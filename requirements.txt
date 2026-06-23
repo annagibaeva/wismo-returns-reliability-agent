@@ -1,0 +1,4 @@
+# The agent, gate, and eval run on the standard library alone (stub backend).
+# Optional:
+anthropic>=0.40.0     # only for --backend llm (real Claude proposer)
+pytest>=8.0           # optional; tests also run via `python tests/test_agent.py`

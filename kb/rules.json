@@ -1,0 +1,77 @@
+{
+  "_comment": "Return policy as DATA, not prose. Each rule: evaluable condition, single licensed outcome, citable source_text, the facts it needs (requires_facts -> unanswerable detection), and a priority (specificity). Higher priority dominates when multiple rules fire. The gate uses priority for check #2.5 (precedence) and deadlock detection.",
+  "rules": [
+    {
+      "rule_id": "RET-007",
+      "title": "Standard 30-day return window",
+      "priority": 10,
+      "condition": "days_since_delivery <= 30 and final_sale == False",
+      "outcome": "eligible",
+      "requires_facts": ["days_since_delivery", "final_sale"],
+      "source_text": "Most items may be returned within 30 days of delivery for a full refund."
+    },
+    {
+      "rule_id": "RET-008",
+      "title": "Outside standard window",
+      "priority": 10,
+      "condition": "days_since_delivery > 30 and final_sale == False",
+      "outcome": "ineligible",
+      "requires_facts": ["days_since_delivery", "final_sale"],
+      "source_text": "Returns are not accepted more than 30 days after delivery."
+    },
+    {
+      "rule_id": "RET-002",
+      "title": "Electronics 15-day window (eligible)",
+      "priority": 20,
+      "condition": "category == 'electronics' and days_since_delivery <= 15",
+      "outcome": "eligible",
+      "requires_facts": ["category", "days_since_delivery"],
+      "source_text": "Electronics may be returned within 15 days of delivery."
+    },
+    {
+      "rule_id": "RET-003",
+      "title": "Electronics past 15-day window (ineligible)",
+      "priority": 20,
+      "condition": "category == 'electronics' and days_since_delivery > 15",
+      "outcome": "ineligible",
+      "requires_facts": ["category", "days_since_delivery"],
+      "source_text": "Electronics returns are not accepted after 15 days, shorter than the standard window."
+    },
+    {
+      "rule_id": "RET-020",
+      "title": "Defective item override",
+      "priority": 90,
+      "condition": "defective == True and final_sale == False",
+      "outcome": "eligible",
+      "requires_facts": ["defective", "final_sale"],
+      "source_text": "Defective items may be returned for a refund or replacement regardless of the standard window."
+    },
+    {
+      "rule_id": "RET-012",
+      "title": "Final-sale items are non-returnable",
+      "priority": 100,
+      "condition": "final_sale == True",
+      "outcome": "ineligible",
+      "requires_facts": ["final_sale"],
+      "source_text": "Final-sale items (clearance, gift cards, intimates) cannot be returned or exchanged."
+    },
+    {
+      "rule_id": "RET-050",
+      "title": "Goodwill grant (eligible)",
+      "priority": 50,
+      "condition": "goodwill_grant == True",
+      "outcome": "eligible",
+      "requires_facts": ["goodwill_grant"],
+      "source_text": "A supervisor may grant a goodwill return as an exception."
+    },
+    {
+      "rule_id": "RET-051",
+      "title": "Fraud hold (ineligible)",
+      "priority": 50,
+      "condition": "fraud_hold == True",
+      "outcome": "ineligible",
+      "requires_facts": ["fraud_hold"],
+      "source_text": "Accounts under a fraud hold are not eligible for returns pending review."
+    }
+  ]
+}

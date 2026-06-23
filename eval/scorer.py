@@ -1,0 +1,111 @@
+"""Scoring: classify each resolution, then aggregate the project's metric suite.
+
+Per resolved ticket we re-run the gate's deterministic assessment (so the scoring
+is identical whether or not the agent itself ran the gate) and bucket it:
+  correct        - grounded AND outcome == policy-licensed == gold
+  hallucination  - a grounding block fired (fabricated rule / condition false / no citation)
+  policy_error   - grounded, but wrong conclusion (precedence miss / deadlock / no-covering)
+
+Metrics:
+  resolution_recall    = answerable tickets resolved correctly / all answerable     (>=80% gate)
+  resolution_precision = resolved correctly / all resolved                          (>=95% gate)
+  hallucination_rate   = hallucinations / all resolved                              (<=2% gate)
+  policy_error_rate    = policy_errors / all resolved
+  handoff_precision    = handoffs that were gold-handoff / all agent handoffs        (>=85% gate)
+  handoff_recall       = gold-handoffs caught / all gold-handoffs
+  deflection_rate      = resolved / all tickets                                      (report only)
+"""
+from __future__ import annotations
+
+import gate as grounding_gate
+
+
+def classify(resolution, ticket: dict) -> dict:
+    expected = ticket["expected"]
+    answerable = expected["answerable"]
+    gold_handoff = expected["expected_handoff"]
+    gold_outcome = expected["outcome"]
+    action = resolution.action
+    outcome = resolution.outcome
+
+    cls = None
+    if action == "handoff":
+        bucket = "handoff"
+    else:  # resolved
+        if outcome in ("eligible", "ineligible"):
+            g = grounding_gate.assess(outcome, resolution.cited_rule_ids, resolution.facts or {})
+            if g.grounding_blocks:
+                cls = "hallucination"
+            elif g.conclusion_blocks or outcome != gold_outcome:
+                cls = "policy_error"
+            else:
+                cls = "correct"
+        else:  # status_provided (wismo)
+            cls = "correct" if gold_outcome == "status_provided" else "policy_error"
+        bucket = cls
+
+    resolved = action == "resolve"
+    return {
+        "ticket_id": resolution.ticket_id,
+        "tier": ticket.get("tier", "?"),
+        "intent_correct": resolution.intent == ticket.get("intent"),
+        "answerable": answerable,
+        "gold_handoff": gold_handoff,
+        "gold_outcome": gold_outcome,
+        "action": action,
+        "outcome": outcome,
+        "bucket": bucket,                     # correct | hallucination | policy_error | handoff
+        "resolved": resolved,
+        "resolved_correct": resolved and cls == "correct",
+        "answerable_correct": answerable and resolved and cls == "correct",
+        "handoff_pred": action == "handoff",
+        "handoff_justified": action == "handoff" and gold_handoff,
+    }
+
+
+def aggregate(rows: list[dict]) -> dict:
+    n = len(rows)
+    n_answerable = sum(r["answerable"] for r in rows)
+    n_resolved = sum(r["resolved"] for r in rows)
+    n_handoff_pred = sum(r["handoff_pred"] for r in rows)
+    n_handoff_gold = sum(r["gold_handoff"] for r in rows)
+
+    def rate(num, den):
+        return (num / den) if den else None
+
+    return {
+        "n": n,
+        "resolution_recall": rate(sum(r["answerable_correct"] for r in rows), n_answerable),
+        "resolution_precision": rate(sum(r["resolved_correct"] for r in rows), n_resolved),
+        "hallucination_rate": rate(sum(r["bucket"] == "hallucination" for r in rows), n_resolved),
+        "policy_error_rate": rate(sum(r["bucket"] == "policy_error" for r in rows), n_resolved),
+        "handoff_precision": rate(sum(r["handoff_justified"] for r in rows), n_handoff_pred),
+        "handoff_recall": rate(sum(r["handoff_justified"] for r in rows), n_handoff_gold),
+        "deflection_rate": rate(n_resolved, n),
+        "counts": {
+            "resolved": n_resolved, "answerable": n_answerable, "handoffs_pred": n_handoff_pred,
+            "handoffs_gold": n_handoff_gold,
+            "correct": sum(r["bucket"] == "correct" for r in rows),
+            "hallucination": sum(r["bucket"] == "hallucination" for r in rows),
+            "policy_error": sum(r["bucket"] == "policy_error" for r in rows),
+        },
+    }
+
+
+def win_condition(summary: dict) -> tuple[bool, dict]:
+    h = summary["hallucination_rate"] or 0.0
+    rr = summary["resolution_recall"] or 0.0
+    hp = summary["handoff_precision"] or 0.0
+    clauses = {
+        "hallucination<=2%": h <= 0.02,
+        "resolution_recall>=80%": rr >= 0.80,
+        "handoff_precision>=85%": hp >= 0.85,
+    }
+    return all(clauses.values()), clauses
+
+
+def by_tier(rows: list[dict]) -> dict:
+    tiers = {}
+    for r in rows:
+        tiers.setdefault(r["tier"], []).append(r)
+    return {t: aggregate(rs) for t, rs in tiers.items()}
