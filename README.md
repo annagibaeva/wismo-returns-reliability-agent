@@ -6,7 +6,7 @@
 
 ---
 
-## TL;DR (the recruiter line)
+## TL;DR
 
 Built a unified WISMO + returns agent with a deterministic **grounding gate**, an **audit trail**, and a **41-ticket tiered test harness** that measures hallucination, policy error, and safe-handoff behavior — and runs the agent **with the gate off vs on** to show the gate's causal effect.
 
