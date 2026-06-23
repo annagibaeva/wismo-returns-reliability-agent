@@ -154,6 +154,10 @@ The story in one line: *the gate cut hallucination from 10% to 0% (and precision
 
 ---
 
+## Contributing
+
+Feature work goes through pull requests — see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Quickstart
 
 No dependencies for the default path (standard library only).
