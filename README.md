@@ -6,7 +6,7 @@
 
 ---
 
-## TL;DR (the recruiter line)
+## TL;DR
 
 Built a unified WISMO + returns agent with a deterministic **grounding gate**, an **audit trail**, and a **41-ticket tiered test harness** that measures hallucination, policy error, and safe-handoff behavior — and runs the agent **with the gate off vs on** to show the gate's causal effect.
 
@@ -153,6 +153,10 @@ Run all 41 tickets **twice — gate off vs gate on** — and compare. Gate-OFF i
 The story in one line: *the gate cut hallucination from 10% to 0% (and precision 81%→100%) while holding recall flat — it learned to refuse the unanswerable, not refuse to work. The cost is ~15 points of deflection (more handoffs), which a stronger reasoner reclaims.* See [`eval/report.md`](eval/report.md) (regenerated each run) and [`docs/case-study.md`](docs/case-study.md) for the honest read.
 
 ---
+
+## Contributing
+
+Feature work goes through pull requests — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Quickstart
 
