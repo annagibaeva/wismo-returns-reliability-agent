@@ -1,6 +1,8 @@
 # Benchmark Report — stub backend
 
-Test set: **41 tickets** (answerable=27, gold-handoffs=14) · snapshot 2026-06-22
+Test set: **43 tickets** (answerable=30, gold-handoffs=13, gold-asks=3) · snapshot 2026-06-22
+
+> **Handoff denominators:** UN-13 is gold `action=ask` (ambiguous multi-order WISMO), not handoff. Gold-handoffs are **13** (down from 14 when ask was lumped with the escalation slice); handoff precision/recall exclude asks from both numerator and denominator.
 
 > ⚠️ **This is the offline `stub` backend** — an intentionally naive, precedence-blind proposer used to exercise the harness without an API key. It is *not* meant to clear the win condition; it demonstrates the gate mechanism. Headline numbers come from `--backend llm`, and we publish whatever that baseline is.
 
@@ -16,15 +18,28 @@ Test set: **41 tickets** (answerable=27, gold-handoffs=14) · snapshot 2026-06-2
 
 | Metric | Gate OFF | Gate ON | Target |
 | --- | --- | --- | --- |
-| Hallucination rate | 10% | 0% | ≤2% |
-| Resolution recall | 93% | 93% | ≥80% |
-| Handoff precision | 100% | 88% | ≥85% |
-| Resolution precision | 81% | 100% | ≥95% |
+| Hallucination rate | 10% | 0% | <=2% |
+| Resolution recall | 83% | 83% | >=80% |
+| Handoff precision | 100% | 87% | >=85% |
+| Resolution precision | 81% | 100% | >=95% |
 | Policy-error rate | 10% | 0% | ~0 |
-| Handoff recall | 71% | 100% | report |
-| Deflection rate | 76% | 61% | report |
+| Handoff recall | 69% | 100% | report |
+| Ask precision | 100% | 100% | report |
+| Ask recall | 100% | 100% | report |
+| Containment rate | 79% | 65% | report |
+| Deflection rate | 72% | 58% | report |
 
-_Counts (gate ON): resolved=25, correct=25, hallucination=0, policy_error=0, handoffs=16._
+## Ask & containment
+
+| | Gate OFF | Gate ON |
+| --- | --- | --- |
+| Ask precision | 3/3 | 3/3 |
+| Ask recall | 3/3 | 3/3 |
+| Containment (not handed off) | 34/43 | 28/43 |
+| Deflection (resolved) | 31/43 | 25/43 |
+
+
+_Counts (gate ON): resolved=25, correct=25, hallucination=0, policy_error=0, asks=3, handoffs=15, action_correct=41/43._
 
 ## Reasoner-alone agreement
 
@@ -34,13 +49,14 @@ On the **22 tickets that have a definite eligible/ineligible answer**, the agent
 
 Counts, not rates — per-tier denominators are tiny and percentages mislead (e.g. one stray handoff in a clean tier is `0/1`, not a `0%` collapse).
 
-| Tier | n | Correct / answerable | Halluc / resolved | Handoff prec (justified/pred) |
-| --- | --- | --- | --- | --- |
-| clean_return | 10 | 9/10 | 0/9 | 0/1 |
-| wismo | 5 | 5/5 | 0/5 | 0/0 |
-| adversarial | 10 | 9/10 | 0/9 | 0/1 |
-| precedence | 3 | 2/2 | 0/2 | 1/1 |
-| unanswerable | 13 | 0/0 | 0/0 | 13/13 |
+| Tier | n | Correct / answerable | Halluc / resolved | Ask (just/pred) | Contained / n | Handoff (just/pred) |
+| --- | --- | --- | --- | --- | --- | --- |
+| clean_return | 10 | 9/10 | 0/9 | 0/0 | 9/10 | 0/1 |
+| wismo | 5 | 5/5 | 0/5 | 0/0 | 5/5 | 0/0 |
+| adversarial | 10 | 9/10 | 0/9 | 0/0 | 9/10 | 0/1 |
+| precedence | 3 | 2/2 | 0/2 | 0/0 | 2/3 | 1/1 |
+| unanswerable | 13 | 0/1 | 0/0 | 1/1 | 1/13 | 12/12 |
+| ask | 2 | 0/2 | 0/0 | 2/2 | 2/2 | 0/0 |
 
 ## Per-ticket (gate ON)
 
@@ -86,9 +102,11 @@ Counts, not rates — per-tier denominators are tiny and percentages mislead (e.
 | UN-10 | unanswerable | handoff | handoff | handoff | ↪ handoff |
 | UN-11 | unanswerable | handoff | handoff | handoff | ↪ handoff |
 | UN-12 | unanswerable | handoff | handoff | handoff | ↪ handoff |
-| UN-13 | unanswerable | handoff | handoff | handoff | ↪ handoff |
+| UN-13 | unanswerable | handoff | ask | handoff | ? ask |
+| ASK-01 | ask | handoff | ask | handoff | ? ask |
+| ASK-02 | ask | handoff | ask | handoff | ? ask |
 
 ## Honest calibration
 
-At n=41 a single ticket moves a rate by ~2%, so all percentages are **directional, not statistically tight**. Raw counts are reported alongside every rate. The set is deliberately weighted toward handoff/unanswerable cases so handoff-precision has a real denominator (gold-handoffs=14).
+At n=43 a single ticket moves a rate by ~2%, so all percentages are **directional, not statistically tight**. Raw counts are reported alongside every rate. The set is deliberately weighted toward handoff/unanswerable cases so handoff-precision has a real denominator (gold-handoffs=13, gold-asks=3).
 
