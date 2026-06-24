@@ -19,5 +19,8 @@ jobs:
       - name: Install test dependencies
         run: pip install pytest
 
+      - name: Lexicon freeze (held-out discipline)
+        run: python eval/check_lexicon_freeze.py
+
       - name: Run tests
         run: python -m pytest tests/ -v

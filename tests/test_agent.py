@@ -125,6 +125,41 @@ def test_single_order_email_lookup_resolves_not_asks():
     assert res.order_id == "ORD-3001"
 
 
+# ---- ticket schema ----
+
+_VALID_SPLITS = frozenset({"seed", "heldout"})
+_EXPECTED_TIERS = frozenset({
+    "clean_return", "wismo", "adversarial", "precedence", "unanswerable", "ask",
+})
+_MIN_HELD_OUT = 20
+
+
+def test_every_ticket_has_split():
+    for t in data.all_tickets():
+        tid = t["id"]
+        assert "split" in t, f"ticket {tid}: missing split"
+        assert t["split"] in _VALID_SPLITS, f"ticket {tid}: split must be seed|heldout, got {t['split']!r}"
+
+
+def test_held_out_coverage():
+    held = data.held_out_tickets()
+    assert len(held) >= _MIN_HELD_OUT, f"need ≥{_MIN_HELD_OUT} held-out tickets, got {len(held)}"
+    held_tiers = {t["tier"] for t in held}
+    missing = _EXPECTED_TIERS - held_tiers
+    assert not missing, f"held-out missing tiers: {sorted(missing)}"
+
+
+def test_ticket_split_schema():
+    seed = data.tickets()
+    held = data.held_out_tickets()
+    assert all(t["split"] == "seed" for t in seed)
+    assert not any("paraphrase_of" in t for t in seed)
+    assert all(t["split"] == "heldout" for t in held)
+    seed_ids = {s["id"] for s in seed}
+    assert all(t.get("paraphrase_of") in seed_ids for t in held)
+    assert {t["tier"] for t in seed} == _EXPECTED_TIERS
+
+
 # ---- routing ----
 
 def test_routing():

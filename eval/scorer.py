@@ -9,6 +9,7 @@ is identical whether or not the agent itself ran the gate) and bucket it:
   handoff        - escalated to a human
 
 Metrics:
+  intent_accuracy      = tickets with correct intent / all tickets
   resolution_recall    = answerable tickets resolved correctly / all answerable     (>=80% gate)
   resolution_precision = resolved correctly / all resolved                          (>=95% gate)
   hallucination_rate   = hallucinations / all resolved                              (<=2% gate)
@@ -60,6 +61,7 @@ def classify(resolution, ticket: dict) -> dict:
     return {
         "ticket_id": resolution.ticket_id,
         "tier": ticket.get("tier", "?"),
+        "split": ticket.get("split", "?"),
         "intent_correct": resolution.intent == ticket.get("intent"),
         "answerable": answerable,
         "gold_action": gold_action,
@@ -95,6 +97,7 @@ def aggregate(rows: list[dict]) -> dict:
 
     return {
         "n": n,
+        "intent_accuracy": rate(sum(r["intent_correct"] for r in rows), n),
         "resolution_recall": rate(sum(r["answerable_correct"] for r in rows), n_answerable),
         "resolution_precision": rate(sum(r["resolved_correct"] for r in rows), n_resolved),
         "hallucination_rate": rate(sum(r["bucket"] == "hallucination" for r in rows), n_resolved),
@@ -112,6 +115,7 @@ def aggregate(rows: list[dict]) -> dict:
             "handoffs_justified": sum(r["handoff_justified"] for r in rows),
             "asks_justified": sum(r["ask_justified"] for r in rows),
             "action_correct": sum(r["action_correct"] for r in rows),
+            "intent_correct": sum(r["intent_correct"] for r in rows),
             "answerable_correct": sum(r["answerable_correct"] for r in rows),
             "resolved_correct": sum(r["resolved_correct"] for r in rows),
             "correct": sum(r["bucket"] == "correct" for r in rows),
@@ -152,3 +156,23 @@ def by_tier(rows: list[dict]) -> dict:
     for r in rows:
         tiers.setdefault(r["tier"], []).append(r)
     return {t: aggregate(rs) for t, rs in tiers.items()}
+
+
+def by_split(rows: list[dict]) -> dict:
+    splits = {}
+    for r in rows:
+        splits.setdefault(r["split"], []).append(r)
+    return {s: aggregate(rs) for s, rs in splits.items()}
+
+
+_GAP_METRICS = ("intent_accuracy", "resolution_recall", "hallucination_rate", "handoff_precision")
+
+
+def generalization_gap(seed_summary: dict, heldout_summary: dict) -> dict:
+    """Seed minus held-out on split-generalization metrics (positive = seed scores higher)."""
+    gap = {}
+    for key in _GAP_METRICS:
+        seed_val = seed_summary.get(key)
+        held_val = heldout_summary.get(key)
+        gap[key] = (seed_val - held_val) if seed_val is not None and held_val is not None else None
+    return gap

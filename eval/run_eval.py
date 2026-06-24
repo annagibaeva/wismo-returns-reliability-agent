@@ -1,8 +1,9 @@
 """Benchmark runner — runs the test set twice (gate OFF vs gate ON), scores both,
-and writes the report. Gate-OFF is the honest baseline; we publish whatever it is.
+writes the report, and always compares seed vs held-out (gate ON) for generalization.
 
 Usage (from repo root):
-    python eval/run_eval.py                 # stub backend (key-free, offline)
+    python eval/run_eval.py                 # stub backend, seed set (key-free, offline)
+    python eval/run_eval.py --held-out      # held-out paraphrases as primary; seed still compared
     python eval/run_eval.py --backend llm   # real Claude (needs ANTHROPIC_API_KEY)
 """
 from __future__ import annotations
@@ -24,9 +25,13 @@ from services_mock import data              # noqa: E402
 from eval import scorer                      # noqa: E402
 
 
-def _run(backend: str, use_gate: bool):
+def _ticket_set(held_out: bool) -> list[dict]:
+    return data.held_out_tickets() if held_out else data.tickets()
+
+
+def _run(backend: str, use_gate: bool, *, held_out: bool = False):
     rows, resolutions = [], []
-    for t in data.tickets():
+    for t in _ticket_set(held_out):
         res = resolve_ticket(t, backend=backend, use_gate=use_gate)
         rows.append(scorer.classify(res, t))
         resolutions.append(res)
@@ -40,6 +45,25 @@ def _pct(x):
 def _frac(num, den):
     """Count form 'x/y' — avoids alarming-looking percentages on tiny per-tier denominators."""
     return f"{num}/{den}"
+
+
+def _gap_pp(seed_val, held_val):
+    """Seed minus held-out in percentage points; ≈0 when the reliability headline holds."""
+    if seed_val is None or held_val is None:
+        return "n/a"
+    g = seed_val - held_val
+    if abs(g) < 0.005:
+        return "≈0"
+    sign = "+" if g > 0 else ""
+    return f"{sign}{g:.0%}"
+
+
+_GAP_ROWS = [
+    ("hallucination_rate", "Hallucination rate", "headline — gap ≈ 0 ⇒ safety holds on paraphrases"),
+    ("resolution_recall", "Resolution recall", "graceful degradation — recall may drop, not safety"),
+    ("handoff_precision", "Handoff precision", "report"),
+    ("intent_accuracy", "Intent accuracy", "report"),
+]
 
 
 _METRIC_ROWS = [
@@ -83,31 +107,100 @@ def _ask_containment_payload(off: dict, on: dict) -> tuple[dict, dict]:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--backend", default="stub", choices=["stub", "llm"])
+    ap.add_argument("--held-out", action="store_true",
+                    help="score held-out paraphrases as primary (win condition); still compares seed")
     args = ap.parse_args()
 
-    off_rows, _ = _run(args.backend, use_gate=False)
-    on_rows, on_res = _run(args.backend, use_gate=True)
+    primary_held_out = args.held_out
+    other_held_out = not primary_held_out
+
+    off_rows, _ = _run(args.backend, use_gate=False, held_out=primary_held_out)
+    on_rows, on_res = _run(args.backend, use_gate=True, held_out=primary_held_out)
     off, on = scorer.aggregate(off_rows), scorer.aggregate(on_rows)
     won, clauses = scorer.win_condition(on)
     tiers = scorer.by_tier(on_rows)
     agreement = scorer.reasoner_agreement(off_rows)
 
-    _console(args.backend, off, on, won, clauses, tiers, agreement)
-    _write_report(args.backend, off, on, won, clauses, tiers, on_rows, agreement)
+    other_on_rows, _ = _run(args.backend, use_gate=True, held_out=other_held_out)
+    seed_on = on if not primary_held_out else scorer.aggregate(other_on_rows)
+    heldout_on = scorer.aggregate(other_on_rows) if primary_held_out else on
+    gap = scorer.generalization_gap(seed_on, heldout_on)
+
+    label = "held-out" if primary_held_out else "seed"
+    _console(args.backend, off, on, won, clauses, tiers, agreement,
+             label=label, seed_on=seed_on, heldout_on=heldout_on, gap=gap)
+    _write_report(args.backend, off, on, won, clauses, tiers, on_rows, agreement,
+                  label=label, seed_on=seed_on, heldout_on=heldout_on, gap=gap)
     ask_payload, containment_payload = _ask_containment_payload(off, on)
     (ROOT / "eval" / "results.json").write_text(json.dumps({
         "backend": args.backend, "gate_off": off, "gate_on": on,
         "ask": ask_payload,
         "containment": containment_payload,
         "win_condition": {"passed": won, "clauses": clauses},
+        "generalization": {
+            "seed_gate_on": seed_on, "heldout_gate_on": heldout_on,
+            "gap_seed_minus_heldout": gap,
+        },
         "reasoner_agreement": agreement, "by_tier": tiers,
         "tickets": [r for r in on_rows],
     }, indent=2, default=str), encoding="utf-8")
     return 0 if won else 1
 
 
-def _console(backend, off, on, won, clauses, tiers, agreement):
-    print(f"\n=== WISMO + Returns Reliability Agent — Benchmark ({backend} backend) ===")
+def _generalization_headline(seed_on, heldout_on, gap, *, backend: str) -> tuple[str, str | None]:
+    """(headline sentence, optional footnote) — tuned to what the gaps actually show."""
+    h_gap = gap.get("hallucination_rate")
+    rr_gap = gap.get("resolution_recall")
+    h_flat = h_gap is not None and abs(h_gap) < 0.005
+    rr_flat = rr_gap is None or abs(rr_gap) < 0.005
+    h_disp = "≈0" if h_flat else _gap_pp(
+        seed_on.get("hallucination_rate"), heldout_on.get("hallucination_rate"))
+
+    if h_flat and not rr_flat and rr_gap > 0:
+        return (
+            f"Headline reliability claim: hallucination gap {h_disp} — held-out costs recall, not safety.",
+            f"Recall dropped {_gap_pp(seed_on.get('resolution_recall'), heldout_on.get('resolution_recall'))} "
+            "on paraphrases; hallucination held flat (graceful degradation).",
+        )
+    if h_flat and rr_flat:
+        stub_note = (
+            " Stub backend is facts-driven (ignores phrasing), so flat gaps here are expected — "
+            "`--backend llm` is where paraphrase-sensitive recall gaps show up."
+            if backend == "stub" else ""
+        )
+        return (
+            f"Headline reliability claim: hallucination gap {h_disp} — safety holds on paraphrases; "
+            f"recall flat too{stub_note}",
+            None,
+        )
+    return (
+        f"Headline reliability claim: hallucination gap {h_disp} — check safety on held-out.",
+        None,
+    )
+
+
+def _generalization_console(seed_on, heldout_on, gap, *, backend: str) -> str:
+    headline, footnote = _generalization_headline(seed_on, heldout_on, gap, backend=backend)
+    lines = [
+        "",
+        "=== Generalization: seed vs held-out (gate ON) ===",
+        headline,
+        "",
+        f"{'metric':<22}{'seed':>10}{'held-out':>10}{'gap':>10}",
+    ]
+    for key, name, _note in _GAP_ROWS:
+        lines.append(
+            f"{name:<22}{_pct(seed_on[key]):>10}{_pct(heldout_on[key]):>10}"
+            f"{_gap_pp(seed_on.get(key), heldout_on.get(key)):>10}"
+        )
+    if footnote:
+        lines.append(f"   → {footnote}")
+    return "\n".join(lines) + "\n"
+
+
+def _console(backend, off, on, won, clauses, tiers, agreement, *, label: str = "seed",
+             seed_on=None, heldout_on=None, gap=None):
+    print(f"\n=== WISMO + Returns Reliability Agent — Benchmark ({backend} backend, {label} set) ===")
     print(f"n = {on['n']} tickets   (answerable={on['counts']['answerable']}, "
           f"gold-handoffs={on['counts']['handoffs_gold']}, gold-asks={on['counts']['asks_gold']})\n")
     print(f"{'metric':<22}{'gate OFF':>10}{'gate ON':>10}{'target':>10}")
@@ -128,6 +221,8 @@ def _console(backend, off, on, won, clauses, tiers, agreement):
     print(f"   → the gate had to catch {a['gap']} of {a['total']} definite-answer tickets the reasoner got wrong.")
 
     print(_ascii_chart(off, on))
+    if seed_on and heldout_on and gap is not None:
+        print(_generalization_console(seed_on, heldout_on, gap, backend=backend), end="")
     print("Per-tier (gate ON)   [counts: correct/answerable, halluc/resolved, ask, containment, handoff]:")
     for tier, s in tiers.items():
         c = s["counts"]
@@ -151,8 +246,50 @@ def _ascii_chart(off, on) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _write_report(backend, off, on, won, clauses, tiers, rows, agreement):
-    L = [f"# Benchmark Report — {backend} backend", "",
+def _generalization_report(seed_on, heldout_on, gap, *, backend: str) -> list[str]:
+    headline, footnote = _generalization_headline(seed_on, heldout_on, gap, backend=backend)
+    h_gap = gap.get("hallucination_rate")
+    h_flat = h_gap is not None and abs(h_gap) < 0.005
+    h_disp = "≈0" if h_flat else _gap_pp(
+        seed_on.get("hallucination_rate"), heldout_on.get("hallucination_rate"))
+    claim = (
+        f"> **Headline reliability claim:** hallucination gap **{h_disp}** on unseen paraphrases. "
+    )
+    if h_flat and footnote and "graceful degradation" in footnote:
+        claim += (
+            "The gate's safety story is split-generalization, not seed memorization — "
+            "**held-out costs recall, not safety** (resolution-recall may drop; hallucination should not)."
+        )
+    elif h_flat:
+        claim += (
+            "Safety holds on paraphrases; recall is flat on this run. "
+            + ("The `stub` backend is facts-driven, so paraphrase gaps appear under `--backend llm`."
+               if backend == "stub" else
+               "Both splits scored identically on gate-ON metrics.")
+        )
+    else:
+        claim += "Held-out hallucination diverged from seed — investigate before claiming generalization."
+    L = [
+        "## Generalization: seed vs held-out (gate ON)", "",
+        claim, "",
+        f"Seed **n={seed_on['n']}** · held-out **n={heldout_on['n']}** · gap = seed − held-out.", "",
+        "| Metric | Seed | Held-out | Gap (seed−held) | Note |",
+        "| --- | --- | --- | --- | --- |",
+    ]
+    for key, name, note in _GAP_ROWS:
+        L.append(
+            f"| {name} | {_pct(seed_on[key])} | {_pct(heldout_on[key])} | "
+            f"{_gap_pp(seed_on.get(key), heldout_on.get(key))} | {note} |"
+        )
+    if footnote:
+        L.append("")
+        L.append(f"_{footnote}_")
+    return L + [""]
+
+
+def _write_report(backend, off, on, won, clauses, tiers, rows, agreement, *, label: str = "seed",
+                  seed_on=None, heldout_on=None, gap=None):
+    L = [f"# Benchmark Report — {backend} backend ({label} set)", "",
          f"Test set: **{on['n']} tickets** (answerable={on['counts']['answerable']}, "
          f"gold-handoffs={on['counts']['handoffs_gold']}, gold-asks={on['counts']['asks_gold']}) · snapshot 2026-06-22", "",
          "> **Handoff denominators:** UN-13 is gold `action=ask` (ambiguous multi-order WISMO), not handoff. "
@@ -168,6 +305,8 @@ def _write_report(backend, off, on, won, clauses, tiers, rows, agreement):
           "AND handoff-precision ≥85%, simultaneously.", ""]
     for c, ok in clauses.items():
         L.append(f"- {'✅' if ok else '❌'} {c}")
+    if seed_on and heldout_on and gap is not None:
+        L += _generalization_report(seed_on, heldout_on, gap, backend=backend)
     L += ["", "## Gate OFF vs ON", "",
           "| Metric | Gate OFF | Gate ON | Target |", "| --- | --- | --- | --- |"]
     for key, label, target in _METRIC_ROWS:
