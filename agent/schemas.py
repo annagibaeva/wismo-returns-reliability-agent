@@ -19,7 +19,7 @@ class Resolution:
     ticket_id: str
     intent: str                       # return | wismo | out_of_scope
     order_id: str | None
-    action: str                       # "resolve" | "handoff"
+    action: str                       # "resolve" | "handoff" | "ask"
     outcome: str                      # eligible | ineligible | status_provided | handoff
     cited_rule_ids: list[str]
     facts: dict
@@ -27,6 +27,7 @@ class Resolution:
     customer_reply: str
     audit_trail: list[AuditStep]
     backend: str
+    clarifying_question: str | None = None   # set when action == "ask"
     proposed_outcome: str | None = None      # the agent's pre-gate proposal
     gate: dict | None = None                 # {passed, blocks} when the gate ran
 

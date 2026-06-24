@@ -60,10 +60,17 @@ def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True) -
                         priority="high" if oos_reason in ("safety", "fraud") else "normal")
 
     # --- resolve the order (by id, else by email) ---
-    order, lookup_err = _lookup(audit, ticket)
+    order, lookup_err, ambiguous_matches = _lookup(audit, ticket)
+    if lookup_err == "ambiguous_order":
+        return _ask(ticket, audit, intent, ambiguous_matches, backend)
     if lookup_err:
         return _handoff(ticket, audit, intent, lookup_err, {}, backend,
                         "I couldn't find a single matching order to act on, so I've passed this to our team.")
+
+    if intent == "return":
+        amb_items = _ambiguous_items(order, msg)
+        if amb_items:
+            return _ask_items(ticket, audit, intent, order, amb_items, backend)
 
     if intent == "wismo":
         line = order_api.status_line(order)
@@ -113,24 +120,86 @@ def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True) -
 
 # --------------------------------------------------------------------------- #
 
-def _lookup(audit: AuditLogger, ticket: dict):
+def _lookup(audit: AuditLogger, ticket: dict) -> tuple[dict | None, str | None, list[dict] | None]:
     oid = ticket.get("order_id")
     if oid:
         try:
             o = order_api.get_order(oid)
             audit.tool_call("lookup_order", {"order_id": oid}, o["order_id"])
-            return o, None
+            return o, None, None
         except order_api.OrderNotFound:
             audit.tool_call("lookup_order", {"order_id": oid}, {"error": "not_found"})
-            return None, "order_not_found"
+            return None, "order_not_found", None
     matches = order_api.find_orders_by_email(ticket.get("customer_email"))
     audit.tool_call("lookup_order", {"email": ticket.get("customer_email")},
                     {"matches": [m["order_id"] for m in matches]})
     if len(matches) == 1:
-        return matches[0], None
+        return matches[0], None, None
     if len(matches) == 0:
-        return None, "order_not_found"
-    return None, "ambiguous_order"
+        return None, "order_not_found", None
+    return None, "ambiguous_order", matches
+
+
+def _ambiguous_order_question(matches: list[dict]) -> str:
+    lines = ["I found several orders on your account. Which one are you asking about?"]
+    for o in matches:
+        item = o["items"][0]["name"]
+        status = o["status"].replace("_", " ")
+        lines.append(f"- {o['order_id']}: {item} ({status})")
+    return "\n".join(lines)
+
+
+def _items_referenced(msg: str, items: list[dict]) -> list[dict]:
+    t = msg.lower()
+    matched = []
+    for it in items:
+        name = it["name"].lower()
+        if name in t:
+            matched.append(it)
+            continue
+        tokens = [w for w in name.replace("-", " ").split() if len(w) > 3]
+        if any(tok in t for tok in tokens):
+            matched.append(it)
+    return matched
+
+
+def _ambiguous_items(order: dict, msg: str) -> list[dict] | None:
+    items = order.get("items") or []
+    if len(items) <= 1:
+        return None
+    return items if len(_items_referenced(msg, items)) != 1 else None
+
+
+def _ambiguous_item_question(order: dict, items: list[dict]) -> str:
+    lines = [f"Order {order['order_id']} has several items. Which one would you like to return?"]
+    for it in items:
+        lines.append(f"- {it['name']}")
+    return "\n".join(lines)
+
+
+def _ask_items(ticket, audit, intent, order, items, backend) -> Resolution:
+    question = _ambiguous_item_question(order, items)
+    rec = ticketing.ask(ticket["id"], question)
+    audit.tool_call("ask", {"question": question}, rec)
+    names = [it["name"] for it in items]
+    audit.decision("ask_clarification",
+                   {"reason": "ambiguous_item", "order_id": order["order_id"], "candidates": names}, "ask")
+    facts = {"order_id": order["order_id"], "candidate_items": names}
+    return Resolution(ticket["id"], intent, order["order_id"], "ask", "handoff",
+                      [], facts, None, question, audit.steps, backend,
+                      clarifying_question=question)
+
+
+def _ask(ticket, audit, intent, matches, backend) -> Resolution:
+    question = _ambiguous_order_question(matches)
+    rec = ticketing.ask(ticket["id"], question)
+    audit.tool_call("ask", {"question": question}, rec)
+    audit.decision("ask_clarification", {"reason": "ambiguous_order", "candidates": [m["order_id"] for m in matches]},
+                   "ask")
+    facts = {"candidate_order_ids": [m["order_id"] for m in matches]}
+    return Resolution(ticket["id"], intent, None, "ask", "handoff",
+                      [], facts, None, question, audit.steps, backend,
+                      clarifying_question=question)
 
 
 def _handoff(ticket, audit, intent, reason, facts, body, backend, *, priority="normal",

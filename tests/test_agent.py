@@ -94,6 +94,37 @@ def test_gate_passes_correct_ruling():
     assert g.passed
 
 
+# ---- ask (ambiguous order lookup) ----
+
+def test_un13_asks_not_handoffs():
+    t = next(t for t in data.tickets() if t["id"] == "UN-13")
+    res = resolve_ticket(t, backend="stub", use_gate=True)
+    assert res.action == "ask"
+    assert res.action != "handoff"
+    assert res.clarifying_question
+    assert "ORD-7001" in res.clarifying_question and "ORD-7002" in res.clarifying_question
+
+
+def test_ask_never_hits_grounding_gate():
+    t = next(t for t in data.tickets() if t["id"] == "UN-13")
+    res = resolve_ticket(t, backend="stub", use_gate=True)
+    assert res.action == "ask"
+    assert not any(s.name == "grounding_gate" for s in res.audit_trail)
+    row = scorer.classify(res, t)
+    assert row["bucket"] == "ask"
+
+
+def test_single_order_email_lookup_resolves_not_asks():
+    # T-020-style: no order_id, but email uniquely resolves → resolve, don't over-ask
+    base = next(t for t in data.tickets() if t["id"] == "WI-01")
+    t = {**base, "id": "T-020", "order_id": None}
+    res = resolve_ticket(t, backend="stub", use_gate=True)
+    assert res.action == "resolve"
+    assert res.action != "ask"
+    assert res.outcome == "status_provided"
+    assert res.order_id == "ORD-3001"
+
+
 # ---- routing ----
 
 def test_routing():
