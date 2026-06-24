@@ -48,4 +48,7 @@ This repo uses a **feature branch → pull request → merge** workflow. Do not 
 ```bash
 python -m pytest tests/ -v
 python eval/run_eval.py
+python eval/check_lexicon_freeze.py   # held-out lexicon discipline
 ```
+
+Optional: `pip install pre-commit && pre-commit install` to run the lexicon freeze hook on every commit.

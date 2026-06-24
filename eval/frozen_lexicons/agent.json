@@ -1,0 +1,78 @@
+{
+  "_ABUSE": [
+    "sue",
+    "lawyer",
+    "legal action",
+    "reviews everywhere",
+    "garbage",
+    "trash"
+  ],
+  "_ADDRESS": [
+    "change the delivery address",
+    "change my address",
+    "change the address",
+    "reroute",
+    "different address"
+  ],
+  "_DEFECTIVE": [
+    "defective",
+    "broken",
+    "faulty",
+    "doesn't work",
+    "does not work",
+    "not working",
+    "leak",
+    "leaking",
+    "cracked",
+    "won't turn on",
+    "dead",
+    "malfunction"
+  ],
+  "_FRAUD": [
+    "fraud",
+    "took over my account",
+    "account takeover",
+    "didn't make",
+    "didn't place"
+  ],
+  "_PAYMENT": [
+    "unauthorized",
+    "dispute",
+    "disputing",
+    "chargeback",
+    "charge back",
+    "my bank"
+  ],
+  "_RETURN": [
+    "return",
+    "send back",
+    "send it back",
+    "send this back",
+    "refund",
+    "money back",
+    "exchange"
+  ],
+  "_SAFETY": [
+    "caught fire",
+    "fire",
+    "smoke",
+    "smoking",
+    "shock",
+    "spark",
+    "burn",
+    "hazard",
+    "dangerous",
+    "explod"
+  ],
+  "_WISMO": [
+    "where",
+    "track",
+    "tracking",
+    "arrive",
+    "arriving",
+    "shipped",
+    "ship",
+    "delivery",
+    "deliver"
+  ]
+}

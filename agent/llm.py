@@ -92,7 +92,7 @@ def _llm_propose(facts: dict, candidate_rules: list[dict], message: str) -> dict
                  for r in candidate_rules], indent=2)
             + "\n\nReturn the structured decision via the return_decision tool.")
     resp = client.messages.create(
-        model=MODEL, max_tokens=512, temperature=0, system=_SYSTEM,
+        model=MODEL, max_tokens=512, system=_SYSTEM,
         tools=[_SCHEMA], tool_choice={"type": "tool", "name": "return_decision"},
         messages=[{"role": "user", "content": user}],
     )

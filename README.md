@@ -8,10 +8,10 @@
 
 ## TL;DR
 
-Built a unified WISMO + returns agent with a deterministic **grounding gate**, an **audit trail**, and a **41-ticket tiered test harness** that measures hallucination, policy error, and safe-handoff behavior — and runs the agent **with the gate off vs on** to show the gate's causal effect.
+Built a unified WISMO + returns agent with a deterministic **grounding gate**, an **audit trail**, and a **43-ticket seed harness + 25 held-out paraphrases** that measures hallucination, policy error, and safe-handoff behavior — and runs the agent **with the gate off vs on** to show the gate's causal effect, then **seed vs held-out** to measure generalization.
 
-> **Result (stub backend, n=41):** the gate cut **hallucination 10% → 0%** and **resolution-precision 81% → 100%**, trading **deflection 76% → 61%** while holding **resolution-recall at 93%**. It refuses the unanswerable, not the answerable.
-> *(Counts reported alongside every rate; at n=41 these are directional, not statistically tight. The `stub` is an intentionally naive offline proposer — see [Two backends](#two-backends-one-seam). Publish-quality numbers come from `--backend llm`.)*
+> **Result (stub backend, seed n=43):** the gate cut **hallucination 10% → 0%** and **resolution-precision 81% → 100%**, trading **deflection 72% → 58%** while holding **resolution-recall at 83%**. **Generalization (gate ON):** hallucination gap **≈0** on held-out paraphrases (seed 0% → held-out 0%).
+> *(Counts reported alongside every rate; at n=43 these are directional, not statistically tight. The `stub` is an intentionally naive offline proposer — see [Two backends](#two-backends-one-seam). Publish-quality numbers come from `--backend llm` — see [`eval/report.md`](eval/report.md).)*
 
 ---
 
@@ -42,7 +42,7 @@ Three clauses that pull against each other on purpose, all true simultaneously:
 
 **Why conjoined:** each metric alone is gameable. An "answer everything" agent maxes deflection but fails hallucination; a "hand off everything" agent gets 0% hallucination but fails recall. Only a **selective** agent clears all three — and selectivity is the entire skill being demonstrated.
 
-> Note on definitions: "deflection" here keeps its standard meaning (resolved without a human) and is **report-only**; the `≥80%` bar sits on **resolution-recall** (of *answerable* tickets). With ~14 handoff-by-design tickets, deflection caps near ~65% structurally, so gating it would be meaningless.
+> Note on definitions: "deflection" here keeps its standard meaning (resolved without a human) and is **report-only**; the `≥80%` bar sits on **resolution-recall** (of *answerable* tickets). With 13 gold handoffs + 3 gold asks, deflection caps structurally below 100%; gating deflection would be meaningless.
 
 ---
 
@@ -118,7 +118,7 @@ v1 ships one provider behind this seam; swapping providers edits one file.
 /agent          router · llm.propose() seam · orchestrator · schemas/audit
 /gate           the grounding gate: checks 1–4 + 2.5
 /eval           scorer (split metrics, per-tier) · runner (gate off vs on) · report
-/fixtures       41 tiered tickets + ground-truth labels · orders
+/fixtures       68 tiered tickets (43 seed + 25 held-out paraphrases) · orders
 /docs           case study · architecture · demo script
 demo.py         paste a ticket -> proposal, gate verdict, action, cited rule, audit trail
 ```
@@ -126,31 +126,43 @@ demo.py         paste a ticket -> proposal, gate verdict, action, cited rule, au
 
 ## The test set (the actual product) — [`fixtures/tickets.json`](fixtures/tickets.json)
 
-41 tickets, **written before the agent**, weighted toward the slices that carry the metrics:
+**43 seed tickets**, written before the agent, plus **25 held-out paraphrases** (same gold labels, different phrasing), weighted toward the slices that carry the metrics:
 
-| Tier | Count | Ground truth |
-|---|---|---|
-| Clean returns | 10 | answerable → resolve (eligible/ineligible) |
-| WISMO | 5 | answerable → resolve (status) |
-| Adversarial | 10 | answerable; framing traps (out-of-window as in-window, final-sale as standard, tone pressure) |
-| **Precedence** | 3 | 2 answerable (a more-specific rule dominates) + 1 genuine deadlock → handoff |
-| Unanswerable | 13 | missing fact / no covering policy / out-of-scope / safety → handoff |
+| Tier | Seed | Held-out | Ground truth |
+|---|---|---|---|
+| Clean returns | 10 | 4 | answerable → resolve (eligible/ineligible) |
+| WISMO | 5 | 3 | answerable → resolve (status) |
+| Adversarial | 10 | 6 | answerable; framing traps (out-of-window as in-window, final-sale as standard, tone pressure) |
+| **Precedence** | 3 | 2 | 2 answerable (a more-specific rule dominates) + 1 genuine deadlock → handoff |
+| Unanswerable | 13 | 8 | missing fact / no covering policy / out-of-scope / safety → handoff |
+| **Ask** | 2 | 2 | answerable but ambiguous → ask (not handoff) |
 
-→ **14 handoff-by-design** (so handoff-precision has a real denominator) · **27 answerable** (so recall does too).
+→ **13 gold handoffs** + **3 gold asks** (so handoff-precision has a real denominator) · **30 answerable** (so recall does too).
+
+> **Lexicon-freeze discipline:** held-out paraphrases must not trigger a lexicon edit — we report whatever they score. That freeze is the integrity signal: it blocks the easy cheat of adding routing keywords until held-out passes. Lexicons are snapshotted in [`eval/frozen_lexicons/`](eval/frozen_lexicons/) and enforced by pre-commit + CI (`eval/check_lexicon_freeze.py`).
 
 ## How it's evaluated
 
-Run all 41 tickets **twice — gate off vs gate on** — and compare. Gate-OFF is the honest baseline; we publish whatever it is.
+Run the seed set **twice — gate off vs gate on** — then score held-out paraphrases (gate ON) for generalization. Gate-OFF is the honest baseline; we publish whatever it is.
 
 | Metric | Gate OFF | Gate ON |
 |---|---|---|
 | Hallucination | 10% | **0%** |
 | Resolution precision | 81% | **100%** |
-| Resolution recall | 93% | 93% |
-| Handoff precision | 100% | 88% |
-| Deflection | 76% | 61% |
+| Resolution recall | 83% | 83% |
+| Handoff precision | 100% | 87% |
+| Deflection | 72% | 58% |
 
-The story in one line: *the gate cut hallucination from 10% to 0% (and precision 81%→100%) while holding recall flat — it learned to refuse the unanswerable, not refuse to work. The cost is ~15 points of deflection (more handoffs), which a stronger reasoner reclaims.* See [`eval/report.md`](eval/report.md) (regenerated each run) and [`docs/case-study.md`](docs/case-study.md) for the honest read.
+*(stub backend, seed n=43 — see [`eval/report-stub.md`](eval/report-stub.md). `--backend llm` in [`eval/report.md`](eval/report.md): recall 90%, handoff-precision 100%, hallucination gap ≈0 on held-out.)*
+
+**Generalization (gate ON, seed vs held-out):**
+
+| Metric | Seed | Held-out | Gap |
+|---|---|---|---|
+| Hallucination | 0% | 0% | **≈0** |
+| Resolution recall | 83% | 83% | ≈0 |
+
+The story in one line: *the gate cut hallucination from 10% to 0% (and precision 81%→100%) while holding recall flat — it learned to refuse the unanswerable, not refuse to work. The cost is ~14 points of deflection (more handoffs), which a stronger reasoner reclaims; held-out paraphrases hold the same safety line.* See [`eval/report.md`](eval/report.md) (regenerated each run) and [`docs/case-study.md`](docs/case-study.md) for the honest read.
 
 ---
 
@@ -180,20 +192,20 @@ python eval/run_eval.py --backend llm
 
 ## Honest calibration
 
-At n=41 a single ticket moves any rate by ~2.4 points, so all percentages are **directional, not statistically tight** — raw counts accompany every rate. The set is weighted toward handoff/unanswerable cases so handoff-precision stands on a real denominator (14 gold handoffs). The `stub` backend clears the win condition because the gate is well-calibrated, not because the proposer is smart; the `llm` backend is where reasoning quality (and thus recall) is actually tested.
+At n=43 a single ticket moves a rate by ~2%, so all percentages are **directional, not statistically tight** — raw counts accompany every rate. The set is weighted toward handoff/unanswerable cases so handoff-precision stands on a real denominator (gold-handoffs=13, gold-asks=3). The `stub` backend clears the win condition because the gate is well-calibrated, not because the proposer is smart; the `llm` backend is where reasoning quality (and thus recall) is actually tested.
 
 ## Results
-=== WISMO + Returns Reliability Agent — Benchmark (stub backend) ===
-n = 41 tickets   (answerable=27, gold-handoffs=14)
+=== WISMO + Returns Reliability Agent — Benchmark (stub backend, seed set) ===
+n = 43 tickets   (answerable=30, gold-handoffs=13, gold-asks=3)
 
 metric                  gate OFF   gate ON    target
 hallucination_rate           10%        0%      <=2%
-resolution_recall            93%       93%     >=80%
-handoff_precision           100%       88%     >=85%
+resolution_recall            83%       83%     >=80%
+handoff_precision           100%       87%     >=85%
 resolution_precision         81%      100%     >=95%
 policy_error_rate            10%        0%        ~0
-handoff_recall               71%      100%    report
-deflection_rate              76%       61%    report
+handoff_recall               69%      100%    report
+deflection_rate              72%       58%    report
 
 Win condition (gate ON): PASS ✅
    ✅ hallucination<=2%
@@ -203,16 +215,25 @@ Win condition (gate ON): PASS ✅
 Gate OFF → ON (the headline contrast):
   hallucination      OFF [██··················] 10%
                      ON  [····················] 0%
-  resolution recall  OFF [███████████████████·] 93%
-                     ON  [███████████████████·] 93%
+  resolution recall  OFF [█████████████████···] 83%
+                     ON  [█████████████████···] 83%
   handoff precision  OFF [████████████████████] 100%
-                     ON  [██████████████████··] 88%
+                     ON  [█████████████████···] 87%
+
+=== Generalization: seed vs held-out (gate ON) ===
+Headline reliability claim: hallucination gap ≈0 — safety holds on paraphrases; recall flat too
+metric                  seed   held-out       gap
+hallucination_rate          0%        0%       ≈0
+resolution_recall          83%       83%       ≈0
+handoff_precision          87%       87%       ≈0
+intent_accuracy           100%      100%       ≈0
 
 Per-tier (gate ON):
-   clean_return   recall=  90%  halluc=   0%  handoff_prec=   0%  (n=10)
-   wismo          recall= 100%  halluc=   0%  handoff_prec=  n/a  (n=5)
-   adversarial    recall=  90%  halluc=   0%  handoff_prec=   0%  (n=10)
-   precedence     recall= 100%  halluc=   0%  handoff_prec= 100%  (n=3)
-   unanswerable   recall=  n/a  halluc=  n/a  handoff_prec= 100%  (n=13)
+   clean_return   correct=  9/10  halluc=   0/9  ask=   0/0  contain=  9/10  handoff=   0/1  (n=10)
+   wismo          correct=   5/5  halluc=   0/5  ask=   0/0  contain=   5/5  handoff=   0/0  (n=5)
+   adversarial    correct=  9/10  halluc=   0/9  ask=   0/0  contain=  9/10  handoff=   0/1  (n=10)
+   precedence     correct=   2/2  halluc=   0/2  ask=   0/0  contain=   2/3  handoff=   1/1  (n=3)
+   unanswerable   correct=   0/1  halluc=   0/0  ask=   1/1  contain=  1/13  handoff= 12/12  (n=13)
+   ask            correct=   0/2  halluc=   0/0  ask=   2/2  contain=   2/2  handoff=   0/0  (n=2)
 ## License
 Synthetic data and demo code, MIT-style — use freely.
