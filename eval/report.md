@@ -26,15 +26,21 @@ Test set: **41 tickets** (answerable=27, gold-handoffs=14) · snapshot 2026-06-2
 
 _Counts (gate ON): resolved=25, correct=25, hallucination=0, policy_error=0, handoffs=16._
 
+## Reasoner-alone agreement
+
+On the **22 tickets that have a definite eligible/ineligible answer**, the agent's *raw* proposal (gate OFF) matched policy **20/22 (91%)**. The grounding gate then had to catch the remaining **2**. This isolates how good the reasoner is *on its own* — the gate's job is to make the residual safe, not to do the reasoning.
+
 ## Per-tier (gate ON)
 
-| Tier | n | Recall | Halluc | Handoff prec |
+Counts, not rates — per-tier denominators are tiny and percentages mislead (e.g. one stray handoff in a clean tier is `0/1`, not a `0%` collapse).
+
+| Tier | n | Correct / answerable | Halluc / resolved | Handoff prec (justified/pred) |
 | --- | --- | --- | --- | --- |
-| clean_return | 10 | 90% | 0% | 0% |
-| wismo | 5 | 100% | 0% | n/a |
-| adversarial | 10 | 90% | 0% | 0% |
-| precedence | 3 | 100% | 0% | 100% |
-| unanswerable | 13 | n/a | n/a | 100% |
+| clean_return | 10 | 9/10 | 0/9 | 0/1 |
+| wismo | 5 | 5/5 | 0/5 | 0/0 |
+| adversarial | 10 | 9/10 | 0/9 | 0/1 |
+| precedence | 3 | 2/2 | 0/2 | 1/1 |
+| unanswerable | 13 | 0/0 | 0/0 | 13/13 |
 
 ## Per-ticket (gate ON)
 

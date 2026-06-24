@@ -85,11 +85,27 @@ def aggregate(rows: list[dict]) -> dict:
         "counts": {
             "resolved": n_resolved, "answerable": n_answerable, "handoffs_pred": n_handoff_pred,
             "handoffs_gold": n_handoff_gold,
+            "handoffs_justified": sum(r["handoff_justified"] for r in rows),
+            "answerable_correct": sum(r["answerable_correct"] for r in rows),
+            "resolved_correct": sum(r["resolved_correct"] for r in rows),
             "correct": sum(r["bucket"] == "correct" for r in rows),
             "hallucination": sum(r["bucket"] == "hallucination" for r in rows),
             "policy_error": sum(r["bucket"] == "policy_error" for r in rows),
         },
     }
+
+
+def reasoner_agreement(off_rows: list[dict]) -> dict:
+    """How often the RAW proposal already matched the policy-licensed outcome — the
+    reasoner measured *alone*, before the gate. Pass the GATE-OFF rows (where the row's
+    outcome is the agent's unguarded proposal). Denominator = tickets that have a
+    definite eligible/ineligible answer; the gap is what the gate must catch.
+    """
+    considered = [r for r in off_rows if r["gold_outcome"] in ("eligible", "ineligible")]
+    matched = sum(1 for r in considered if r["outcome"] == r["gold_outcome"])
+    total = len(considered)
+    return {"matched": matched, "total": total, "gap": total - matched,
+            "rate": (matched / total) if total else None}
 
 
 def win_condition(summary: dict) -> tuple[bool, dict]:

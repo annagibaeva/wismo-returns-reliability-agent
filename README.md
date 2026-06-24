@@ -182,5 +182,37 @@ python eval/run_eval.py --backend llm
 
 At n=41 a single ticket moves any rate by ~2.4 points, so all percentages are **directional, not statistically tight** — raw counts accompany every rate. The set is weighted toward handoff/unanswerable cases so handoff-precision stands on a real denominator (14 gold handoffs). The `stub` backend clears the win condition because the gate is well-calibrated, not because the proposer is smart; the `llm` backend is where reasoning quality (and thus recall) is actually tested.
 
+## Results
+=== WISMO + Returns Reliability Agent — Benchmark (stub backend) ===
+n = 41 tickets   (answerable=27, gold-handoffs=14)
+
+metric                  gate OFF   gate ON    target
+hallucination_rate           10%        0%      <=2%
+resolution_recall            93%       93%     >=80%
+handoff_precision           100%       88%     >=85%
+resolution_precision         81%      100%     >=95%
+policy_error_rate            10%        0%        ~0
+handoff_recall               71%      100%    report
+deflection_rate              76%       61%    report
+
+Win condition (gate ON): PASS ✅
+   ✅ hallucination<=2%
+   ✅ resolution_recall>=80%
+   ✅ handoff_precision>=85%
+
+Gate OFF → ON (the headline contrast):
+  hallucination      OFF [██··················] 10%
+                     ON  [····················] 0%
+  resolution recall  OFF [███████████████████·] 93%
+                     ON  [███████████████████·] 93%
+  handoff precision  OFF [████████████████████] 100%
+                     ON  [██████████████████··] 88%
+
+Per-tier (gate ON):
+   clean_return   recall=  90%  halluc=   0%  handoff_prec=   0%  (n=10)
+   wismo          recall= 100%  halluc=   0%  handoff_prec=  n/a  (n=5)
+   adversarial    recall=  90%  halluc=   0%  handoff_prec=   0%  (n=10)
+   precedence     recall= 100%  halluc=   0%  handoff_prec= 100%  (n=3)
+   unanswerable   recall=  n/a  halluc=  n/a  handoff_prec= 100%  (n=13)
 ## License
 Synthetic data and demo code, MIT-style — use freely.
