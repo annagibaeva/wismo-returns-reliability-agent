@@ -29,10 +29,11 @@ def _ticket_set(held_out: bool) -> list[dict]:
     return data.held_out_tickets() if held_out else data.tickets()
 
 
-def _run(backend: str, use_gate: bool, *, held_out: bool = False):
+def _run(backend: str, use_gate: bool, *, held_out: bool = False, use_soft_entailment: bool = False):
     rows, resolutions = [], []
     for t in _ticket_set(held_out):
-        res = resolve_ticket(t, backend=backend, use_gate=use_gate)
+        res = resolve_ticket(t, backend=backend, use_gate=use_gate,
+                             use_soft_entailment=use_soft_entailment)
         rows.append(scorer.classify(res, t))
         resolutions.append(res)
     return rows, resolutions
@@ -109,19 +110,23 @@ def main() -> int:
     ap.add_argument("--backend", default="stub", choices=["stub", "llm"])
     ap.add_argument("--held-out", action="store_true",
                     help="score held-out paraphrases as primary (win condition); still compares seed")
+    ap.add_argument("--soft-entailment", action="store_true",
+                    help="enable soft entailment layer on gate-ON runs (off by default)")
     args = ap.parse_args()
 
     primary_held_out = args.held_out
     other_held_out = not primary_held_out
 
     off_rows, _ = _run(args.backend, use_gate=False, held_out=primary_held_out)
-    on_rows, on_res = _run(args.backend, use_gate=True, held_out=primary_held_out)
+    on_rows, on_res = _run(args.backend, use_gate=True, held_out=primary_held_out,
+                           use_soft_entailment=args.soft_entailment)
     off, on = scorer.aggregate(off_rows), scorer.aggregate(on_rows)
     won, clauses = scorer.win_condition(on)
     tiers = scorer.by_tier(on_rows)
     agreement = scorer.reasoner_agreement(off_rows)
 
-    other_on_rows, _ = _run(args.backend, use_gate=True, held_out=other_held_out)
+    other_on_rows, _ = _run(args.backend, use_gate=True, held_out=other_held_out,
+                            use_soft_entailment=args.soft_entailment)
     seed_on = on if not primary_held_out else scorer.aggregate(other_on_rows)
     heldout_on = scorer.aggregate(other_on_rows) if primary_held_out else on
     gap = scorer.generalization_gap(seed_on, heldout_on)

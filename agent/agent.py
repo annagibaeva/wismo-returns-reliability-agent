@@ -48,7 +48,8 @@ def _route(msg: str) -> tuple[str, str | None]:
     return "wismo", None
 
 
-def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True) -> Resolution:
+def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True,
+                   use_soft_entailment: bool = False) -> Resolution:
     audit = AuditLogger()
     msg = ticket["message"]
     intent, oos_reason = _route(msg)
@@ -105,6 +106,21 @@ def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True) -
         return _handoff(ticket, audit, "return", reason, facts, body, backend,
                         proposed=proposal["outcome"], gate=gate_dict,
                         cited=proposal.get("cited_rule_ids", []))
+
+    if use_soft_entailment:
+        eres = grounding_gate.assess_entailment(
+            proposal.get("rationale", ""), proposal.get("cited_rule_ids", []), backend=backend)
+        audit.decision("soft_entailment",
+                       {"rationale": proposal.get("rationale"), "cited": proposal.get("cited_rule_ids")},
+                       {"passed": eres.passed, "checks": eres.checks})
+        gate_dict["soft_entailment"] = {"passed": eres.passed, "checks": eres.checks}
+        if not eres.passed:
+            reason = eres.primary_reason() or "explanation does not entail cited policy"
+            body = ("I can't confirm the cited policy supports this explanation with confidence, "
+                    f"so I've routed this to a specialist (reason: {reason}).")
+            return _handoff(ticket, audit, "return", reason, facts, body, backend,
+                            proposed=proposal["outcome"], gate=gate_dict,
+                            cited=proposal.get("cited_rule_ids", []))
 
     outcome = proposal["outcome"]
     if outcome == "eligible":  # only book an RMA on approval

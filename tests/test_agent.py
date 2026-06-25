@@ -10,6 +10,7 @@ sys.path.insert(0, str(ROOT))
 import kb
 from kb.evaluator import evaluate, MissingFact
 import gate as grounding_gate
+from gate.entailment import assess as assess_entailment
 from agent.agent import resolve_ticket, _route
 from services_mock import data
 from eval import scorer
@@ -92,6 +93,61 @@ def test_gate_passes_correct_ruling():
              "defective": False, "goodwill_grant": False, "fraud_hold": False}
     g = grounding_gate.assess("eligible", ["RET-007"], facts)
     assert g.passed
+
+
+# ---- soft entailment layer ----
+
+def test_entailment_passes_aligned_explanation():
+    expl = ("The cotton t-shirt is within the 30-day return window, so it may be returned "
+            "for a full refund.")
+    src = kb.get_rule("RET-007")["source_text"]
+    assert assess_entailment(expl, ["RET-007"]).passed
+
+
+def test_entailment_fails_contradiction():
+    expl = "Approved for a full refund — the customer is eligible to return this item."
+    assert not assess_entailment(expl, ["RET-012"]).passed
+
+
+def test_entailment_fails_without_policy_anchor():
+    assert not assess_entailment("Looks good to me.", ["RET-007"]).passed
+
+
+def test_soft_layer_off_by_default():
+    t = next(t for t in data.tickets() if t["id"] == "CR-01")
+    res = resolve_ticket(t, backend="stub", use_gate=True)
+    assert not any(s.name == "soft_entailment" for s in res.audit_trail)
+
+
+def test_soft_layer_only_downgrades():
+    """Soft layer may convert resolve→handoff; never the reverse or ask→resolve."""
+    for t in data.all_tickets():
+        baseline = resolve_ticket(t, backend="stub", use_gate=True, use_soft_entailment=False)
+        with_soft = resolve_ticket(t, backend="stub", use_gate=True, use_soft_entailment=True)
+        if baseline.action == "resolve":
+            assert with_soft.action in ("resolve", "handoff"), t["id"]
+        else:
+            assert with_soft.action == baseline.action, t["id"]
+
+
+def test_soft_downgrades_when_entailment_fails():
+    import agent.llm as llm_mod
+    t = next(t for t in data.tickets() if t["id"] == "CR-06")  # final-sale ineligible
+    orig = llm_mod.propose_return_decision
+
+    def _misaligned(*_a, **_kw):
+        return {"outcome": "ineligible", "cited_rule_ids": ["RET-012"],
+                "rationale": "Approved for a full refund — customer is eligible to return."}
+
+    llm_mod.propose_return_decision = _misaligned
+    try:
+        without = resolve_ticket(t, backend="stub", use_gate=True, use_soft_entailment=False)
+        with_soft = resolve_ticket(t, backend="stub", use_gate=True, use_soft_entailment=True)
+        assert without.action == "resolve"
+        assert with_soft.action == "handoff"
+        assert with_soft.handoff_reason == "explanation does not entail cited policy"
+    finally:
+        llm_mod.propose_return_decision = orig
 
 
 # ---- ask (ambiguous order lookup) ----

@@ -39,12 +39,13 @@ def _ticket(args) -> dict:
             "order_id": args.order, "message": args.message, "expected": None}
 
 
-def _show(res, ticket, used_gate):
+def _show(res, ticket, used_gate, used_soft=False):
     print(BAR)
     print(f"TICKET {ticket['id']}  ({ticket.get('customer_email')})")
     print(f"  \"{ticket['message']}\"")
     print(BAR)
-    print(f"Backend        : {res.backend}    gate: {'ON' if used_gate else 'OFF'}")
+    print(f"Backend        : {res.backend}    gate: {'ON' if used_gate else 'OFF'}"
+          + (f"    soft: {'ON' if used_soft else 'OFF'}"))
     print(f"Intent (routed): {res.intent}")
     print(f"Order          : {res.order_id}")
     if res.facts:
@@ -61,6 +62,12 @@ def _show(res, ticket, used_gate):
         if res.gate.get("licensed_outcome") or res.gate.get("conflict"):
             print(f"    licensed outcome = {res.gate.get('licensed_outcome')} "
                   f"(rules {res.gate.get('controlling_rule_ids')}) conflict={res.gate.get('conflict')}")
+        if se := res.gate.get("soft_entailment"):
+            verdict = "PASS" if se["passed"] else "BLOCK"
+            print(f"Soft entailment: {verdict}")
+            for c in se.get("checks", []):
+                if not c.get("entails"):
+                    print(f"    - {c.get('rule_id')}: {c.get('reason', 'failed')}")
     print(f"\nACTION         : {res.action.upper()}"
           + (f"   reason: {res.handoff_reason}" if res.handoff_reason else ""))
     print(f"Outcome        : {res.outcome}")
@@ -92,11 +99,14 @@ def main():
     ap.add_argument("--order")
     ap.add_argument("--backend", default="stub", choices=["stub", "llm"])
     ap.add_argument("--no-gate", action="store_true")
+    ap.add_argument("--soft-entailment", action="store_true",
+                    help="enable soft entailment layer (explanation ⊨ cited source_text)")
     args = ap.parse_args()
     used_gate = not args.no_gate
     ticket = _ticket(args)
-    res = resolve_ticket(ticket, backend=args.backend, use_gate=used_gate)
-    _show(res, ticket, used_gate)
+    res = resolve_ticket(ticket, backend=args.backend, use_gate=used_gate,
+                         use_soft_entailment=args.soft_entailment)
+    _show(res, ticket, used_gate, args.soft_entailment)
 
 
 if __name__ == "__main__":
