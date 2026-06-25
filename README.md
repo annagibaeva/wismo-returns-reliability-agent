@@ -237,3 +237,8 @@ Per-tier (gate ON):
    ask            correct=   0/2  halluc=   0/0  ask=   2/2  contain=   2/2  handoff=   0/0  (n=2)
 ## License
 Synthetic data and demo code, MIT-style — use freely.
+
+---
+
+## Video walkthrough
+[Watch the demo on Loom](https://www.loom.com/share/ae62d11da788410c82775298b851a8c3)
