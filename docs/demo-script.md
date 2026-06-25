@@ -1,66 +1,149 @@
-# Demo Video Script — "The gate makes it safe" (~3 min)
+# Demo Script — "Move the trust boundary, then measure it" (~3 min)
 
-Goal: show that a fallible proposer becomes *reliable* once gated — and that the gate is selective,
-not lazy. Keep the terminal large; everything runs locally, no API key.
+A support agent for e-commerce returns. The thesis: you can't QA a stochastic component into
+trustworthiness, so I split the solver from the verifier, made the verifier deterministic, and put
+it on the trust boundary in front of the customer — then measured the gate's causal lift by running
+the same proposer with it off and on.
+
+Everything runs on your laptop. No API key, no setup.
+
+Audience note: written for people who build agents for a living. Hook lands the
+problem-solve-impact in 30 seconds, then proves it live. Leans into the two decisions that matter —
+a mechanical (non-LLM) verifier and policy-as-data — and ends on an honest production read.
 
 ---
 
-### 0:00 — Hook (12s)
-> "Support automation's worst failure isn't being unhelpful — it's being *confidently wrong*:
-> approving a return policy says no to. This agent proposes an answer, then a deterministic grounding
-> gate verifies it against policy before the customer ever sees it. Let me show you the gate working."
+## Hook — problem, solve, impact (30s, spoken, no terminal yet)
 
-### 0:12 — The benchmark, off vs on (35s)
-```
-python eval/run_eval.py
-```
-> "Same agent, run twice — gate off, gate on. Off: 10% hallucination, 81% precision. On: **zero**
-> hallucination, 100% precision — and recall holds at 93%. The gate didn't make it lazy; it converted
-> wrong answers into handoffs. That's the whole thesis in one table."
-Point at the ASCII off→on bars and the green win-condition checks.
+> "This is a support agent that handles e-commerce returns: it reads a ticket, pulls the customer's
+> order, applies the returns policy, and either resolves it or escalates to a human. Thousands of
+> tickets, no human in the loop.
+>
+> The problem: the dangerous failure isn't the bot that can't help — it's the one that's
+> **confidently wrong**. 'Yes, you're refunded' when policy says no. The customer hears yes, finance
+> later says no, and now it's a reversal, a furious customer, and a chargeback you can't claw back.
+>
+> What I built: the industry instinct is *make the model better* — I think that's the wrong layer.
+> You can't QA a stochastic component into trustworthiness. So I split the solver from the verifier,
+> made the verifier **deterministic**, and put it on the trust boundary in front of the customer.
+>
+> The impact: across 43 tickets, that gate takes hallucination from 10% to **zero** — without
+> making the agent lazy. Let me show you the exact case it catches, then prove it generalizes."
 
-### 0:47 — The money shot: same proposal, two fates (45s)
+*Now go to the terminal.*
+
+---
+
+## The catch, live (35s)
+
 ```
 python demo.py --id AD-04 --no-gate
 ```
-> "Electronics, 16 days. The standard window is 30 days, so the proposer says 'approved' and books an
-> RMA. But electronics have a 15-day window — this is a **confidently wrong refund.**"
+
+> "Ticket AD-04. A customer — call her Maya — returns headphones on day 16 and asks for a refund.
+> Gate off: the agent sees a 16-day return, checks the standard 30-day window, and approves it. That
+> answer ships straight to Maya: 'You're all set.'
+>
+> It's wrong. And not because the model is dumb — every fact it used was true. It's wrong because
+> electronics carry a 15-day window that overrides the standard one, and the proposer didn't weigh
+> which rule wins."
+
 ```
 python demo.py --id AD-04
 ```
-> "Identical proposal. Now the gate sees a higher-priority rule — RET-003 — contradicts it, blocks it,
-> and routes to a human. Read the audit trail: proposal, gate verdict, licensed outcome, handoff. Fully
-> auditable."
 
-### 1:32 — Precedence the gate gets right (30s)
-```
-python demo.py --id PR-01      # in-window AND final-sale -> ineligible
-python demo.py --id PR-02      # defective AND out-of-window -> eligible
-```
-> "Two rules fire and disagree. Final-sale beats the standard window; defective beats the expired
-> window. The gate enforces precedence by priority — not vibes."
+> "Same exact proposal. Gate on, check **2.5** catches that the 15-day electronics rule dominates —
+> blocks the refund, routes to a human. Maya gets a person instead of a wrong promise. And you can
+> read the whole trail: what it proposed, why it was blocked, where it landed. Nothing hidden."
 
-### 2:02 — Knowing what it can't know (30s)
-```
-python demo.py --id UN-08      # null final-sale flag -> missing fact
-python demo.py --id PR-03      # goodwill grant + fraud hold -> deadlock
-```
-> "No required fact, or two equal rules in genuine conflict — there's no grounded answer, so it hands
-> off instead of guessing. 'Unanswerable' is detected mechanically, not by tone."
+---
 
-### 2:32 — Honest calibration (20s)
-> "n=41, so every rate is directional — counts sit next to every percentage, and the set is weighted
-> toward handoff cases so precision has a real denominator. The offline proposer here is deliberately
-> naive; the real-LLM backend is one flag away and we publish whatever baseline it gives."
+## The walkthrough
 
-### 2:52 — Close (10s)
-> "A grounding gate that drives hallucination to zero while staying selective, with an audit trail and
-> a harness that proves it. Repo and case study in the description."
+### 1. Prove it generalizes — the causal measurement (40s)
+
+```
+python eval/run_eval.py
+```
+
+> "One case is an anecdote. Same agent, 43 returns tickets, run twice — gate off, gate on. Same
+> proposer both times, so the delta is *causally* the gate, not a model swap.
+>
+> Off: 10% of answers are wrong — Maya isn't a one-off. On: hallucination goes to **zero**,
+> resolution precision **81 → 100**. And the number I care about most — recall stays **flat at 83%**.
+> It didn't get safe by getting lazy and handing everything off. It converted *wrong* answers into
+> handoffs, not *all* answers. That distinction is the whole game.
+>
+> The cost is ~14 points of deflection — more human tickets — and I'll come back to why that's the
+> **proposer's** fault, not the gate's."
+
+Point at the off→on bars and the green PASS checks.
+
+### 2. Why the verifier is mechanical, not another LLM (35s)
+
+Show [`kb/rules.json`](../kb/rules.json); name [`kb/evaluator.py`](../kb/evaluator.py).
+
+> "The decision I'd defend hardest. The verifier doesn't ask a model 'are you sure?' — policies are
+> **structured data**, and conditions run through a **restricted AST walker**: no `eval`, no code
+> execution, no model in the loop.
+>
+> Each rule declares the facts it needs. So 'this ticket is unanswerable' isn't a confidence score —
+> it's **mechanical**: the required fact is missing, the rule literally can't fire. That's what makes
+> the gate trustworthy. It's deterministic and auditable — exactly what a stochastic proposer is not.
+> When I tell Maya's manager why a ticket was escalated, I point at a rule and a missing fact, not a
+> probability."
+
+### 3. The subtle part — precedence, not existence (30s)
+
+> "Why Maya's case is the right hard case: gate off, the proposer cited rules that were each
+> individually true — the conclusion was still wrong because it ignored the more-specific one.
+>
+> That's the bug a naive self-check misses. Ask the model 'did you cite a real policy?' and it passes
+> — every citation was real. The verifier has to reason over rule **priority**, not just rule
+> existence. That's check 2.5, and it's the difference between a gate that *looks* rigorous and one
+> that *is*."
+
+### 4. What I'd do differently — production watch-outs (40s)
+
+> "Three things I'd flag before anyone trusts this in production.
+>
+> **One — the gate proves grounded-in-*my-KB*, not grounded-in-what-legal-actually-wrote.** KB drift
+> is the silent killer. If the real electronics window dropped to 14 days and my KB still said 15,
+> I'd block correctly against the wrong rule. I'd version the KB and diff it against source-of-truth
+> on every policy change.
+>
+> **Two — these are 43 tickets I wrote myself, plus 25 paraphrases.** Held-in. Real tickets are
+> multi-intent, mid-conversation, typo'd order IDs. I'd want red-team cases and production replay
+> before I believed these numbers.
+>
+> **Three — that 14-point deflection cost is the *proposer's* ceiling, not the gate's.** The gate
+> lets me run a cheaper, fallible proposer and catch its mistakes — but every block is human labor,
+> so I'd watch **handoff-queue volume** as the real cost metric, not just accuracy."
+
+### Close (10s)
+
+> "So: a deterministic verifier that drives hallucination to zero without making the agent useless,
+> the causal measurement to prove it, and an honest list of what'd break at scale. Maya gets a human
+> instead of a wrong refund — and I can show you exactly why. Repo and write-up in the description."
+
+---
+
+## Honesty beat (say once, wherever it fits)
+
+> "Fair warning on the numbers: 43 tickets is a small set — treat these as direction, not gospel,
+> and raw counts sit next to every percentage. The proposer here is an intentionally naive offline
+> stand-in, so the gate is what's on trial, not a smart model. Swapping in a real Claude backend is a
+> single flag, and I publish whatever score that gives."
 
 ---
 
 ## One-take fallback
+
+If you only have time for one command:
+
 ```
 python eval/run_eval.py && python demo.py --id AD-04 --no-gate && python demo.py --id AD-04
 ```
-Scorecard, the confidently-wrong refund, then the gate catching it — back to back.
+
+The scoreboard, the confidently-wrong refund, then the verifier catching it — back to back. For the
+*recorded* version, do the full script: this audience wants the reasoning, not just the result.
