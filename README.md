@@ -2,7 +2,7 @@
 
 > A customer-support agent for e-commerce returns whose **grounding gate drives hallucination to 0 while staying selective** — it resolves the tickets it can ground in policy, and hands off the ones it can't. The headline isn't "it answers"; it's "it refuses to be confidently wrong without refusing to work."
 
-**Built as a portfolio piece on reliable support automation** — the design question Decagon-class products live or die on.
+**Built as a portfolio piece on reliable support automation**
 
 ---
 
