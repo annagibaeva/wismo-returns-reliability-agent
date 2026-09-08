@@ -118,6 +118,43 @@ def test_defective_for_falls_back_to_gold_facts_outside_the_fault_tier():
 
 
 # --------------------------------------------------------------------------- #
+# T11: Spanish variant ids resolve to their English source's gold record.
+#
+# `gold_facts.json` has one entry per English ticket and none of the 97 `ES-*`
+# ids (see its own `_comment`: the gold record is deliberately
+# language-independent). Before `eval/gold.py::_variant_of_map`, `facts_for`
+# raised `KeyError` on all 97 Spanish ids, and `defective_for` only survived on
+# the 17 fault-tier ones -- a load-bearing accident of short-circuiting on
+# `expected["gold_defective"]` before ever reaching `facts_for`, not a design
+# that covered Spanish. This section is the regression guard for the fix.
+# --------------------------------------------------------------------------- #
+
+def test_facts_for_resolves_every_spanish_id():
+    es_tickets = data.all_tickets(lang="es")
+    assert len(es_tickets) == 97
+    for t in es_tickets:
+        assert gold.facts_for(t["id"]) == gold.facts_for(t["variant_of"]), t["id"]
+
+
+def test_defective_for_resolves_every_spanish_id_not_just_the_fault_tier():
+    es_tickets = data.all_tickets(lang="es")
+    fault_es = [t for t in es_tickets if "gold_defective" in t["expected"]]
+    non_fault_es = [t for t in es_tickets if "gold_defective" not in t["expected"]]
+    assert len(fault_es) == 17          # the tier the pre-fix code happened to survive on
+    assert len(non_fault_es) == 80      # the 80 that raised KeyError before the fix
+    for t in es_tickets:
+        assert gold.defective_for(t) == gold.defective_for({"id": t["variant_of"],
+                                                             "expected": t["expected"]}), t["id"]
+
+
+def test_pre_fix_facts_for_raised_on_spanish_ids_outside_the_fault_tier():
+    """Names the bug the fix above closes, so a regression that re-breaks Spanish
+    resolution fails here even if every English-only test above stays green."""
+    with pytest.raises(KeyError):
+        gold.all_facts()["ES-CR-01"]  # the raw dict has no Spanish keys -- by design
+
+
+# --------------------------------------------------------------------------- #
 # 6. The true/false/null tally.
 # --------------------------------------------------------------------------- #
 
