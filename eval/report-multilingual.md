@@ -6,11 +6,13 @@ Backend: **stub** · lang scope: **English + Spanish** (`--all-langs`) · snapsh
 
 - model: claude-opus-4-8  (used only when --backend llm actually runs)
 - dataset date (frozen 'today'): 2026-06-22
-- git sha: a6a00edb5fec2f5bbb79ec8b180ba9c7867e0a29
+- git sha: b360a9e1ee4ab8d92b5470d41566c138dd915b35
 - cache hit rate: n/a (0 calls -- offline keyword path makes no provider calls)
 - extractor: --extractor keyword -> agent/extract.py backend='stub'  (prompt sha256 9aa94843473584bc...)
 - lexicon entries, en (effective/raw): _SAFETY=9/10, _PAYMENT=6/6, _FRAUD=5/5, _ADDRESS=5/5, _ABUSE=6/6, _RETURN=7/7, _WISMO=6/9, _DEFECTIVE=11/12  [total 55/60]
 - lexicon entries, es (effective/raw): _SAFETY=12/12, _PAYMENT=6/6, _FRAUD=8/8, _ADDRESS=10/10, _ABUSE=10/10, _RETURN=12/12, _WISMO=10/10, _DEFECTIVE=21/23  [total 89/91]
+
+> **Independent calibration:** these numbers are self-checked (the same system that produced them re-graded them), not human-validated. See [`docs/calibration-es.md`](../docs/calibration-es.md) for the full per-ticket hand-grade — native-speaker sign-off is still outstanding.
 
 ## Cross-language table (gate ON, seed set)
 

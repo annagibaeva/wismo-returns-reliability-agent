@@ -48,7 +48,7 @@ at the agent's lexicon, and every row below also carries a comparison against it
                               `False` and `None` license the same outcome under
                               every rule in kb/rules.json today — a literal reading
                               would flag the English control's structural
-                              False-for-unstated gap on every one of its 37 `null`
+                              False-for-unstated gap on every one of its 44 `null`
                               gold entries and swamp the multilingual signal. That
                               gap is real and stays visible under M-3, just not
                               inside M-1. `silent_fact_error_literal` carries the

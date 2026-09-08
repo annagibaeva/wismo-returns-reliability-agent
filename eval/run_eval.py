@@ -704,6 +704,19 @@ def _report_filename(lang: str) -> str:
     return "report.md" if lang == "en" else f"report-{lang}.md"
 
 
+def _calibration_disclaimer(lang: str) -> list[str]:
+    """Shared by every report writer -- hoisted out of _write_report so a second
+    writer (_write_multilingual_report) cannot silently omit it. Two independent
+    copies of this caveat is how it goes stale in one place and not the other."""
+    calib_path = ROOT / "docs" / f"calibration-{lang}.md"
+    if not calib_path.exists():
+        return []
+    return [f"> **Independent calibration:** these numbers are self-checked (the same system that "
+            f"produced them re-graded them), not human-validated. See "
+            f"[`docs/calibration-{lang}.md`](../docs/calibration-{lang}.md) for the full "
+            f"per-ticket hand-grade — native-speaker sign-off is still outstanding.", ""]
+
+
 def _write_report(header, backend, r):
     off, on, won, clauses = r["off"], r["on"], r["won"], r["clauses"]
     tiers, rows, agreement, label = r["tiers"], r["on_rows"], r["agreement"], r["label"]
@@ -724,12 +737,7 @@ def _write_report(header, backend, r):
          "> **Handoff denominators:** UN-13 is gold `action=ask` (ambiguous multi-order WISMO), not handoff — "
          "handoff precision/recall exclude asks from both numerator and denominator. Gold-handoffs are "
          f"**{on['counts']['handoffs_gold']}**.", ""]
-    calib_path = ROOT / "docs" / f"calibration-{r['lang']}.md"
-    if calib_path.exists():
-        L += [f"> **Independent calibration:** these numbers are self-checked (the same system that "
-              f"produced them re-graded them), not human-validated. See "
-              f"[`docs/calibration-{r['lang']}.md`](../docs/calibration-{r['lang']}.md) for the full "
-              f"per-ticket hand-grade — native-speaker sign-off is still outstanding.", ""]
+    L += _calibration_disclaimer(r["lang"])
     if backend == "stub":
         L += ["> ⚠️ **This is the offline `stub` backend** — an intentionally naive, precedence-blind "
               "proposer used to exercise the harness without an API key. It is *not* meant to clear the "
@@ -1009,7 +1017,10 @@ def _write_multilingual_report(header, en, es, deep):
         if r["errors"]:
             L += ["", f"## Routing errors ({lang}, isolated, not fatal)", ""]
             L += [f"- `{e['ticket_id']}` (lang={e['lang']!r}): {e['error']}" for e in r["errors"]]
-    L += ["", "## Cross-language table (gate ON, seed set)", "",
+    L += [""]
+    for lang in ("en", "es"):
+        L += _calibration_disclaimer(lang)
+    L += ["## Cross-language table (gate ON, seed set)", "",
           f"English n={en['on']['n']} · Spanish n={es['on']['n']}.", "",
           "| Metric | English | Spanish | Target |", "| --- | --- | --- | --- |"]
     for key, name, target in _CROSS_METRIC_ROWS:
