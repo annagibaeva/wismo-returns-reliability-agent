@@ -721,9 +721,15 @@ def _write_report(header, backend, r):
               f"excludes these tickets from its denominator.", ""]
         L += [f"- `{e['ticket_id']}` (lang={e['lang']!r}): {e['error']}" for e in errors]
     L += ["",
-         "> **Handoff denominators:** UN-13 is gold `action=ask` (ambiguous multi-order WISMO), not handoff. "
-         "Gold-handoffs are **13** (down from 14 when ask was lumped with the escalation slice); "
-         "handoff precision/recall exclude asks from both numerator and denominator.", ""]
+         "> **Handoff denominators:** UN-13 is gold `action=ask` (ambiguous multi-order WISMO), not handoff — "
+         "handoff precision/recall exclude asks from both numerator and denominator. Gold-handoffs are "
+         f"**{on['counts']['handoffs_gold']}**.", ""]
+    calib_path = ROOT / "docs" / f"calibration-{r['lang']}.md"
+    if calib_path.exists():
+        L += [f"> **Independent calibration:** these numbers are self-checked (the same system that "
+              f"produced them re-graded them), not human-validated. See "
+              f"[`docs/calibration-{r['lang']}.md`](../docs/calibration-{r['lang']}.md) for the full "
+              f"per-ticket hand-grade — native-speaker sign-off is still outstanding.", ""]
     if backend == "stub":
         L += ["> ⚠️ **This is the offline `stub` backend** — an intentionally naive, precedence-blind "
               "proposer used to exercise the harness without an API key. It is *not* meant to clear the "

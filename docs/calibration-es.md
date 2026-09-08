@@ -54,6 +54,24 @@ Two further honesty notes about method:
   gold label I would dispute. All 65 fixture `expected` blocks matched my independent
   reading of message + order + policy.
 
+**The upper-bound hedge above is sharper than "anchoring inflates it" — it is
+under-specified without this.** All three disagreements trace to either a mechanical
+check or a pre-registered effect, not to unaided reading. `ES-CR-09` and `ES-AD-10`
+are both findable by a scripted comparison of `cited_rule_ids` against
+`kb.licensed_outcome(...)[1]` — the same sweep reproduces the whole citation-check
+table under F1 below in one pass, no judgement calls involved. `ES-UN-12` was named
+in the task brief before grading started. **The unaided-reading component of this
+exercise — the part where I was actually forming an independent opinion rather than
+running a check — produced zero disagreements of its own.** Read that way, 95% is
+better described as "the scorer agrees with a mechanical citation re-check plus two
+pre-registered effects" than as "a careful reader disagreed only three times in 65."
+It also gives this document's own headline observation — that all three
+disagreements run one way, offered below as evidence of systematic scorer generosity
+— a competing explanation it does not otherwise consider: anchoring would suppress
+precisely the disagreements that lack a computable signature to fall back on, so a
+one-way asymmetry is equally consistent with anchoring having hidden the rest as it
+is with the scorer being uniformly generous.
+
 ---
 
 ## Result
