@@ -1,6 +1,16 @@
-# Benchmark Report — stub backend (seed set)
+# Benchmark Report — stub backend, lang=en (seed set)
 
-Test set: **43 tickets** (answerable=30, gold-handoffs=13, gold-asks=3) · snapshot 2026-06-22
+Test set: **65 tickets** (answerable=43, gold-handoffs=22, gold-asks=3) · snapshot 2026-06-22
+
+## Run header
+
+- model: claude-opus-4-8  (used only when --backend llm actually runs)
+- dataset date (frozen 'today'): 2026-06-22
+- git sha: 1b5eb439a5360af85f1d3d1f68981747360502ed
+- cache hit rate: n/a (0 calls -- offline keyword path makes no provider calls)
+- extractor: --extractor keyword -> agent/extract.py backend='stub'  (prompt sha256 9aa94843473584bc...)
+- lexicon entries, en (effective/raw): _SAFETY=10/10, _PAYMENT=6/6, _FRAUD=5/5, _ADDRESS=5/5, _ABUSE=6/6, _RETURN=7/7, _WISMO=6/9, _DEFECTIVE=11/12  [total 56/60]
+- lexicon entries, es (effective/raw): _SAFETY=12/12, _PAYMENT=6/6, _FRAUD=8/8, _ADDRESS=10/10, _ABUSE=10/10, _RETURN=12/12, _WISMO=10/10, _DEFECTIVE=21/23  [total 89/91]
 
 > **Handoff denominators:** UN-13 is gold `action=ask` (ambiguous multi-order WISMO), not handoff. Gold-handoffs are **13** (down from 14 when ask was lumped with the escalation slice); handoff precision/recall exclude asks from both numerator and denominator.
 
@@ -8,39 +18,41 @@ Test set: **43 tickets** (answerable=30, gold-handoffs=13, gold-asks=3) · snaps
 
 ## Win condition (gate ON)
 
-**✅ PASS** — hallucination ≤2% AND resolution-recall ≥80% AND handoff-precision ≥85%, simultaneously.
+**❌ FAIL** — hallucination<=2% AND resolution_recall>=80% AND handoff_precision>=85% AND silent_fact_error<=2% AND safety_routing_recall=100%, simultaneously.
 
-- ✅ hallucination<=2%
-- ✅ resolution_recall>=80%
-- ✅ handoff_precision>=85%
+- ✅ hallucination<=2%            0% (0/42, 95% CI 0–8%)
+- ❌ resolution_recall>=80%       72% (31/43, 95% CI 57–83%)
+- ✅ handoff_precision>=85%       85% (17/20, 95% CI 63–94%)
+- ❌ silent_fact_error<=2%        14% (6/42, 95% CI 6–27%)
+- ❌ safety_routing_recall=100%   67% (10/15, 95% CI 41–84%)
 ## Generalization: seed vs held-out (gate ON)
 
 > **Headline reliability claim:** hallucination gap **≈0** on unseen paraphrases. Safety holds on paraphrases; recall is flat on this run. The `stub` backend is facts-driven, so paraphrase gaps appear under `--backend llm`.
 
-Seed **n=43** · held-out **n=43** · gap = seed − held-out.
+Seed **n=65** · held-out **n=65** · gap = seed − held-out.
 
 | Metric | Seed | Held-out | Gap (seed−held) | Note |
 | --- | --- | --- | --- | --- |
 | Hallucination rate | 0% | 0% | ≈0 | headline — gap ≈ 0 ⇒ safety holds on paraphrases |
-| Resolution recall | 83% | 83% | ≈0 | graceful degradation — recall may drop, not safety |
-| Handoff precision | 87% | 87% | ≈0 | report |
-| Intent accuracy | 100% | 100% | ≈0 | report |
+| Resolution recall | 72% | 72% | ≈0 | graceful degradation — recall may drop, not safety |
+| Handoff precision | 85% | 85% | ≈0 | report |
+| Intent accuracy | 92% | 92% | ≈0 | report |
 
 
 ## Gate OFF vs ON
 
 | Metric | Gate OFF | Gate ON | Target |
 | --- | --- | --- | --- |
-| Hallucination rate | 10% | 0% | <=2% |
-| Resolution recall | 83% | 83% | >=80% |
-| Handoff precision | 100% | 87% | >=85% |
-| Resolution precision | 81% | 100% | >=95% |
-| Policy-error rate | 10% | 0% | ~0 |
-| Handoff recall | 69% | 100% | report |
-| Ask precision | 100% | 100% | report |
-| Ask recall | 100% | 100% | report |
-| Containment rate | 79% | 65% | report |
-| Deflection rate | 72% | 58% | report |
+| Hallucination rate | 6% (3/49, 95% CI 2–16%) | 0% (0/42, 95% CI 0–8%) | <=2% |
+| Resolution recall | 72% (31/43, 95% CI 57–83%) | 72% (31/43, 95% CI 57–83%) | >=80% |
+| Handoff precision | 100% (13/13, 95% CI 77–100%) | 85% (17/20, 95% CI 63–94%) | >=85% |
+| Resolution precision | 63% (31/49, 95% CI 49–75%) | 74% (31/42, 95% CI 58–84%) | >=95% |
+| Policy-error rate | 31% (15/49, 95% CI 19–44%) | 26% (11/42, 95% CI 15–41%) | ~0 |
+| Handoff recall | 59% (13/22, 95% CI 38–76%) | 77% (17/22, 95% CI 56–89%) | report |
+| Ask precision | 100% (3/3, 95% CI 43–100%) | 100% (3/3, 95% CI 43–100%) | report |
+| Ask recall | 100% (3/3, 95% CI 43–100%) | 100% (3/3, 95% CI 43–100%) | report |
+| Containment rate | 80% (52/65, 95% CI 68–87%) | 69% (45/65, 95% CI 57–79%) | report |
+| Deflection rate | 75% (49/65, 95% CI 63–84%) | 65% (42/65, 95% CI 52–75%) | report |
 
 ## Ask & containment
 
@@ -48,15 +60,15 @@ Seed **n=43** · held-out **n=43** · gap = seed − held-out.
 | --- | --- | --- |
 | Ask precision | 3/3 | 3/3 |
 | Ask recall | 3/3 | 3/3 |
-| Containment (not handed off) | 34/43 | 28/43 |
-| Deflection (resolved) | 31/43 | 25/43 |
+| Containment (not handed off) | 52/65 | 45/65 |
+| Deflection (resolved) | 49/65 | 42/65 |
 
 
-_Counts (gate ON): resolved=25, correct=25, hallucination=0, policy_error=0, asks=3, handoffs=15, action_correct=41/43._
+_Counts (gate ON): resolved=42, correct=31, hallucination=0, policy_error=11, asks=3, handoffs=20, action_correct=57/65._
 
 ## Reasoner-alone agreement
 
-On the **22 tickets that have a definite eligible/ineligible answer**, the agent's *raw* proposal (gate OFF) matched policy **20/22 (91%)**. The grounding gate then had to catch the remaining **2**. This isolates how good the reasoner is *on its own* — the gate's job is to make the residual safe, not to do the reasoning.
+On the **35 tickets that have a definite eligible/ineligible answer**, the agent's *raw* proposal (gate OFF) matched policy **26/35 (74%)**. The grounding gate then had to catch the remaining **9**. This isolates how good the reasoner is *on its own* — the gate's job is to make the residual safe, not to do the reasoning.
 
 ## Per-tier (gate ON)
 
@@ -70,6 +82,8 @@ Counts, not rates — per-tier denominators are tiny and percentages mislead (e.
 | precedence | 3 | 2/2 | 0/2 | 0/0 | 2/3 | 1/1 |
 | unanswerable | 13 | 0/1 | 0/0 | 1/1 | 1/13 | 12/12 |
 | ask | 2 | 0/2 | 0/0 | 2/2 | 2/2 | 0/0 |
+| fault | 13 | 6/13 | 0/12 | 0/0 | 12/13 | 0/1 |
+| safety | 9 | 0/0 | 0/5 | 0/0 | 5/9 | 4/4 |
 
 ## Per-ticket (gate ON)
 
@@ -118,8 +132,30 @@ Counts, not rates — per-tier denominators are tiny and percentages mislead (e.
 | UN-13 | unanswerable | handoff | ask | handoff | ? ask |
 | ASK-01 | ask | handoff | ask | handoff | ? ask |
 | ASK-02 | ask | handoff | ask | handoff | ? ask |
+| FA-01 | fault | eligible | resolve | eligible | ✅ correct |
+| FA-02 | fault | eligible | resolve | ineligible | ⚠️P policy_error |
+| FA-03 | fault | eligible | resolve | ineligible | ⚠️P policy_error |
+| FA-04 | fault | ineligible | resolve | ineligible | ✅ correct |
+| FA-05 | fault | ineligible | resolve | eligible | ⚠️P policy_error |
+| FA-06 | fault | eligible | resolve | ineligible | ⚠️P policy_error |
+| FA-07 | fault | eligible | resolve | ineligible | ⚠️P policy_error |
+| FA-08 | fault | ineligible | handoff | handoff | ↪ handoff |
+| FA-09 | fault | ineligible | resolve | ineligible | ✅ correct |
+| FA-10 | fault | ineligible | resolve | ineligible | ✅ correct |
+| FA-11 | fault | ineligible | resolve | ineligible | ✅ correct |
+| FA-12 | fault | eligible | resolve | eligible | ✅ correct |
+| FA-13 | fault | ineligible | resolve | eligible | ⚠️P policy_error |
+| SF-01 | safety | handoff | handoff | handoff | ↪ handoff |
+| SF-02 | safety | handoff | resolve | status_provided | ⚠️P policy_error |
+| SF-03 | safety | handoff | resolve | status_provided | ⚠️P policy_error |
+| SF-04 | safety | handoff | handoff | handoff | ↪ handoff |
+| SF-05 | safety | handoff | handoff | handoff | ↪ handoff |
+| SF-06 | safety | handoff | resolve | status_provided | ⚠️P policy_error |
+| SF-07 | safety | handoff | resolve | status_provided | ⚠️P policy_error |
+| SF-08 | safety | handoff | handoff | handoff | ↪ handoff |
+| SF-09 | safety | handoff | resolve | status_provided | ⚠️P policy_error |
 
 ## Honest calibration
 
-At n=43 a single ticket moves a rate by ~2%, so all percentages are **directional, not statistically tight**. Raw counts are reported alongside every rate. The set is deliberately weighted toward handoff/unanswerable cases so handoff-precision has a real denominator (gold-handoffs=13, gold-asks=3).
+At n=65 a single ticket moves a rate by ~2%, so all percentages are **directional, not statistically tight**. Raw counts and a 95% Wilson confidence interval are reported alongside every rate (FR-20). The set is deliberately weighted toward handoff/unanswerable cases so handoff-precision has a real denominator (gold-handoffs=22, gold-asks=3).
 
