@@ -1,0 +1,1042 @@
+{
+  "AD-01": {
+    "action": "resolve",
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": 50,
+      "defective": false,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 55.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "ineligible"
+  },
+  "AD-02": {
+    "action": "resolve",
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "facts": {
+      "category": "clearance",
+      "days_since_delivery": 12,
+      "defective": false,
+      "final_sale": true,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 25.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "ineligible"
+  },
+  "AD-03": {
+    "action": "resolve",
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "facts": {
+      "category": "intimates",
+      "days_since_delivery": 10,
+      "defective": false,
+      "final_sale": true,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 39.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "ineligible"
+  },
+  "AD-04": {
+    "action": "handoff",
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "facts": {
+      "category": "electronics",
+      "days_since_delivery": 16,
+      "defective": false,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 220.0,
+      "status": "delivered"
+    },
+    "handoff_reason": "wrong conclusion / precedence miss",
+    "outcome": "handoff"
+  },
+  "AD-05": {
+    "action": "resolve",
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": 38,
+      "defective": false,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 70.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "ineligible"
+  },
+  "AD-06": {
+    "action": "resolve",
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "facts": {
+      "category": "electronics",
+      "days_since_delivery": 33,
+      "defective": false,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 310.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "ineligible"
+  },
+  "AD-07": {
+    "action": "resolve",
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": 11,
+      "defective": false,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 80.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "eligible"
+  },
+  "AD-08": {
+    "action": "resolve",
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "facts": {
+      "category": "clearance",
+      "days_since_delivery": 13,
+      "defective": false,
+      "final_sale": true,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 18.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "ineligible"
+  },
+  "AD-09": {
+    "action": "resolve",
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": 43,
+      "defective": false,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 95.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "ineligible"
+  },
+  "AD-10": {
+    "action": "resolve",
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "facts": {
+      "category": "electronics",
+      "days_since_delivery": 9,
+      "defective": false,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 130.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "eligible"
+  },
+  "ASK-01": {
+    "action": "ask",
+    "cited_rule_ids": [],
+    "facts": {
+      "candidate_items": [
+        "Cotton Hoodie",
+        "Fleece Joggers"
+      ],
+      "order_id": "ORD-8001"
+    },
+    "handoff_reason": null,
+    "outcome": "handoff"
+  },
+  "ASK-02": {
+    "action": "ask",
+    "cited_rule_ids": [],
+    "facts": {
+      "candidate_order_ids": [
+        "ORD-8002",
+        "ORD-8003"
+      ]
+    },
+    "handoff_reason": null,
+    "outcome": "handoff"
+  },
+  "CR-01": {
+    "action": "resolve",
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": 12,
+      "defective": false,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 49.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "eligible"
+  },
+  "CR-02": {
+    "action": "resolve",
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "facts": {
+      "category": "footwear",
+      "days_since_delivery": 10,
+      "defective": false,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 120.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "eligible"
+  },
+  "CR-03": {
+    "action": "resolve",
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": 45,
+      "defective": false,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 159.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "ineligible"
+  },
+  "CR-04": {
+    "action": "resolve",
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "facts": {
+      "category": "electronics",
+      "days_since_delivery": 8,
+      "defective": false,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 149.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "eligible"
+  },
+  "CR-05": {
+    "action": "handoff",
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "facts": {
+      "category": "electronics",
+      "days_since_delivery": 20,
+      "defective": false,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 199.0,
+      "status": "delivered"
+    },
+    "handoff_reason": "wrong conclusion / precedence miss",
+    "outcome": "handoff"
+  },
+  "CR-06": {
+    "action": "resolve",
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "facts": {
+      "category": "clearance",
+      "days_since_delivery": 10,
+      "defective": false,
+      "final_sale": true,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 12.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "ineligible"
+  },
+  "CR-07": {
+    "action": "resolve",
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "facts": {
+      "category": "gift_card",
+      "days_since_delivery": 4,
+      "defective": false,
+      "final_sale": true,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 100.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "ineligible"
+  },
+  "CR-08": {
+    "action": "resolve",
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "facts": {
+      "category": "home",
+      "days_since_delivery": 9,
+      "defective": false,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 89.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "eligible"
+  },
+  "CR-09": {
+    "action": "resolve",
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": 7,
+      "defective": true,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 65.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "eligible"
+  },
+  "CR-10": {
+    "action": "resolve",
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "facts": {
+      "category": "accessories",
+      "days_since_delivery": 6,
+      "defective": false,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 35.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "eligible"
+  },
+  "HO-AD-01": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": 50,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 55.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "HO-AD-02": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "clearance",
+      "days_since_delivery": 12,
+      "final_sale": true,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 25.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "HO-AD-03": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "intimates",
+      "days_since_delivery": 10,
+      "final_sale": true,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 39.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "HO-AD-04": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "electronics",
+      "days_since_delivery": 16,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 220.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "HO-AD-05": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": 11,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 80.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "HO-AD-06": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "electronics",
+      "days_since_delivery": 9,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 130.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "HO-ASK-01": {
+    "action": "ask",
+    "cited_rule_ids": [],
+    "facts": {
+      "candidate_items": [
+        "Cotton Hoodie",
+        "Fleece Joggers"
+      ],
+      "order_id": "ORD-8001"
+    },
+    "handoff_reason": null,
+    "outcome": "handoff"
+  },
+  "HO-ASK-02": {
+    "action": "ask",
+    "cited_rule_ids": [],
+    "facts": {
+      "candidate_order_ids": [
+        "ORD-8002",
+        "ORD-8003"
+      ]
+    },
+    "handoff_reason": null,
+    "outcome": "handoff"
+  },
+  "HO-CR-01": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": 12,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 49.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "HO-CR-02": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "electronics",
+      "days_since_delivery": 20,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 199.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "HO-CR-03": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "clearance",
+      "days_since_delivery": 10,
+      "final_sale": true,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 12.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "HO-CR-04": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": 7,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 65.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "HO-PR-01": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "clearance",
+      "days_since_delivery": 10,
+      "final_sale": true,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 50.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "HO-PR-02": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": 48,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 110.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "HO-UN-01": {
+    "action": "handoff",
+    "cited_rule_ids": [],
+    "facts": {},
+    "handoff_reason": "order_not_found",
+    "outcome": "handoff"
+  },
+  "HO-UN-02": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": null,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 60.0,
+      "status": "processing"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "HO-UN-03": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "home",
+      "days_since_delivery": null,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 85.0,
+      "status": "in_transit"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "HO-UN-04": {
+    "action": "handoff",
+    "cited_rule_ids": [],
+    "facts": {},
+    "handoff_reason": "safety",
+    "outcome": "handoff"
+  },
+  "HO-UN-05": {
+    "action": "handoff",
+    "cited_rule_ids": [],
+    "facts": {},
+    "handoff_reason": "payment_dispute",
+    "outcome": "handoff"
+  },
+  "HO-UN-06": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "home",
+      "days_since_delivery": null,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 45.0,
+      "status": "in_transit"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "HO-UN-07": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": 10,
+      "final_sale": null,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 65.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "HO-UN-08": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "electronics",
+      "days_since_delivery": 13,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 150.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "HO-WI-01": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "home",
+      "days_since_delivery": null,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 45.0,
+      "status": "in_transit"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "HO-WI-02": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": null,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 79.0,
+      "status": "in_transit"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "HO-WI-03": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": null,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 69.0,
+      "status": "processing"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "PR-01": {
+    "action": "resolve",
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "facts": {
+      "category": "clearance",
+      "days_since_delivery": 10,
+      "defective": false,
+      "final_sale": true,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 50.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "ineligible"
+  },
+  "PR-02": {
+    "action": "resolve",
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": 48,
+      "defective": true,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 110.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "eligible"
+  },
+  "PR-03": {
+    "action": "handoff",
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": 7,
+      "defective": false,
+      "final_sale": false,
+      "fraud_hold": true,
+      "goodwill_grant": true,
+      "order_found": true,
+      "order_value": 75.0,
+      "status": "delivered"
+    },
+    "handoff_reason": "unresolved conflict (deadlock)",
+    "outcome": "handoff"
+  },
+  "UN-01": {
+    "action": "handoff",
+    "cited_rule_ids": [],
+    "facts": {},
+    "handoff_reason": "order_not_found",
+    "outcome": "handoff"
+  },
+  "UN-02": {
+    "action": "handoff",
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": null,
+      "defective": false,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 60.0,
+      "status": "processing"
+    },
+    "handoff_reason": "insufficient facts",
+    "outcome": "handoff"
+  },
+  "UN-03": {
+    "action": "handoff",
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "facts": {
+      "category": "home",
+      "days_since_delivery": null,
+      "defective": false,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 85.0,
+      "status": "in_transit"
+    },
+    "handoff_reason": "insufficient facts",
+    "outcome": "handoff"
+  },
+  "UN-04": {
+    "action": "handoff",
+    "cited_rule_ids": [],
+    "facts": {},
+    "handoff_reason": "safety",
+    "outcome": "handoff"
+  },
+  "UN-05": {
+    "action": "handoff",
+    "cited_rule_ids": [],
+    "facts": {},
+    "handoff_reason": "payment_dispute",
+    "outcome": "handoff"
+  },
+  "UN-06": {
+    "action": "handoff",
+    "cited_rule_ids": [],
+    "facts": {},
+    "handoff_reason": "address_change",
+    "outcome": "handoff"
+  },
+  "UN-07": {
+    "action": "handoff",
+    "cited_rule_ids": [],
+    "facts": {},
+    "handoff_reason": "abuse",
+    "outcome": "handoff"
+  },
+  "UN-08": {
+    "action": "handoff",
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": 10,
+      "defective": false,
+      "final_sale": null,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 65.0,
+      "status": "delivered"
+    },
+    "handoff_reason": "insufficient facts",
+    "outcome": "handoff"
+  },
+  "UN-09": {
+    "action": "handoff",
+    "cited_rule_ids": [],
+    "facts": {},
+    "handoff_reason": "order_not_found",
+    "outcome": "handoff"
+  },
+  "UN-10": {
+    "action": "handoff",
+    "cited_rule_ids": [],
+    "facts": {},
+    "handoff_reason": "order_not_found",
+    "outcome": "handoff"
+  },
+  "UN-11": {
+    "action": "handoff",
+    "cited_rule_ids": [],
+    "facts": {},
+    "handoff_reason": "safety",
+    "outcome": "handoff"
+  },
+  "UN-12": {
+    "action": "handoff",
+    "cited_rule_ids": [],
+    "facts": {},
+    "handoff_reason": "fraud",
+    "outcome": "handoff"
+  },
+  "UN-13": {
+    "action": "ask",
+    "cited_rule_ids": [],
+    "facts": {
+      "candidate_order_ids": [
+        "ORD-7002",
+        "ORD-7001"
+      ]
+    },
+    "handoff_reason": null,
+    "outcome": "handoff"
+  },
+  "WI-01": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "home",
+      "days_since_delivery": null,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 45.0,
+      "status": "in_transit"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "WI-02": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": null,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 79.0,
+      "status": "in_transit"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "WI-03": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": 8,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 56.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "WI-04": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "apparel",
+      "days_since_delivery": null,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 69.0,
+      "status": "processing"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  },
+  "WI-05": {
+    "action": "resolve",
+    "cited_rule_ids": [],
+    "facts": {
+      "category": "accessories",
+      "days_since_delivery": 2,
+      "final_sale": false,
+      "fraud_hold": false,
+      "goodwill_grant": false,
+      "order_found": true,
+      "order_value": 40.0,
+      "status": "delivered"
+    },
+    "handoff_reason": null,
+    "outcome": "status_provided"
+  }
+}
