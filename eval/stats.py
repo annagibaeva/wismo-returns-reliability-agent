@@ -41,8 +41,18 @@ def wilson_interval(successes: int, n: int, z: float = Z95) -> tuple[float, floa
 
 
 def fmt_rate(successes: int, n: int, z: float = Z95) -> str:
-    """FR-20's print form: `14% (6/43, 95% CI 6-27%)`. `n=0` has no rate to show."""
+    """FR-20's print form: `14% (6/43, 95% CI 6-27%)`. `n=0` has no rate to show.
+
+    The headline rate rounds to the nearest percent (`round()`-style, via `:.0%`).
+    The two CI bounds are truncated, not rounded: 6/43's Wilson lower bound is
+    6.556%, and the spec's own worked example prints `6`, not the `7` rounding
+    would give. `round(..., 9)` before flooring only absorbs float noise (e.g.
+    6.999999999998 for an intended 7.0); it does not change which integer percent
+    an honest bound truncates to.
+    """
     if n <= 0:
         return f"n/a (0/{n})"
     lo, hi = wilson_interval(successes, n, z)
-    return f"{successes / n:.0%} ({successes}/{n}, 95% CI {lo:.0%}–{hi:.0%})"
+    lo_pct = math.floor(round(lo * 100, 9))
+    hi_pct = math.floor(round(hi * 100, 9))
+    return f"{successes / n:.0%} ({successes}/{n}, 95% CI {lo_pct}–{hi_pct}%)"
