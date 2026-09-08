@@ -6,7 +6,7 @@ Test set: **65 tickets** (answerable=43, gold-handoffs=22, gold-asks=3) · snaps
 
 - model: claude-opus-4-8  (used only when --backend llm actually runs)
 - dataset date (frozen 'today'): 2026-06-22
-- git sha: 7446dbd0aa29b0010ce5cf3bdd7ef17a7dd92e26
+- git sha: 42519944239c31ade8c21c7a73fd91d3ccb4aee2
 - cache hit rate: n/a (0 calls -- offline keyword path makes no provider calls)
 - extractor: --extractor keyword -> agent/extract.py backend='stub'  (prompt sha256 9aa94843473584bc...)
 - lexicon entries, en (effective/raw): _SAFETY=9/10, _PAYMENT=6/6, _FRAUD=5/5, _ADDRESS=5/5, _ABUSE=6/6, _RETURN=7/7, _WISMO=6/9, _DEFECTIVE=11/12  [total 55/60]

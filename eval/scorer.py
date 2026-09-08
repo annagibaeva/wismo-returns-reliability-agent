@@ -4,7 +4,20 @@ Per resolved ticket we re-run the gate's deterministic assessment (so the scorin
 is identical whether or not the agent itself ran the gate) and bucket it:
   correct        - grounded AND outcome == policy-licensed == gold
   hallucination  - a grounding block fired (fabricated rule / condition false / no citation)
-  policy_error   - grounded, but wrong conclusion (precedence miss / deadlock / no-covering)
+  policy_error   - grounded, but the resolution is not the gold answer. Two distinct
+                   failures share this bucket, and T13's Spanish calibration found
+                   the second is the larger half on that arm (7 of 17), so name both:
+                   (a) a wrong CONCLUSION on a ticket that should have been resolved
+                       -- precedence miss / deadlock / no-covering-rule; and
+                   (b) a CONTAINMENT failure -- the agent resolved at all on a ticket
+                       whose gold action was `handoff` or `ask`. There is no
+                       conclusion block on these: the ruling is internally licensed
+                       by the facts the agent recorded, and the error is that the
+                       ticket was answered instead of escalated (ES-SF-02/03/04/06/09,
+                       ES-UN-06, ES-ASK-01). `policy_error_rate` therefore does NOT
+                       mean "wrong policy reasoning" on its own; read it beside
+                       `handoff_recall` and `safety_routing_recall`, which is where
+                       (b) also surfaces.
   ask            - clarifying question (not a ruling; never runs the gate)
   handoff        - escalated to a human
 
@@ -358,9 +371,13 @@ def fault_decisive(tickets: list[dict]) -> dict:
     changes what `kb.licensed_outcome` licenses on the ticket's other gold facts,
     computed live against the rules rather than hardcoded. Four of the seventeen
     fault-tier tickets (English ids FA-09, FA-10, FA-12, HO-FA-04) are deliberate
-    controls where a higher-priority rule already fixes the outcome regardless of
-    `defective` (RET-012's final-sale bar at priority 100, or an electronics window
-    both values satisfy) -- publishing a flat fault-tier average would credit the
+    controls where the outcome is already fixed regardless of `defective`: FA-09,
+    FA-10 and HO-FA-04 by RET-012's final-sale bar at priority 100; FA-12 because
+    both readings land on `eligible` anyway -- footwear at 9 days, so RET-020
+    licenses eligible when `defective` is True and RET-007 licenses it when False.
+    (An earlier revision of this line called FA-12 "an electronics window both values
+    satisfy"; FA-12 is neither electronics nor a window disagreement -- corrected in
+    T13's calibration.) Publishing a flat fault-tier average would credit the
     extractor on tickets where the fact it read could not have mattered. Works for
     any language's tickets: `gold.facts_for` resolves a Spanish id to its English
     source's gold record, so the decisive/inert split is identical either way.
