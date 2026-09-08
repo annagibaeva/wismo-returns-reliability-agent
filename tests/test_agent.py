@@ -13,6 +13,7 @@ import gate as grounding_gate
 from gate.entailment import assess as assess_entailment
 from agent.agent import resolve_ticket, _route, _has
 from agent.lexicons import LEXICONS
+from agent.schemas import AuditLogger
 from services_mock import data
 from eval import scorer
 
@@ -300,6 +301,74 @@ def test_english_issue_no_longer_reads_as_abuse():
 
 def test_empty_lexicon_matches_nothing():
     assert _has("anything at all", ()) is False
+
+
+# ---- routing: language selection (T4) ----
+
+def test_route_defaults_to_english():
+    # No lang argument at all -- existing callers must be unaffected.
+    assert _route("where is my order") == ("wismo", None)
+    assert _route("I want to return this jacket") == ("return", None)
+
+
+def test_route_selects_spanish_lexicon():
+    assert _route("quiero una devolución de mi pedido", lang="es") == ("return", None)
+    assert _route("hay fuego y mucho humo en la caja", lang="es") == ("out_of_scope", "safety")
+    assert _route("¿dónde está mi pedido?", lang="es") == ("wismo", None)
+
+
+def test_route_unknown_language_raises():
+    # A mistyped or unsupported language code must be loud, not a silent fall-through
+    # to English -- that would route every ticket in that language through the wrong
+    # keywords while looking exactly like ordinary, correctly-routed English traffic.
+    try:
+        _route("hola", lang="fr")
+        assert False, "expected ValueError for an unknown language"
+    except ValueError as e:
+        assert "fr" in str(e)
+
+
+# ---- routing: the fallback event (T4, FR-2) ----
+
+def test_route_fallback_event_fires_when_nothing_matches():
+    audit = AuditLogger()
+    intent, reason = _route("asdkjh qwoiue zzxcv nonsense words", lang="en", audit=audit)
+    assert (intent, reason) == ("wismo", None)
+    fallback_steps = [s for s in audit.steps if s.name == "route_fallback"]
+    assert len(fallback_steps) == 1
+    step = fallback_steps[0]
+    assert step.input["lang"] == "en"
+    assert step.output["intent"] == "wismo"
+
+
+def test_route_fallback_event_does_not_fire_on_genuine_wismo_match():
+    # This is the distinction T4 exists to introduce: a real WISMO match and an
+    # unmatched fallback both used to return the identical ("wismo", None), making
+    # them indistinguishable. Only the second should ever produce an audit event.
+    audit = AuditLogger()
+    intent, reason = _route("where is my order, when will it arrive", lang="en", audit=audit)
+    assert (intent, reason) == ("wismo", None)
+    assert not any(s.name == "route_fallback" for s in audit.steps)
+
+
+def test_route_fallback_event_without_audit_logger_is_a_no_op():
+    # _route must stay directly callable without an audit logger -- the default
+    # `audit=None` must not raise when the fallback path is taken.
+    assert _route("asdkjh qwoiue zzxcv nonsense words", lang="en") == ("wismo", None)
+
+
+def test_resolve_ticket_records_fallback_for_unmatched_message():
+    ticket = {"id": "t-fallback-e2e", "message": "asdkjh qwoiue zzxcv nonsense words",
+              "customer_email": "unknown@example.com"}
+    res = resolve_ticket(ticket, backend="stub", use_gate=True)
+    assert any(s.name == "route_fallback" for s in res.audit_trail)
+
+
+def test_resolve_ticket_does_not_record_fallback_for_real_wismo_ticket():
+    ticket = {**data.tickets()[0], "message": "where is my order, tracking please"}
+    res = resolve_ticket(ticket, backend="stub", use_gate=True)
+    assert res.intent == "wismo"
+    assert not any(s.name == "route_fallback" for s in res.audit_trail)
 
 
 # ---- end-to-end ----
