@@ -4,6 +4,7 @@ file's own copy) are checked against each other.
 """
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -131,5 +132,25 @@ def test_defective_tally():
 
 def test_false_vs_null_rule_is_recorded():
     comment = gold._load()["_comment"]
-    assert "false" in comment and "null" in comment
-    assert "RET-020" in comment  # the outcome-inert justification, stated explicitly
+    # Characteristic clauses of the rule itself -- not just the words
+    # "false"/"null"/"RET-020", which would survive the rule being deleted and
+    # replaced with unrelated prose that happens to mention them too.
+    assert (
+        "requires the message to supply a complete non-defect reason for the return"
+        in comment
+    )
+    assert "`null` covers everything short of that" in comment
+    assert "RET-020 is the only rule reading `defective`" in comment  # the outcome-inert justification
+
+
+def test_comment_self_references_resolve_to_real_tests():
+    """`_comment` cites this file's own test names (e.g. the order-derived-facts
+    proof) -- a stale one (missing the `_exactly` suffix) went unnoticed until a
+    review caught it, because nothing checked the reference. Every
+    `tests/test_gold_facts.py::<name>` citation in `_comment` must name a test
+    that actually exists here."""
+    comment = gold._load()["_comment"]
+    names = re.findall(r"tests/test_gold_facts\.py::(\w+)", comment)
+    assert names, "expected at least one self-reference to check"
+    for name in names:
+        assert name in globals() and callable(globals()[name]), name
