@@ -147,15 +147,46 @@ def _keys(snapshots: dict[str, Snapshot | None]) -> set[tuple[str, str]]:
     return {(lang, name) for lang, m in union_lexicons(snapshots).items() for name in m}
 
 
+def _frozen_gaps() -> list[str]:
+    """Modules whose frozen snapshot file is missing from an existing freeze directory.
+
+    The loss guard below compares live keys against the keys *on disk*, so deleting a
+    snapshot file deletes the baseline it held rather than tripping the guard — the
+    lexicons it froze become nothing to lose. Hence this, one level up: the freeze
+    directory existing is what says a baseline exists, and a module listed in MODULES
+    with no file in it has had its baseline removed.
+
+    Empty when the directory does not exist at all: nothing has ever been frozen here,
+    a first freeze has no baseline to lose, and requiring --force to bootstrap would
+    be requiring it to say "yes, really" to nothing.
+    """
+    if not FREEZE_DIR.exists():
+        return []
+    return [rel for rel in MODULES if not _frozen_path(rel).exists()]
+
+
 def write_snapshots(force: bool = False) -> int:
     """Re-freeze. Refuses to record a lexicon the checker can no longer see.
 
     A restructure the extractor does not understand looks exactly like "the lexicons
     are gone", and the tempting fix — rerun with --write — writes an empty snapshot
     that then passes forever while guarding nothing. So a re-freeze that *loses* a
-    lexicon key stops and names it; --force is for a deliberate removal.
+    lexicon key stops and names it; --force is for a deliberate removal. A *deleted
+    snapshot file* is the same loss reached one level up, and is refused the same way.
     """
     live = current_snapshots()
+    first_freeze = not FREEZE_DIR.exists()
+    gaps = _frozen_gaps()
+    if gaps and not force:
+        print(f"refusing to write: {len(gaps)} frozen snapshot file(s) are missing from "
+              f"{FREEZE_DIR.relative_to(ROOT)}:", file=sys.stderr)
+        for rel in gaps:
+            print(f"  {_frozen_path(rel).name} (the baseline for {rel})", file=sys.stderr)
+        print("\nA deleted snapshot takes its baseline with it — the lexicons it froze are "
+              "no longer anything to lose, so writing now would re-baseline them silently. "
+              "Restore them first (git checkout eval/frozen_lexicons). Use --force only to "
+              "deliberately re-baseline from whatever the code says now.", file=sys.stderr)
+        return 1
     lost = sorted(_keys(_load_frozen()) - _keys(live))
     if lost and not force:
         print(f"refusing to write: {len(lost)} frozen lexicon(s) are no longer visible in "
@@ -171,6 +202,9 @@ def write_snapshots(force: bool = False) -> int:
               "snapshot guards nothing.", file=sys.stderr)
         return 1
 
+    if first_freeze:
+        print("note: no frozen snapshots exist yet — recording a first baseline, with "
+              "nothing to compare it against.")
     FREEZE_DIR.mkdir(parents=True, exist_ok=True)
     for rel, snapshot in live.items():
         path = _frozen_path(rel)
@@ -183,6 +217,9 @@ def write_snapshots(force: bool = False) -> int:
     if lost:
         print(f"--force: dropped {len(lost)} lexicon(s): "
               + ", ".join(f"{lang}/{name}" for lang, name in lost))
+    if gaps:
+        print(f"--force: re-baselined {len(gaps)} module(s) whose frozen snapshot was "
+              "missing: " + ", ".join(gaps))
     return 0
 
 
