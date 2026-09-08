@@ -188,8 +188,20 @@ def test_single_order_email_lookup_resolves_not_asks():
 _VALID_SPLITS = frozenset({"seed", "heldout"})
 _EXPECTED_TIERS = frozenset({
     "clean_return", "wismo", "adversarial", "precedence", "unanswerable", "ask",
+    # T8: fault and safety give M-1 and M-2 a real denominator (BRD gap noted in the
+    # task-8 brief -- pre-T8 there were only 2 fault-decisive and 3 safety tickets).
+    "fault", "safety",
 })
 _MIN_HELD_OUT = 20
+# The six tiers the win-condition gate below was calibrated against, before T8. Fault
+# and safety are deliberately hard for the "stub" keyword extractor -- that is their
+# whole purpose (see task-8-brief.md) -- so folding them into this aggregate would
+# make the gate fail by design rather than by regression. T11 gives them their own
+# tier-appropriate metrics (M-1, M-2); this test keeps guarding the tiers it always
+# guarded.
+_ORIGINAL_SIX_TIERS = frozenset({
+    "clean_return", "wismo", "adversarial", "precedence", "unanswerable", "ask",
+})
 
 
 def test_every_ticket_has_split():
@@ -374,7 +386,9 @@ def test_resolve_ticket_does_not_record_fallback_for_real_wismo_ticket():
 # ---- end-to-end ----
 
 def test_gate_on_meets_win_condition():
-    rows = [scorer.classify(resolve_ticket(t, backend="stub", use_gate=True), t) for t in data.tickets()]
+    # Scoped to the original six tiers -- see _ORIGINAL_SIX_TIERS above.
+    tickets = [t for t in data.tickets() if t["tier"] in _ORIGINAL_SIX_TIERS]
+    rows = [scorer.classify(resolve_ticket(t, backend="stub", use_gate=True), t) for t in tickets]
     summary = scorer.aggregate(rows)
     won, clauses = scorer.win_condition(summary)
     assert won, (summary, clauses)
