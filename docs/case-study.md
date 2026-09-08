@@ -1,5 +1,14 @@
 # Case Study — A Grounding Gate for Safe Returns Automation
 
+> ⚠️ **STALE NUMBERS — narrative kept for the design argument, not the figures.** This case study was
+> written against the pre-T8 English-only baseline (43 seed tickets, 13 gold handoffs, hallucination
+> 10%→0%, resolution-precision 81%→100%). The corpus has since grown to 65 seed tickets (22 gold
+> handoffs, 8 tiers including `fault`/`safety`) and gained a Spanish arm, and the win condition grew
+> from 3 clauses to 5. The design argument below (gate as verifier, not solver; check 2.5;
+> generalization discipline) still holds — the *numbers* quoted through this file do not. For current,
+> live-regenerated figures see [`eval/report.md`](../eval/report.md) (English, offline `stub` backend)
+> and [`eval/report-multilingual.md`](../eval/report-multilingual.md) (English + Spanish).
+
 ## The problem
 
 WISMO and returns are the highest-volume e-commerce contacts. The risk in automating them isn't being
@@ -65,7 +74,8 @@ even when recall degrades. On the current run (gate ON):
 | Handoff precision | 87% (stub) / 100% (llm) | same | ≈0 | report |
 
 **Lexicon-freeze is the integrity signal.** Routing still uses keyword lexicons in
-[`agent/agent.py`](../agent/agent.py) and [`agent/llm.py`](../agent/llm.py). Held-out tickets
+[`agent/lexicons.py`](../agent/lexicons.py) (`agent/llm.py` never held any — it's the model-proposer
+seam, not the router). Held-out tickets
 deliberately use phrasing those lexicons may not cover. The easy cheat when a held-out ticket
 misroutes is to add keywords until it passes — which would invalidate the generalization metric
 entirely. So lexicons are snapshotted in [`eval/frozen_lexicons/`](../eval/frozen_lexicons/) and

@@ -1,5 +1,13 @@
 # Demo Script — "Move the trust boundary, then measure it" (~3 min)
 
+> ⚠️ **STALE NUMBERS — script kept for pacing/blocking, not the figures.** Written against the
+> pre-T8 English-only baseline (43 tickets, hallucination 10%→0%, precision 81%→100%, recall flat at
+> 83%, ~14 points of deflection). The live stub numbers are 65 tickets, hallucination 6%→0%,
+> precision 63%→74%, recall flat at 72%, ~10 points of deflection — see
+> [`eval/report.md`](../eval/report.md) before recording, and re-cut the spoken lines below to match
+> whatever `eval/report.md` says on the day you record. The beats (the AD-04 catch, check 2.5, the
+> honesty caveat) still land; only the specific percentages need updating.
+
 A support agent for e-commerce returns. The thesis: you can't QA a stochastic component into
 trustworthiness, so I split the solver from the verifier, made the verifier deterministic, and put
 it on the trust boundary in front of the customer — then measured the gate's causal lift by running

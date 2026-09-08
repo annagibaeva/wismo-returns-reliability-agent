@@ -90,9 +90,9 @@ def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True,
     """
     audit = AuditLogger()
     msg = ticket["message"]
-    # No ticket carries a "lang" key yet -- the fixtures are English-only until a
-    # later task adds Spanish variants -- so this default is correct now and stays
-    # correct once they exist.
+    # Spanish tickets carry lang="es" (see fixtures/tickets.json); English tickets
+    # still omit the key, so the default keeps old fixtures and any caller that
+    # predates the "es" arm working unchanged.
     lang = ticket.get("lang", "en")
     intent, oos_reason = _route(msg, lang, audit)
     audit.decision("route_intent", msg, {"intent": intent, "reason": oos_reason, "lang": lang})
