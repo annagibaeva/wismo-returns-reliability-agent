@@ -195,6 +195,7 @@ def fake_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         'LEXICONS = {"en": {"_SAFETY": ("fire",)}, "es": {"_SAFETY": ("fuego",)}}\n',
         encoding="utf-8")
     (tmp_path / "agent" / "extract.py").write_text("Z = 1\n", encoding="utf-8")
+    (tmp_path / "agent" / "cache.py").write_text("W = 1\n", encoding="utf-8")
     monkeypatch.setattr(freeze, "ROOT", tmp_path)
     monkeypatch.setattr(freeze, "FREEZE_DIR", tmp_path / "eval" / "frozen_lexicons")
     return tmp_path
@@ -205,7 +206,8 @@ def test_a_first_freeze_needs_no_force(fake_repo: Path) -> None:
     assert freeze._missing_baselines() == ([], [])
     assert freeze.write_snapshots() == 0
     assert sorted(p.name for p in freeze.FREEZE_DIR.iterdir()) == [
-        "_frozen_modules.json", "agent.json", "extract.json", "lexicons.json", "llm.json"]
+        "_frozen_modules.json", "agent.json", "cache.json", "extract.json", "lexicons.json",
+        "llm.json"]
     assert freeze._known_modules() == set(freeze.MODULES)
 
 

@@ -30,8 +30,15 @@ FREEZE_DIR = Path(__file__).resolve().parent / "frozen_lexicons"
 # registers as drift rather than as nothing at all. agent/extract.py arrives in T5,
 # scanned for the same reason — it imports LEXICONS today, and a later task adds
 # model prompt text to it, so it is exactly the kind of module a keyword tuple could
-# land in unnoticed.
-MODULES = ("agent/agent.py", "agent/llm.py", "agent/lexicons.py", "agent/extract.py")
+# land in unnoticed. agent/cache.py arrives in T7 and is scanned rather than excused:
+# it is the module that handles the *whole prompt*, message text included, on its way
+# to being hashed. That is precisely where a normalisation step ("strip these words
+# before keying", "treat these phrases as equivalent") would look like plumbing and
+# behave like a lexicon. Excusing it would have required claiming it structurally
+# cannot hold routing words, and a module that takes customer prose as input cannot
+# honestly claim that. It holds none today, and its snapshot is `{}`.
+MODULES = ("agent/agent.py", "agent/llm.py", "agent/lexicons.py", "agent/extract.py",
+           "agent/cache.py")
 FLAT_LANG = "en"
 
 # Every other module under agent/ that is *not* scanned above, with the reason it

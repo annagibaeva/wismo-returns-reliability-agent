@@ -3,6 +3,7 @@
     "agent/agent.py",
     "agent/llm.py",
     "agent/lexicons.py",
-    "agent/extract.py"
+    "agent/extract.py",
+    "agent/cache.py"
   ]
 }

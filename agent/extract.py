@@ -44,6 +44,13 @@ deliberate: a wrong key is a key somebody set, whereas *no* key is the default s
 of every fresh checkout and every CI job, so it is the one that gets set by mistake
 and the one that must not look like data.
 
+T7 puts `agent/cache.py` in front of the provider call, and it sits *before* the SDK
+import and the credentials check rather than after them: a ticket already in the cache
+is answered without a wire, so replaying a published run needs neither `anthropic` nor
+a key. The FR-5 boundary is unmoved -- a cache *miss* on an unconfigured machine still
+raises, and a corrupt entry raises too, both from outside the `except` that produces
+`None`. Failures are never stored, so a timeout is never frozen into the artifact.
+
 D-4 (BRD section 14): the extractor never sees the policy. No `kb/rules.json`, no
 rule text, no rule ids, no hint of what `defective` will be used for. Reading
 errors have to stay separable from reasoning errors, and a model told that "faulty"
@@ -57,7 +64,7 @@ rather than merely documented.
 """
 from __future__ import annotations
 
-from . import llm
+from . import cache, llm
 from .lexicons import LEXICONS
 
 # The complete set of facts any backend here is allowed to return. `defective` is the
@@ -158,8 +165,42 @@ _SCHEMA = {
 
 _ANSWERS = {"yes": True, "no": False, "not_stated": None}
 
+# The cache stores the model's *answer string*, not the bool it maps to, and both the
+# hit path and the miss path run it through `_ANSWERS`. That is what makes a hit and a
+# miss provably identical: there is one mapping, applied once, in one place. It also
+# keeps the three-state distinction legible on disk -- an entry reads "not_stated"
+# rather than `null`, so "the customer didn't say" is not stored as the absence of an
+# answer.
+_CALL = "extract.defective"
+
+
+def _readable(answer) -> bool:
+    """Whether an answer is one this seam can map. The cache's validity predicate too:
+    a stored answer outside the three agreed strings is a corrupt entry, not a miss."""
+    return isinstance(answer, str) and answer in _ANSWERS
+
 
 def _llm_extract(msg: str) -> dict:
+    # Built once and used twice -- hashed for the cache key, then splatted into the
+    # request. Nothing that shapes the response can be missing from the key, because
+    # anything missing from this dict is also missing from the call.
+    request = {
+        "model": llm.MODEL, "max_tokens": 128, "temperature": 0, "system": _SYSTEM,
+        "tools": [_SCHEMA], "tool_choice": {"type": "tool", "name": "message_facts"},
+        "messages": [{"role": "user", "content": _USER.format(msg=msg)}],
+    }
+    # Before the SDK import and before the credentials check, both deliberately. A run
+    # served entirely from cache never touches the wire, so it needs neither `anthropic`
+    # nor a key -- that is the reviewer-reproduces-without-credentials property, and
+    # checking the setup first would take it away. The boundary is unmoved, not
+    # weakened: it still guards the wire, and a cache miss on an unconfigured machine
+    # still raises rather than reading as "the customer didn't say". A `CacheCorrupt`
+    # from here is likewise a broken artifact, not an unreadable message, and it is
+    # raised outside the `try` below so FR-5 cannot swallow it into a `None`.
+    hit = cache.get(_CALL, request, _readable)
+    if hit is not None:
+        return {"defective": _ANSWERS[hit]}
+
     # Import outside the try: a missing SDK is a broken setup, not an unreadable message.
     import anthropic
     client = anthropic.Anthropic()
@@ -183,28 +224,32 @@ def _llm_extract(msg: str) -> dict:
             "the model extractor has no Anthropic credentials configured (set "
             "ANTHROPIC_API_KEY); a missing key is a broken run, not an unreadable message")
     try:
-        resp = client.messages.create(
-            model=llm.MODEL, max_tokens=128, temperature=0, system=_SYSTEM,
-            tools=[_SCHEMA], tool_choice={"type": "tool", "name": "message_facts"},
-            messages=[{"role": "user", "content": _USER.format(msg=msg)}],
-        )
-        return {"defective": _answer(resp)}
+        resp = client.messages.create(**request)
     except Exception:
         # Deliberately every exception, and deliberately no retry. Timeouts, rate
         # limits, connection resets, overloads, refusal-shaped payloads, SDK error
         # classes we have not met yet: enumerating the provider's taxonomy couples us
         # to a list that grows, and the class we forgot is the one that takes down an
         # eval run. Every failure here means the same thing -- could not determine.
+        # Nothing is cached on this path: a cached failure is a transient outage frozen
+        # into the artifact, and a re-run must be free to get a real answer.
         return {"defective": None}
+    answer = _reading(resp)
+    if answer is None:
+        return {"defective": None}  # unreadable response: also a failure, also uncached
+    cache.put(_CALL, request, answer)
+    return {"defective": _ANSWERS[answer]}
 
 
-def _answer(resp) -> bool | None:
+def _reading(resp) -> str | None:
     """The single enum value the model chose; `None` for anything else whatsoever.
 
-    Only the literal "no" yields `False`. Everything else the model could send that is
-    not one of the three agreed strings -- free text, a bare JSON boolean, a nested
-    object, a missing field, no tool call at all -- is a response we cannot read, and
-    an unreadable response is not evidence that the item works. Keys other than
+    Returns the answer *string* rather than the bool, so the one place that turns an
+    answer into a fact is `_ANSWERS`, on both the cached and the live path. Only the
+    literal "no" reaches `False`. Everything else the model could send that is not one
+    of the three agreed strings -- free text, a bare JSON boolean, a nested object, a
+    missing field, no tool call at all -- is a response we cannot read, and an
+    unreadable response is not evidence that the item works. Keys other than
     `defective` are never looked at, so a hallucinated `final_sale` cannot leave here.
     """
     for block in getattr(resp, "content", None) or []:
@@ -214,5 +259,5 @@ def _answer(resp) -> bool | None:
         if not isinstance(out, dict):
             return None
         value = out.get("defective")
-        return _ANSWERS.get(value) if isinstance(value, str) else None
+        return value if _readable(value) else None
     return None
