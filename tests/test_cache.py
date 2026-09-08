@@ -257,6 +257,25 @@ def test_proposer_hit_and_miss_agree(monkeypatch):
     assert hit == miss == _DECISION
 
 
+def test_proposer_call_is_temperature_zero_structured_output(monkeypatch):
+    """Pins the same property `test_llm_call_is_temperature_zero_structured_output`
+    pins for the extractor. `agent/llm.py`'s module docstring has claimed "temperature
+    0" since the first commit, but `_llm_propose`'s request dict silently dropped the
+    key in an unrelated commit and ran at whatever the API defaults to for a long
+    stretch of this project's history -- caught only by manual git-log archaeology,
+    twice deferred. This makes the next silent drop a failing test instead of a
+    quiet change in what gets published."""
+    calls = _install_provider(monkeypatch, calls=[])
+    facts, rules = {"defective": False, "days_since_delivery": 5}, kb.rules()
+    propose_return_decision(facts, rules, "take it back", backend="llm")
+    sent = calls[0]
+    assert sent["temperature"] == 0
+    assert sent["model"] == llm_mod.MODEL
+    assert sent["tools"] == [llm_mod._SCHEMA]
+    assert sent["tool_choice"] == {"type": "tool", "name": "return_decision"}
+    assert sent["system"] == llm_mod._SYSTEM
+
+
 # --------------------------------------------------------------------------- #
 # the reason the cache is committed: replay with no key and no SDK
 # --------------------------------------------------------------------------- #

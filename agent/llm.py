@@ -120,7 +120,7 @@ def _llm_propose(facts: dict, candidate_rules: list[dict], message: str) -> dict
     # shapes the response can be absent from the key. Looked up before the SDK import,
     # so a fully cached run replays with no `anthropic` and no credentials.
     request = {
-        "model": MODEL, "max_tokens": 512, "system": _SYSTEM,
+        "model": MODEL, "max_tokens": 512, "temperature": 0, "system": _SYSTEM,
         "tools": [_SCHEMA], "tool_choice": {"type": "tool", "name": "return_decision"},
         "messages": [{"role": "user", "content": user}],
     }
