@@ -249,6 +249,29 @@ def test_unanswerable_is_handed_off_not_resolved():
     assert res.action == "handoff"
 
 
+# ---- _handoff argument wiring (regression: body/backend were swapped) ----
+
+def test_out_of_scope_handoff_reply_and_backend_are_not_swapped():
+    # UN-04: safety escalation via the out_of_scope branch (agent.py's first _handoff call)
+    t = next(t for t in data.tickets() if t["id"] == "UN-04")
+    res = resolve_ticket(t, backend="stub", use_gate=True)
+    assert res.action == "handoff"
+    assert res.backend == "stub"
+    assert res.customer_reply == (
+        "This needs a specialist — I've escalated it and someone will follow up directly.")
+
+
+def test_lookup_failure_handoff_reply_and_backend_are_not_swapped():
+    # UN-01: return ticket citing an order id that doesn't exist -> order_not_found branch
+    t = next(t for t in data.tickets() if t["id"] == "UN-01")
+    res = resolve_ticket(t, backend="stub", use_gate=True)
+    assert res.action == "handoff"
+    assert res.handoff_reason == "order_not_found"
+    assert res.backend == "stub"
+    assert res.customer_reply == (
+        "I couldn't find a single matching order to act on, so I've passed this to our team.")
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     failed = 0

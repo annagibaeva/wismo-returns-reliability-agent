@@ -56,8 +56,9 @@ def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True,
     audit.decision("route_intent", msg, {"intent": intent, "reason": oos_reason})
 
     if intent == "out_of_scope":
-        return _handoff(ticket, audit, intent, oos_reason, {}, backend,
-                        "This needs a specialist — I've escalated it and someone will follow up directly.",
+        return _handoff(ticket, audit, intent, oos_reason, {},
+                        body="This needs a specialist — I've escalated it and someone will follow up directly.",
+                        backend=backend,
                         priority="high" if oos_reason in ("safety", "fraud") else "normal")
 
     # --- resolve the order (by id, else by email) ---
@@ -65,8 +66,9 @@ def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True,
     if lookup_err == "ambiguous_order":
         return _ask(ticket, audit, intent, ambiguous_matches, backend)
     if lookup_err:
-        return _handoff(ticket, audit, intent, lookup_err, {}, backend,
-                        "I couldn't find a single matching order to act on, so I've passed this to our team.")
+        return _handoff(ticket, audit, intent, lookup_err, {},
+                        body="I couldn't find a single matching order to act on, so I've passed this to our team.",
+                        backend=backend)
 
     if intent == "return":
         amb_items = _ambiguous_items(order, msg)
@@ -103,7 +105,7 @@ def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True,
         reason = gres.primary_reason()
         body = ("I can't confirm the right policy outcome here with confidence, so I've routed this to a "
                 f"specialist (reason: {reason}).")
-        return _handoff(ticket, audit, "return", reason, facts, body, backend,
+        return _handoff(ticket, audit, "return", reason, facts, body=body, backend=backend,
                         proposed=proposal["outcome"], gate=gate_dict,
                         cited=proposal.get("cited_rule_ids", []))
 
@@ -118,7 +120,7 @@ def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True,
             reason = eres.primary_reason() or "explanation does not entail cited policy"
             body = ("I can't confirm the cited policy supports this explanation with confidence, "
                     f"so I've routed this to a specialist (reason: {reason}).")
-            return _handoff(ticket, audit, "return", reason, facts, body, backend,
+            return _handoff(ticket, audit, "return", reason, facts, body=body, backend=backend,
                             proposed=proposal["outcome"], gate=gate_dict,
                             cited=proposal.get("cited_rule_ids", []))
 
@@ -218,7 +220,7 @@ def _ask(ticket, audit, intent, matches, backend) -> Resolution:
                       clarifying_question=question)
 
 
-def _handoff(ticket, audit, intent, reason, facts, body, backend, *, priority="normal",
+def _handoff(ticket, audit, intent, reason, facts, *, body, backend, priority="normal",
              proposed=None, gate=None, cited=None) -> Resolution:
     rec = ticketing.handoff(ticket["id"], "specialist", reason or "needs_human", priority)
     audit.tool_call("handoff", {"reason": reason, "priority": priority}, rec)
