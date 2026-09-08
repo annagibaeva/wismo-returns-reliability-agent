@@ -14,7 +14,7 @@ from gate.entailment import assess as assess_entailment
 from agent.agent import resolve_ticket, _route, _has
 from agent.lexicons import LEXICONS
 from agent.schemas import AuditLogger
-from services_mock import data
+from services_mock import data, order_api
 from eval import scorer
 
 
@@ -202,6 +202,13 @@ _MIN_HELD_OUT = 20
 _ORIGINAL_SIX_TIERS = frozenset({
     "clean_return", "wismo", "adversarial", "precedence", "unanswerable", "ask",
 })
+# _EXPECTED_TIERS is forced to stay in sync with reality by test_ticket_split_schema
+# (equality against the seed's actual tiers). _ORIGINAL_SIX_TIERS has no such forcing
+# function on its own -- without this, a future tier could be added to _EXPECTED_TIERS
+# and silently fall outside test_gate_on_meets_win_condition's scope by default, never
+# gated at all. This assertion runs at import time (module collection), so it fires
+# regardless of which tests are selected.
+assert _ORIGINAL_SIX_TIERS | {"fault", "safety"} == _EXPECTED_TIERS
 
 
 def test_every_ticket_has_split():
@@ -395,6 +402,35 @@ def test_gate_on_meets_win_condition():
     assert summary["hallucination_rate"] == 0.0
 
 
+def test_all_eight_tiers_characterization_not_a_gate():
+    # NOT a win-condition gate -- test_gate_on_meets_win_condition above is deliberately
+    # scoped away from fault/safety because the stub keyword extractor is expected to
+    # struggle on them (that's the tiers' whole purpose; T11 gives them real metrics).
+    # But the difference between scoping a result out and hiding it is whether the
+    # excluded number stays measured somewhere. This pins the all-tier aggregate as a
+    # record, with raw counts, so a later task that moves it has to say so explicitly
+    # rather than let it drift unnoticed. handoff_precision sits at exactly the >=85%
+    # win-condition threshold (17/20) -- zero margin, which is exactly why it needs a
+    # pin rather than a report.
+    tickets = data.tickets()
+    assert len(tickets) == 65
+    rows = [scorer.classify(resolve_ticket(t, backend="stub", use_gate=True), t) for t in tickets]
+    summary = scorer.aggregate(rows)
+    counts = summary["counts"]
+
+    assert counts["answerable_correct"] == 31
+    assert counts["answerable"] == 43
+    assert summary["resolution_recall"] == 31 / 43
+
+    assert counts["handoffs_justified"] == 17
+    assert counts["handoffs_pred"] == 20
+    assert summary["handoff_precision"] == 17 / 20 == 0.85
+
+    assert counts["resolved"] == 42
+    assert counts["hallucination"] == 0
+    assert summary["hallucination_rate"] == 0.0
+
+
 def test_gate_off_has_more_hallucination_than_on():
     off = scorer.aggregate([scorer.classify(resolve_ticket(t, "stub", False), t) for t in data.tickets()])
     on = scorer.aggregate([scorer.classify(resolve_ticket(t, "stub", True), t) for t in data.tickets()])
@@ -429,6 +465,28 @@ def test_lookup_failure_handoff_reply_and_backend_are_not_swapped():
     assert res.backend == "stub"
     assert res.customer_reply == (
         "I couldn't find a single matching order to act on, so I've passed this to our team.")
+
+
+# ---- gold_defective consistency (fault tier) ----
+#
+# gold_defective is written by nobody and read by nobody in agent/gate/kb -- it exists
+# solely as the fault tier's gold record of which reading of `defective` licenses the
+# ticket's `expected.outcome`/`controlling_rules`. That derivation was checked by hand
+# once, for all 17 fault tickets. This test re-derives it, permanently, against live
+# kb.licensed_outcome() and the order's real facts -- the one class of error (a wrong
+# gold label) that no later test can catch on its own, because the fixture *is* the
+# ground truth.
+
+def test_gold_defective_consistent_with_licensed_outcome():
+    tickets = [t for t in data.all_tickets() if "gold_defective" in t.get("expected", {})]
+    assert len(tickets) == 17  # all 17 fault-tier tickets carry gold_defective
+    for t in tickets:
+        expected = t["expected"]
+        order = order_api.get_order(t["order_id"])
+        facts = order_api.order_facts(order) | {"defective": expected["gold_defective"]}
+        outcome, controlling_rules, conflict = kb.licensed_outcome(facts)
+        assert outcome == expected["outcome"], t["id"]
+        assert controlling_rules == expected["controlling_rules"], t["id"]
 
 
 if __name__ == "__main__":
