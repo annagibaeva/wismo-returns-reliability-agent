@@ -13,11 +13,17 @@ auditable.
 the freeze checker walks the AST and cannot see a lexicon that is computed at
 import time. Anything cleverer here is invisible to the guard.
 
-Matching is a raw substring test over `msg.lower()` — no tokenisation, no accent
-folding. Spanish handles accents in the data instead, by truncating stems before
-the accented vowel (`devoluc`, `direcci`, `lleg`) so one string matches both
-spellings. Folding is not added because it would edit the matcher English also
-runs through, and because naive NFD stripping maps `año` to `ano`.
+Entries are read as prefixes: `agent._has` requires a leading word boundary and no
+trailing one, so a stem still matches the longer word (`devoluc` → *devolución*)
+but cannot start mid-word (`roto` no longer fires inside *prototipo*, and no token
+ending `-no` completes `no funciona`). Write entries accordingly — a stem must be a
+real word-start, and a suffix-only fragment will never match.
+
+There is still no tokenisation and no accent folding. Spanish handles accents in
+the data, by truncating stems before the accented vowel (`devoluc`, `direcci`,
+`lleg`) so one string matches both spellings. Folding is not added because it would
+edit the matcher English also runs through, and because naive NFD stripping maps
+`año` to `ano`.
 """
 from __future__ import annotations
 

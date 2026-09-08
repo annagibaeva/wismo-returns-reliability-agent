@@ -6,6 +6,9 @@ agent acts on its raw proposal — that's the baseline arm of the eval.
 """
 from __future__ import annotations
 
+import re
+from functools import lru_cache
+
 import kb
 import gate as grounding_gate
 from services_mock import order_api, returns_system, ticketing
@@ -18,8 +21,25 @@ from .schemas import AuditLogger, Resolution
 _EN = LEXICONS["en"]
 
 
+@lru_cache(maxsize=None)
+def _matcher(words: tuple[str, ...]) -> re.Pattern[str]:
+    r"""One alternation per lexicon, cached — `_has` runs eight of these per ticket.
+
+    `(?<!\w)` is a *leading* boundary only. Trailing is deliberately absent: the
+    entries are stems, and `devoluc` has to keep matching *devolución*, `explod`
+    *explodes*, `disputing` *disputing*. The lookbehind is what a raw substring test
+    lacked, and lacking it inverted polarity in Spanish — any token ending `-no`
+    completed `no funciona`, so *el teléfono funciona bien* read as a defect claim.
+
+    `\w` is Unicode-aware here (str pattern, no `re.ASCII`), so `ñ` and the accented
+    vowels count as word characters and *año* / *dañado* are not split mid-word.
+    """
+    return re.compile(r"(?<!\w)(?:" + "|".join(re.escape(w) for w in words) + ")")
+
+
 def _has(t, words):
-    return any(w in t for w in words)
+    # An empty lexicon must match nothing; an empty alternation would match everywhere.
+    return bool(words) and _matcher(tuple(words)).search(t) is not None
 
 
 def _route(msg: str) -> tuple[str, str | None]:

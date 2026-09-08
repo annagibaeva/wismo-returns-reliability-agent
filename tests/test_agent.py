@@ -11,7 +11,8 @@ import kb
 from kb.evaluator import evaluate, MissingFact
 import gate as grounding_gate
 from gate.entailment import assess as assess_entailment
-from agent.agent import resolve_ticket, _route
+from agent.agent import resolve_ticket, _route, _has
+from agent.lexicons import LEXICONS
 from services_mock import data
 from eval import scorer
 
@@ -224,6 +225,81 @@ def test_routing():
     assert _route("the kettle gave me an electric shock")[0] == "out_of_scope"
     assert _route("I'm disputing this charge with my bank")[0] == "out_of_scope"
     assert _route("the seams are leaking, it's faulty")[0] == "return"  # defect => return
+
+
+# ---- routing: a lexicon entry has to start a word ----
+#
+# `_has` used to be a raw substring test. That inverted the polarity of the one fact
+# this project measures: any Spanish token ending `-no` completed `no funciona`, so
+# "el teléfono funciona bien" — the item works — scored as a defect claim. Masculine
+# nouns in `-no` are dense in this domain (teléfono, horno, interno, vecino) and
+# "normal funcionamiento" is a standard collocation, so this was not a corner case.
+# The fix is a leading word boundary. There is deliberately no trailing one: the
+# entries are stems and must keep matching longer words.
+
+_ES = LEXICONS["es"]
+_EN_LEX = LEXICONS["en"]
+
+
+def test_spanish_working_item_is_not_a_defect_claim():
+    for msg in ("el telefono funciona bien pero llego tarde",
+                "el teléfono funciona bien pero llegó tarde",
+                "el ventilador interno funciona correctamente",
+                "el horno enciende pero la puerta llego rayada",
+                "el horno prende sin problema",
+                "mi vecino anda de viaje",
+                "el aparato recupero su normal funcionamiento"):
+        assert _has(msg, _ES["_DEFECTIVE"]) is False, msg
+
+
+def test_spanish_defect_claims_still_match():
+    for msg in ("no funciona", "el horno no enciende", "no prende", "la licuadora no anda",
+                "está roto", "llegó rota la pantalla", "vino con un mal funcionamiento",
+                "el producto llegó defectuoso", "el paquete llegó dañado"):
+        assert _has(msg, _ES["_DEFECTIVE"]) is True, msg
+
+
+def test_entry_cannot_start_mid_word():
+    assert _has("necesito el prototipo", _ES["_DEFECTIVE"]) is False
+    assert _has("el protocolo de la tienda", _ES["_DEFECTIVE"]) is False
+    assert _has("sufrimos una derrota", _ES["_DEFECTIVE"]) is False
+    assert _has("seguia esperando el pedido", _ES["_WISMO"]) is False
+    assert _has("no conseguía abrirlo", _ES["_WISMO"]) is False
+    assert _has("el arrastre del cajón", _ES["_WISMO"]) is False
+
+
+def test_stems_still_match_longer_words():
+    # No trailing boundary: a stem is a prefix, and must stay one.
+    assert _has("quiero la devolución de mi pedido", _ES["_RETURN"]) is True   # devoluc
+    assert _has("gestionar devoluciones", _ES["_RETURN"]) is True              # devoluc
+    assert _has("cambiar la dirección de entrega", _ES["_ADDRESS"]) is True    # direcci
+    assert _has("el producto llegó defectuoso", _ES["_DEFECTIVE"]) is True     # defectuos
+    assert _has("the battery explodes when charging", _EN_LEX["_SAFETY"]) is True   # explod
+    assert _has("i am disputing this charge", _EN_LEX["_PAYMENT"]) is True     # disputing
+
+
+def test_accented_letters_count_as_word_characters():
+    # If `\w` were ASCII-only, `ñ` would read as a boundary and "o" would match inside
+    # "año". Asserted through `_has` rather than by inspecting the pattern.
+    assert _has("año", ("o",)) is False
+    assert _has("acción", ("n",)) is False
+    assert _has("está", ("a",)) is False
+    assert _has("año nuevo", ("nuevo",)) is True
+    assert _has("hace un año que compré esto", _ES["_DEFECTIVE"]) is False
+    assert _has("¿dónde está mi pedido?", _ES["_WISMO"]) is True  # after "¿", a non-word char
+
+
+def test_english_issue_no_longer_reads_as_abuse():
+    # Intended consequence of the boundary rule, not a regression: "sue" no longer
+    # fires inside "issue". No current ticket contains the substring, so no baseline
+    # route moves — but a future English ticket saying "issue" is now handled.
+    assert _route("I have an issue with my order") == ("wismo", None)
+    assert _route("the issuer declined the payment") == ("wismo", None)
+    assert _route("I will sue you") == ("out_of_scope", "abuse")
+
+
+def test_empty_lexicon_matches_nothing():
+    assert _has("anything at all", ()) is False
 
 
 # ---- end-to-end ----
