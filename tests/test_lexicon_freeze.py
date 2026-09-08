@@ -1,4 +1,4 @@
-"""Guards the freeze checker itself, and pins the English words it must keep seeing.
+"""Guards the freeze checker itself, and pins the words it must keep seeing.
 
 `eval/check_lexicon_freeze.py` is the integrity mechanism the held-out numbers rest
 on, and it has one catastrophic failure mode: the lexicons move somewhere its AST
@@ -9,11 +9,19 @@ that moment -- so the guard has to live here, in code no re-freeze touches:
 
   * the union across scanned modules is non-empty and holds all eight lexicons;
   * the live English words equal the tuples as they stood at base commit 865bc1e,
-    in order (T3's done-criterion and global constraint 2, made machine-checkable).
+    in order (T3's done-criterion and global constraint 2, made machine-checkable);
+  * the live Spanish words equal the lists T3 authored, in order.
 
-Both read the live values through the checker's own `extract_lexicons()`, so they
-work unchanged before T3 (flat `_NAME = (...)` tuples in agent/agent.py) and after
-it (the same words under `LEXICONS["en"]` in agent/lexicons.py).
+Spanish needs a pin of its own for two reasons. `--force` can drop a whole language
+with no witness left anywhere -- the snapshot is rewritten and the check then passes
+against nothing. And the union assertion above stopped constraining English the
+moment Spanish existed: `found >= EXPECTED_NAMES` is satisfiable by the Spanish
+half alone, so without a per-language pin English could vanish entirely and only
+the second bullet would notice.
+
+All three read the live values through the checker's own `extract_lexicons()`, so
+they work unchanged before T3 (flat `_NAME = (...)` tuples in agent/agent.py) and
+after it (the same words under `LEXICONS["en"]` in agent/lexicons.py).
 """
 from __future__ import annotations
 
@@ -59,6 +67,36 @@ ENGLISH_AT_BASE = {
 }
 EXPECTED_NAMES = frozenset(ENGLISH_AT_BASE)
 
+# The eight Spanish lexicons as authored in T3, verbatim and in order. Transcribed
+# from spanish-lexicon-proposal.md -- which was written before any Spanish ticket
+# existed, and is the whole basis of the claim that these words were not tuned to
+# the tickets they are scored on. Same rule as above: never regenerate this from
+# agent/lexicons.py, or the witness starts agreeing with whatever it is watching.
+SPANISH_AT_T3 = {
+    '_ABUSE': ['demandar', 'abogado', 'acciones legales', 'medidas legales', 'denunci',
+               'reseñ', 'resena', 'redes sociales', 'basura', 'porquer'],
+    '_ADDRESS': ['cambiar la direcci', 'cambiar mi direcci', 'cambiar de direcci',
+                 'cambio de direcci', 'otra direcci', 'nueva direcci',
+                 'cambio de domicilio', 'otro domicilio', 'redirig', 'desviar'],
+    '_DEFECTIVE': ['defectuos', 'roto', 'rota', 'rotos', 'rotas', 'rompi', 'dañad',
+                   'descompuest', 'quebrad', 'agrietad',
+                   'no funciona', 'no sirve', 'de funcionar', 'no enciende', 'no prende',
+                   'no anda', 'falla', 'fallo', 'falló', 'mal funcionamiento',
+                   'gotea', 'goteo', 'fuga'],
+    '_FRAUD': ['fraude', 'suplant', 'hacke', 'robaron', 'no reconozco',
+               'no hice el pedido', 'no hice ese pedido', 'no realic'],
+    '_PAYMENT': ['no autoric', 'no autorizad', 'disput', 'contracargo', 'mi banco',
+                 'al banco'],
+    '_RETURN': ['devolv', 'devoluc', 'devu', 'reembols', 'de vuelta', 'mi dinero',
+                'regresarl', 'cambiarl', 'cambiar por', 'cambio por', 'cambio de talla',
+                'cambiar de talla'],
+    '_SAFETY': ['fuego', 'incendi', 'humo', 'chisp', 'quem', 'descarga eléctr',
+                'descarga electr', 'electrocut', 'calambre', 'explot', 'explos',
+                'peligro'],
+    '_WISMO': ['dónde', 'donde', 'rastre', 'seguimiento', 'guía', 'guia', 'env',
+               'entreg', 'lleg', 'paquete'],
+}
+
 
 def _assert_lexicons_present(union: dict[str, dict[str, list[str]]]) -> None:
     """Every expected lexicon exists somewhere, with words. Union, not per-file.
@@ -99,6 +137,17 @@ def test_english_words_unchanged_since_base_commit() -> None:
     live = union_lexicons(current_snapshots())
     assert FLAT_LANG in live, "no English lexicons are visible to the freeze checker at all"
     assert live[FLAT_LANG] == ENGLISH_AT_BASE
+
+
+def test_spanish_words_unchanged_since_t3() -> None:
+    """Fails if a single Spanish word is added, removed, or reordered.
+
+    The counterpart to the English pin, and the only witness that survives a
+    `--force` re-freeze that drops Spanish outright.
+    """
+    live = union_lexicons(current_snapshots())
+    assert "es" in live, "no Spanish lexicons are visible to the freeze checker at all"
+    assert live["es"] == SPANISH_AT_T3
 
 
 def test_flat_tuples_are_recorded_as_english(tmp_path: Path) -> None:

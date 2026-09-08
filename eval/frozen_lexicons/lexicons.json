@@ -1,1 +1,189 @@
-null
+{
+  "en": {
+    "_ABUSE": [
+      "sue",
+      "lawyer",
+      "legal action",
+      "reviews everywhere",
+      "garbage",
+      "trash"
+    ],
+    "_ADDRESS": [
+      "change the delivery address",
+      "change my address",
+      "change the address",
+      "reroute",
+      "different address"
+    ],
+    "_DEFECTIVE": [
+      "defective",
+      "broken",
+      "faulty",
+      "doesn't work",
+      "does not work",
+      "not working",
+      "leak",
+      "leaking",
+      "cracked",
+      "won't turn on",
+      "dead",
+      "malfunction"
+    ],
+    "_FRAUD": [
+      "fraud",
+      "took over my account",
+      "account takeover",
+      "didn't make",
+      "didn't place"
+    ],
+    "_PAYMENT": [
+      "unauthorized",
+      "dispute",
+      "disputing",
+      "chargeback",
+      "charge back",
+      "my bank"
+    ],
+    "_RETURN": [
+      "return",
+      "send back",
+      "send it back",
+      "send this back",
+      "refund",
+      "money back",
+      "exchange"
+    ],
+    "_SAFETY": [
+      "caught fire",
+      "fire",
+      "smoke",
+      "smoking",
+      "shock",
+      "spark",
+      "burn",
+      "hazard",
+      "dangerous",
+      "explod"
+    ],
+    "_WISMO": [
+      "where",
+      "track",
+      "tracking",
+      "arrive",
+      "arriving",
+      "shipped",
+      "ship",
+      "delivery",
+      "deliver"
+    ]
+  },
+  "es": {
+    "_ABUSE": [
+      "demandar",
+      "abogado",
+      "acciones legales",
+      "medidas legales",
+      "denunci",
+      "rese\u00f1",
+      "resena",
+      "redes sociales",
+      "basura",
+      "porquer"
+    ],
+    "_ADDRESS": [
+      "cambiar la direcci",
+      "cambiar mi direcci",
+      "cambiar de direcci",
+      "cambio de direcci",
+      "otra direcci",
+      "nueva direcci",
+      "cambio de domicilio",
+      "otro domicilio",
+      "redirig",
+      "desviar"
+    ],
+    "_DEFECTIVE": [
+      "defectuos",
+      "roto",
+      "rota",
+      "rotos",
+      "rotas",
+      "rompi",
+      "da\u00f1ad",
+      "descompuest",
+      "quebrad",
+      "agrietad",
+      "no funciona",
+      "no sirve",
+      "de funcionar",
+      "no enciende",
+      "no prende",
+      "no anda",
+      "falla",
+      "fallo",
+      "fall\u00f3",
+      "mal funcionamiento",
+      "gotea",
+      "goteo",
+      "fuga"
+    ],
+    "_FRAUD": [
+      "fraude",
+      "suplant",
+      "hacke",
+      "robaron",
+      "no reconozco",
+      "no hice el pedido",
+      "no hice ese pedido",
+      "no realic"
+    ],
+    "_PAYMENT": [
+      "no autoric",
+      "no autorizad",
+      "disput",
+      "contracargo",
+      "mi banco",
+      "al banco"
+    ],
+    "_RETURN": [
+      "devolv",
+      "devoluc",
+      "devu",
+      "reembols",
+      "de vuelta",
+      "mi dinero",
+      "regresarl",
+      "cambiarl",
+      "cambiar por",
+      "cambio por",
+      "cambio de talla",
+      "cambiar de talla"
+    ],
+    "_SAFETY": [
+      "fuego",
+      "incendi",
+      "humo",
+      "chisp",
+      "quem",
+      "descarga el\u00e9ctr",
+      "descarga electr",
+      "electrocut",
+      "calambre",
+      "explot",
+      "explos",
+      "peligro"
+    ],
+    "_WISMO": [
+      "d\u00f3nde",
+      "donde",
+      "rastre",
+      "seguimiento",
+      "gu\u00eda",
+      "guia",
+      "env",
+      "entreg",
+      "lleg",
+      "paquete"
+    ]
+  }
+}

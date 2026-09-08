@@ -10,18 +10,12 @@ import kb
 import gate as grounding_gate
 from services_mock import order_api, returns_system, ticketing
 from . import llm
+from .lexicons import LEXICONS
 from .schemas import AuditLogger, Resolution
 
-# --- intent / safety lexicons ---
-_SAFETY = ("caught fire", "fire", "smoke", "smoking", "shock", "spark", "burn", "hazard", "dangerous", "explod")
-_PAYMENT = ("unauthorized", "dispute", "disputing", "chargeback", "charge back", "my bank")
-_FRAUD = ("fraud", "took over my account", "account takeover", "didn't make", "didn't place")
-_ADDRESS = ("change the delivery address", "change my address", "change the address", "reroute", "different address")
-_ABUSE = ("sue", "lawyer", "legal action", "reviews everywhere", "garbage", "trash")
-_RETURN = ("return", "send back", "send it back", "send this back", "refund", "money back", "exchange")
-_WISMO = ("where", "track", "tracking", "arrive", "arriving", "shipped", "ship", "delivery", "deliver")
-_DEFECTIVE = ("defective", "broken", "faulty", "doesn't work", "does not work", "not working",
-              "leak", "leaking", "cracked", "won't turn on", "dead", "malfunction")
+# The words themselves live in agent/lexicons.py, under the freeze check. English is
+# still the only language routing consults; choosing one per ticket is T4's job.
+_EN = LEXICONS["en"]
 
 
 def _has(t, words):
@@ -30,20 +24,20 @@ def _has(t, words):
 
 def _route(msg: str) -> tuple[str, str | None]:
     t = msg.lower()
-    if _has(t, _SAFETY):
+    if _has(t, _EN["_SAFETY"]):
         return "out_of_scope", "safety"
-    if _has(t, _FRAUD):
+    if _has(t, _EN["_FRAUD"]):
         return "out_of_scope", "fraud"
-    if _has(t, _PAYMENT):
+    if _has(t, _EN["_PAYMENT"]):
         return "out_of_scope", "payment_dispute"
-    if _has(t, _ADDRESS):
+    if _has(t, _EN["_ADDRESS"]):
         return "out_of_scope", "address_change"
-    if _has(t, _ABUSE):
+    if _has(t, _EN["_ABUSE"]):
         return "out_of_scope", "abuse"
     # explicit return verbs OR a defect complaint (a faulty-item report is a return/replacement intent)
-    if _has(t, _RETURN) or _has(t, _DEFECTIVE):
+    if _has(t, _EN["_RETURN"]) or _has(t, _EN["_DEFECTIVE"]):
         return "return", None
-    if _has(t, _WISMO):
+    if _has(t, _EN["_WISMO"]):
         return "wismo", None
     return "wismo", None
 
@@ -85,7 +79,7 @@ def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True,
 
     # --- returns: assemble facts, propose, gate ---
     facts = order_api.order_facts(order)
-    facts["defective"] = _has(msg.lower(), _DEFECTIVE)
+    facts["defective"] = _has(msg.lower(), _EN["_DEFECTIVE"])
     audit.tool_call("extract_facts", {"order_id": order["order_id"]}, facts)
 
     candidates = kb.rules()
