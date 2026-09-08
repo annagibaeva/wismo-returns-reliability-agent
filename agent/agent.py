@@ -12,12 +12,9 @@ from functools import lru_cache
 import kb
 import gate as grounding_gate
 from services_mock import order_api, returns_system, ticketing
-from . import llm
+from . import extract, llm
 from .lexicons import LEXICONS
 from .schemas import AuditLogger, Resolution
-
-# The words themselves live in agent/lexicons.py, under the freeze check.
-_EN = LEXICONS["en"]
 
 
 @lru_cache(maxsize=None)
@@ -121,7 +118,7 @@ def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True,
 
     # --- returns: assemble facts, propose, gate ---
     facts = order_api.order_facts(order)
-    facts["defective"] = _has(msg.lower(), _EN["_DEFECTIVE"])
+    facts.update(extract.extract_facts(msg, lang, backend=backend))
     audit.tool_call("extract_facts", {"order_id": order["order_id"]}, facts)
 
     candidates = kb.rules()
