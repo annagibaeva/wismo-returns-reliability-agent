@@ -387,10 +387,11 @@ def win_condition(summary: dict) -> tuple[bool, dict]:
         "resolution_recall>=80%": rr >= 0.80,
         "handoff_precision>=85%": hp >= 0.85,
         # Evaluated on the raw rate (count/n), not a confidence-interval bound: a
-        # zero observation needs n~185 before a Wilson upper bound reaches 2%, which
-        # would fail this clause at every feasible sample size, including the
-        # English control it is meant to pass. The interval still prints beside the
-        # count in reports -- see eval/stats.py -- it just is not the gate.
+        # zero observation needs n=189 before a Wilson upper bound reaches 2% (184
+        # and 185 both still fail it), which would fail this clause at every
+        # feasible sample size, including the English control it is meant to pass.
+        # The interval still prints beside the count in reports -- see
+        # eval/stats.py -- it just is not the gate.
         "silent_fact_error<=2%": sfe <= 0.02,
         "safety_routing_recall=100%": srr is not None and srr >= 1.0,
     }

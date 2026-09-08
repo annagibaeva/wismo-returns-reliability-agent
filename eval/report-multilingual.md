@@ -6,10 +6,10 @@ Backend: **stub** · lang scope: **English + Spanish** (`--all-langs`) · snapsh
 
 - model: claude-opus-4-8  (used only when --backend llm actually runs)
 - dataset date (frozen 'today'): 2026-06-22
-- git sha: 1b5eb439a5360af85f1d3d1f68981747360502ed
+- git sha: 7446dbd0aa29b0010ce5cf3bdd7ef17a7dd92e26
 - cache hit rate: n/a (0 calls -- offline keyword path makes no provider calls)
 - extractor: --extractor keyword -> agent/extract.py backend='stub'  (prompt sha256 9aa94843473584bc...)
-- lexicon entries, en (effective/raw): _SAFETY=10/10, _PAYMENT=6/6, _FRAUD=5/5, _ADDRESS=5/5, _ABUSE=6/6, _RETURN=7/7, _WISMO=6/9, _DEFECTIVE=11/12  [total 56/60]
+- lexicon entries, en (effective/raw): _SAFETY=9/10, _PAYMENT=6/6, _FRAUD=5/5, _ADDRESS=5/5, _ABUSE=6/6, _RETURN=7/7, _WISMO=6/9, _DEFECTIVE=11/12  [total 55/60]
 - lexicon entries, es (effective/raw): _SAFETY=12/12, _PAYMENT=6/6, _FRAUD=8/8, _ADDRESS=10/10, _ABUSE=10/10, _RETURN=12/12, _WISMO=10/10, _DEFECTIVE=21/23  [total 89/91]
 
 ## Cross-language table (gate ON, seed set)
@@ -53,7 +53,7 @@ M-1 is zero only under the six-tier scope that excludes `fault` and `safety` -- 
 | es | six-tier | 27 | 0% (0/27, 95% CI 0–12%) | 33% (9/27, 95% CI 18–52%) |
 | es | **full corpus (headline)** | 70 | **14% (10/70, 95% CI 7–24%)** | 29% (20/70, 95% CI 19–40%) |
 
-_M-1's `<=2%` win-condition clause is evaluated on the RAW rate (count/n = 0/25), not a Wilson upper bound: a zero observation at n=25 has a 95% CI of [0.0%, 13.3%] -- the upper bound alone would fail this clause at every feasible sample size (n needs to reach roughly 185 before that bound drops to 2%). The interval still prints beside the count above; it is not the gate._
+_M-1's `<=2%` win-condition clause is evaluated on the RAW rate (count/n = 0/25), not a Wilson upper bound: a zero observation at n=25 has a 95% CI of [0.0%, 13.3%] -- the upper bound alone would fail this clause at every feasible sample size (a zero-success Wilson upper bound first drops to <=2% at exactly n=189: n=188 -> 2.0024%, still above 2%; n=189 -> 1.9920%). The interval still prints beside the count above; it is not the gate._
 
 ## M-4 route_fallback: membership, not just the rate (Part 3b)
 
@@ -71,6 +71,13 @@ Of the 17 fault-tier tickets, some have a gold `defective` that cannot change th
 
 - en: decisive **13/17**, inert `FA-09, FA-10, FA-12, HO-FA-04`
 - es: decisive **13/17**, inert `ES-FA-09, ES-FA-10, ES-FA-12, ES-HO-FA-04`
+
+## Extractor agreement (M-6)
+
+How often the keyword and model extractors read `defective` the SAME way on the same tickets (agreement, not accuracy against gold). `scorer.extractor_agreement` had no caller before this fix -- wired in here, seed set, gate ON.
+
+- en: n/a this run — model extractor arm not run this session (this run used --extractor keyword only); pass --extractor model, with ANTHROPIC_API_KEY configured, to compute M-6
+- es: n/a this run — model extractor arm not run this session (this run used --extractor keyword only); pass --extractor model, with ANTHROPIC_API_KEY configured, to compute M-6
 
 ## Caveats
 

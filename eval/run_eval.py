@@ -31,7 +31,7 @@ try:
 except Exception:
     pass
 
-from agent.agent import resolve_ticket        # noqa: E402
+from agent.agent import resolve_ticket, _has   # noqa: E402
 from agent import cache as cache_mod           # noqa: E402
 from agent import extract as extract_mod       # noqa: E402
 from agent import llm as llm_mod               # noqa: E402
@@ -199,24 +199,30 @@ def _extractor_prompt_hash() -> str:
 
 
 def _effective_lexicon_counts() -> dict:
-    """Per-language, per-list RAW and EFFECTIVE entry counts.
+    r"""Per-language, per-list RAW and EFFECTIVE entry counts.
 
-    An entry is dead when a SHORTER entry in the SAME list is one of its prefixes:
-    `agent/agent.py::_has`'s matcher requires only a leading word boundary (no
-    trailing one — see agent/lexicons.py's own docstring), so wherever the longer
-    entry would match, the shorter one already matches at the same position, and the
-    longer entry can never independently fire. Spanish `_DEFECTIVE`'s `rotos`/`rotas`
-    are the named example (each is a longer sibling of an already-present shorter
-    entry -- `rotos` extends `roto`, `rotas` extends `rota`); this is the general
-    mechanical test that finds them (and finds the ones no one had named yet -- see
-    the T12 report's Concerns section for what else it turned up).
+    An entry `w` is dead when the OTHER entries in the same list already make `_has`
+    match it: `_has(w, words - {w})` is True. This calls `agent/agent.py::_has`
+    directly on the entry itself, rather than reimplementing its rule, so it cannot
+    drift out of sync with what the matcher actually does (a `w.startswith(v)`
+    prefix-only test was tried first and missed a real case: `_matcher`'s boundary is
+    a LEADING `(?<!\w)` only -- no trailing one -- so a shorter entry can match a
+    longer one at ANY non-word-preceded position inside it, not just at index 0.
+    Spanish `_DEFECTIVE`'s `rotos`/`rotas` happen to be prefix cases (`roto`/`rota`
+    occur at index 0); English `_SAFETY`'s `"caught fire"` is not -- `"fire"` occurs
+    at the space, seven characters in -- which is exactly the case a prefix test
+    cannot see. Both are dead for the same reason: `_has` only ever returns a
+    boolean, never which keyword matched, so a subsumed entry contributes nothing.
+    `tests/test_run_eval.py::test_dead_classification_matches_has_removal_property`
+    ties this classification to `_has`'s real behaviour on every entry in both
+    lexicons, so this cannot silently drift back to a narrower rule again.
     """
     out = {}
     for lang, lex in LEXICONS.items():
         lists = {}
         raw_total = eff_total = 0
         for name, words in lex.items():
-            dead = sorted(w for w in words if any(v != w and w.startswith(v) for v in words))
+            dead = sorted(w for w in words if _has(w, tuple(v for v in words if v != w)))
             eff = len(words) - len(dead)
             lists[name] = {"raw": len(words), "effective": eff, "dead": dead}
             raw_total += len(words)
@@ -369,11 +375,43 @@ def _ask_containment_payload(off: dict, on: dict) -> tuple[dict, dict]:
     )
 
 
+def _extractor_agreement_result(backend: str, lang: str, *, held_out: bool,
+                                use_soft_entailment: bool, current_seam: str,
+                                current_rows: list[dict]) -> dict:
+    """M-6 (`scorer.extractor_agreement`): keyword-vs-model agreement, wired into the
+    harness (it had no caller before this fix -- the same "implemented but never
+    called" defect this task existed to fix for `fmt_rate`).
+
+    Only ever adds work when it is free: the keyword arm is offline and cheap, so it
+    is added whenever the RUN ALREADY includes a model arm (`current_seam == "llm"`,
+    which only happens via an explicit `--extractor model`, and only after
+    `_preflight_extractor` has already confirmed credentials are configured). It
+    never opportunistically starts a live model arm on a keyword-extractor run just
+    because credentials happen to be present in the environment -- that would make
+    `--extractor keyword`'s "offline, zero calls" guarantee (see `_track_cache`) a
+    lie. When the run has no model arm -- no API key, the default and the CI case --
+    this returns `available=False` with an explicit reason, so M-6 is visibly absent
+    for a stated cause rather than silently missing (indistinguishable from a metric
+    that passed).
+    """
+    if current_seam != "llm":
+        return {"available": False, "result": None,
+                "reason": "model extractor arm not run this session (this run used "
+                          "--extractor keyword only); pass --extractor model, with "
+                          "ANTHROPIC_API_KEY configured, to compute M-6"}
+    keyword_rows, _, _ = _run(backend, use_gate=True, held_out=held_out,
+                              use_soft_entailment=use_soft_entailment,
+                              lang=lang, extractor="stub")
+    return {"available": True, "reason": None,
+            "result": scorer.extractor_agreement(keyword_rows, current_rows)}
+
+
 def _compute(backend: str, extractor_seam: str, *, lang: str, held_out: bool,
             use_soft_entailment: bool) -> dict:
     """Everything one language/backend/extractor combination needs to report: gate
-    OFF vs ON, win condition, per-tier, reasoner-alone agreement, and the seed-vs-
-    held-out generalization gap. Shared by the single-language path and --all-langs.
+    OFF vs ON, win condition, per-tier, reasoner-alone agreement, extractor
+    agreement (M-6), and the seed-vs-held-out generalization gap. Shared by the
+    single-language path and --all-langs.
     """
     primary_held_out = held_out
     other_held_out = not primary_held_out
@@ -387,6 +425,9 @@ def _compute(backend: str, extractor_seam: str, *, lang: str, held_out: bool,
     won, clauses = scorer.win_condition(on)
     tiers = scorer.by_tier(on_rows)
     agreement = scorer.reasoner_agreement(off_rows)
+    m6 = _extractor_agreement_result(backend, lang, held_out=primary_held_out,
+                                     use_soft_entailment=use_soft_entailment,
+                                     current_seam=extractor_seam, current_rows=on_rows)
 
     other_on_rows, _, other_errors = _run(backend, use_gate=True, held_out=other_held_out,
                                           use_soft_entailment=use_soft_entailment,
@@ -400,7 +441,7 @@ def _compute(backend: str, extractor_seam: str, *, lang: str, held_out: bool,
 
     return {"backend": backend, "lang": lang, "label": "held-out" if primary_held_out else "seed",
             "off": off, "on": on, "on_rows": on_rows, "on_res": on_res, "won": won,
-            "clauses": clauses, "tiers": tiers, "agreement": agreement,
+            "clauses": clauses, "tiers": tiers, "agreement": agreement, "m6": m6,
             "seed_on": seed_on, "heldout_on": heldout_on, "gap": gap, "errors": errors}
 
 
@@ -464,7 +505,8 @@ def main() -> int:
                 "seed_gate_on": r["seed_on"], "heldout_gate_on": r["heldout_on"],
                 "gap_seed_minus_heldout": r["gap"],
             },
-            "reasoner_agreement": r["agreement"], "by_tier": r["tiers"],
+            "reasoner_agreement": r["agreement"], "extractor_agreement": r["m6"],
+            "by_tier": r["tiers"],
             "routing_errors": r["errors"],
             "tickets": [row for row in r["on_rows"]],
         }, indent=2, default=str), encoding="utf-8")
@@ -474,7 +516,7 @@ def main() -> int:
 def _summary_payload(r: dict) -> dict:
     return {"off": r["off"], "on": r["on"], "won": r["won"], "clauses": r["clauses"],
             "seed_on": r["seed_on"], "heldout_on": r["heldout_on"], "gap": r["gap"],
-            "errors": r["errors"]}
+            "errors": r["errors"], "m6": r["m6"]}
 
 
 # --------------------------------------------------------------------------- #
@@ -530,6 +572,15 @@ def _generalization_console(seed_on, heldout_on, gap, *, backend: str) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _m6_line(m6: dict) -> str:
+    """M-6's one-line print form: the rate when the model arm ran this session,
+    otherwise the explicit reason it did not -- never silently absent."""
+    if not m6["available"]:
+        return f"n/a -- {m6['reason']}"
+    res = m6["result"]
+    return f"{stats.fmt_rate(res['count'], res['n'])} (disagreements: {res['disagreements']})"
+
+
 def _win_condition_summary_sentence(clauses: dict) -> str:
     """Built FROM the clause dict, not a hardcoded prose count -- the FIX for the
     staleness that had eval/report.md asserting a 3-clause PASS while win_condition()
@@ -570,6 +621,8 @@ def _console(header, backend, r):
     print(f"\nReasoner-alone agreement (raw proposal vs policy, gate OFF): "
           f"{a['matched']}/{a['total']} ({_pct(a['rate'])})")
     print(f"   → the gate had to catch {a['gap']} of {a['total']} definite-answer tickets the reasoner got wrong.")
+
+    print(f"\nExtractor agreement (M-6, keyword vs model, gate ON): {_m6_line(r['m6'])}")
 
     print(_ascii_chart(off, on))
     if seed_on and heldout_on and gap is not None:
@@ -643,6 +696,14 @@ def _generalization_report(seed_on, heldout_on, gap, *, backend: str) -> list[st
     return L + [""]
 
 
+def _report_filename(lang: str) -> str:
+    """Each language gets its own output path: a `--lang es` run must not silently
+    overwrite the English `report.md` that README.md and other docs already link to.
+    English keeps the existing bare name for backward compatibility; every other
+    language gets its own `report-{lang}.md`."""
+    return "report.md" if lang == "en" else f"report-{lang}.md"
+
+
 def _write_report(header, backend, r):
     off, on, won, clauses = r["off"], r["on"], r["won"], r["clauses"]
     tiers, rows, agreement, label = r["tiers"], r["on_rows"], r["agreement"], r["label"]
@@ -703,7 +764,18 @@ def _write_report(header, backend, r):
           f"On the **{a['total']} tickets that have a definite eligible/ineligible answer**, the agent's "
           f"*raw* proposal (gate OFF) matched policy **{a['matched']}/{a['total']} ({_pct(a['rate'])})**. "
           f"The grounding gate then had to catch the remaining **{a['gap']}**. This isolates how good the "
-          "reasoner is *on its own* — the gate's job is to make the residual safe, not to do the reasoning.", "",
+          "reasoner is *on its own* — the gate's job is to make the residual safe, not to do the reasoning.", ""]
+    m6 = r["m6"]
+    L += ["## Extractor agreement (M-6)", "",
+          "How often the keyword and model extractors read `defective` the SAME way on the same "
+          "tickets (agreement between the two readings, not accuracy against gold).", ""]
+    if m6["available"]:
+        res = m6["result"]
+        L.append(f"**{stats.fmt_rate(res['count'], res['n'])}** "
+                 f"(disagreements: `{', '.join(res['disagreements']) or 'none'}`).")
+    else:
+        L.append(f"n/a this run — {m6['reason']}.")
+    L += ["",
           "## Per-tier (gate ON)", "",
           "Counts, not rates — per-tier denominators are tiny and percentages mislead "
           "(e.g. one stray handoff in a clean tier is `0/1`, not a `0%` collapse).", "",
@@ -726,7 +798,8 @@ def _write_report(header, backend, r):
           "reported alongside every rate (FR-20). The set is deliberately weighted toward handoff/"
           "unanswerable cases so handoff-precision has a real denominator "
           f"(gold-handoffs={on['counts']['handoffs_gold']}, gold-asks={on['counts']['asks_gold']}).", ""]
-    (Path(__file__).resolve().parent / "report.md").write_text("\n".join(L) + "\n", encoding="utf-8")
+    (Path(__file__).resolve().parent / _report_filename(r["lang"])).write_text(
+        "\n".join(L) + "\n", encoding="utf-8")
 
 
 # --------------------------------------------------------------------------- #
@@ -864,6 +937,10 @@ def _console_multilingual(header, en, es, deep):
         fd = deep["fault_decisive"][lang]
         print(f"   [{lang}] decisive={fd['decisive']}/{fd['n']}  inert={fd['inert_ids']}")
 
+    print("\n--- extractor agreement (M-6, keyword vs model, gate ON, seed set) ---")
+    print(f"   [en] {_m6_line(en['m6'])}")
+    print(f"   [es] {_m6_line(es['m6'])}")
+
 
 _CAVEATS = [
     "The null-vs-`False` inertness (M-1's refined definition excluding it) is a property of "
@@ -903,6 +980,18 @@ def _caveat_lines(deep) -> list[str]:
         safety_tier_hits=safety_hits, safety_tier_n=len(safety_rows),
     ) for c in _CAVEATS]
     return filled
+
+
+def _zero_success_2pct_threshold() -> tuple[int, float, float]:
+    """The exact n at which a ZERO-success Wilson upper bound first drops to <=2%,
+    plus the bound immediately on each side -- computed live against
+    `stats.wilson_interval` (not a hand-computed guess) so this cannot go stale
+    the way the "roughly 185" estimate did (the true value is 189; 184 and 185 both
+    still fail the <=2% test)."""
+    n = 1
+    while stats.wilson_interval(0, n)[1] > 0.02:
+        n += 1
+    return n, stats.wilson_interval(0, n - 1)[1], stats.wilson_interval(0, n)[1]
 
 
 def _write_multilingual_report(header, en, es, deep):
@@ -959,12 +1048,14 @@ def _write_multilingual_report(header, en, es, deep):
                  f"{stats.fmt_rate(full_sfe['literal_count'], full_sfe['n'])} |")
     en_six_sfe = scorer.silent_fact_error(deep["scopes"]["en"]["six_tier"]["rows"])
     lo, hi = stats.wilson_interval(en_six_sfe["count"], en_six_sfe["n"])
+    n_thresh, hi_before, hi_at = _zero_success_2pct_threshold()
     L += ["", f"_M-1's `<=2%` win-condition clause is evaluated on the RAW rate "
           f"(count/n = {en_six_sfe['count']}/{en_six_sfe['n']}), not a Wilson upper bound: a zero "
           f"observation at n={en_six_sfe['n']} has a 95% CI of "
           f"[{lo*100:.1f}%, {hi*100:.1f}%] -- the upper bound alone would fail this clause at every "
-          "feasible sample size (n needs to reach roughly 185 before that bound drops to 2%). The "
-          "interval still prints beside the count above; it is not the gate._", ""]
+          f"feasible sample size (a zero-success Wilson upper bound first drops to <=2% at exactly "
+          f"n={n_thresh}: n={n_thresh - 1} -> {hi_before*100:.4f}%, still above 2%; n={n_thresh} -> "
+          f"{hi_at*100:.4f}%). The interval still prints beside the count above; it is not the gate._", ""]
 
     L += ["## M-4 route_fallback: membership, not just the rate (Part 3b)", "",
           "English and Spanish land on nearly the SAME rate over the full corpus (seed + held-out, "
@@ -988,6 +1079,20 @@ def _write_multilingual_report(header, en, es, deep):
         fd = deep["fault_decisive"][lang]
         L.append(f"- {lang}: decisive **{fd['decisive']}/{fd['n']}**, "
                  f"inert `{', '.join(fd['inert_ids'])}`")
+    L += [""]
+
+    L += ["## Extractor agreement (M-6)", "",
+          "How often the keyword and model extractors read `defective` the SAME way on the same "
+          "tickets (agreement, not accuracy against gold). `scorer.extractor_agreement` had no "
+          "caller before this fix -- wired in here, seed set, gate ON.", ""]
+    for lang, r in (("en", en), ("es", es)):
+        m6 = r["m6"]
+        if m6["available"]:
+            res = m6["result"]
+            L.append(f"- {lang}: **{stats.fmt_rate(res['count'], res['n'])}** "
+                     f"(disagreements: `{', '.join(res['disagreements']) or 'none'}`)")
+        else:
+            L.append(f"- {lang}: n/a this run — {m6['reason']}")
     L += [""]
 
     L += ["## Caveats", "", "A reader who takes the numbers above without these will over-generalise.", ""]

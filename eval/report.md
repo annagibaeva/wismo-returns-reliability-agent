@@ -6,10 +6,10 @@ Test set: **65 tickets** (answerable=43, gold-handoffs=22, gold-asks=3) · snaps
 
 - model: claude-opus-4-8  (used only when --backend llm actually runs)
 - dataset date (frozen 'today'): 2026-06-22
-- git sha: 1b5eb439a5360af85f1d3d1f68981747360502ed
+- git sha: 7446dbd0aa29b0010ce5cf3bdd7ef17a7dd92e26
 - cache hit rate: n/a (0 calls -- offline keyword path makes no provider calls)
 - extractor: --extractor keyword -> agent/extract.py backend='stub'  (prompt sha256 9aa94843473584bc...)
-- lexicon entries, en (effective/raw): _SAFETY=10/10, _PAYMENT=6/6, _FRAUD=5/5, _ADDRESS=5/5, _ABUSE=6/6, _RETURN=7/7, _WISMO=6/9, _DEFECTIVE=11/12  [total 56/60]
+- lexicon entries, en (effective/raw): _SAFETY=9/10, _PAYMENT=6/6, _FRAUD=5/5, _ADDRESS=5/5, _ABUSE=6/6, _RETURN=7/7, _WISMO=6/9, _DEFECTIVE=11/12  [total 55/60]
 - lexicon entries, es (effective/raw): _SAFETY=12/12, _PAYMENT=6/6, _FRAUD=8/8, _ADDRESS=10/10, _ABUSE=10/10, _RETURN=12/12, _WISMO=10/10, _DEFECTIVE=21/23  [total 89/91]
 
 > **Handoff denominators:** UN-13 is gold `action=ask` (ambiguous multi-order WISMO), not handoff. Gold-handoffs are **13** (down from 14 when ask was lumped with the escalation slice); handoff precision/recall exclude asks from both numerator and denominator.
@@ -69,6 +69,12 @@ _Counts (gate ON): resolved=42, correct=31, hallucination=0, policy_error=11, as
 ## Reasoner-alone agreement
 
 On the **35 tickets that have a definite eligible/ineligible answer**, the agent's *raw* proposal (gate OFF) matched policy **26/35 (74%)**. The grounding gate then had to catch the remaining **9**. This isolates how good the reasoner is *on its own* — the gate's job is to make the residual safe, not to do the reasoning.
+
+## Extractor agreement (M-6)
+
+How often the keyword and model extractors read `defective` the SAME way on the same tickets (agreement between the two readings, not accuracy against gold).
+
+n/a this run — model extractor arm not run this session (this run used --extractor keyword only); pass --extractor model, with ANTHROPIC_API_KEY configured, to compute M-6.
 
 ## Per-tier (gate ON)
 
