@@ -27,9 +27,24 @@ ROOT = Path(__file__).resolve().parent.parent
 FREEZE_DIR = Path(__file__).resolve().parent / "frozen_lexicons"
 
 # agent/lexicons.py arrives in T3; it is scanned from now on so that its arrival
-# registers as drift rather than as nothing at all.
-MODULES = ("agent/agent.py", "agent/llm.py", "agent/lexicons.py")
+# registers as drift rather than as nothing at all. agent/extract.py arrives in T5,
+# scanned for the same reason — it imports LEXICONS today, and a later task adds
+# model prompt text to it, so it is exactly the kind of module a keyword tuple could
+# land in unnoticed.
+MODULES = ("agent/agent.py", "agent/llm.py", "agent/lexicons.py", "agent/extract.py")
 FLAT_LANG = "en"
+
+# Every other module under agent/ that is *not* scanned above, with the reason it
+# holds no routing keywords today. tests/test_lexicon_freeze.py enforces that this
+# set plus MODULES covers every .py file under agent/ — so a future module (e.g.
+# agent/cache.py) fails that test the moment it exists, until someone either adds it
+# to MODULES (and freezes it) or adds it here with a reason. Extending this dict is
+# the conscious act the plan's §0.3 asks for: it shows up in the diff, in plain text,
+# next to the module name.
+NON_LEXICON_MODULES = {
+    "agent/__init__.py": "re-exports resolve_ticket and Resolution; defines nothing",
+    "agent/schemas.py": "dataclasses for the audit trail and resolution record only",
+}
 
 Snapshot = dict[str, dict[str, list[str]]]
 

@@ -194,6 +194,7 @@ def fake_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     (tmp_path / "agent" / "lexicons.py").write_text(
         'LEXICONS = {"en": {"_SAFETY": ("fire",)}, "es": {"_SAFETY": ("fuego",)}}\n',
         encoding="utf-8")
+    (tmp_path / "agent" / "extract.py").write_text("Z = 1\n", encoding="utf-8")
     monkeypatch.setattr(freeze, "ROOT", tmp_path)
     monkeypatch.setattr(freeze, "FREEZE_DIR", tmp_path / "eval" / "frozen_lexicons")
     return tmp_path
@@ -204,7 +205,7 @@ def test_a_first_freeze_needs_no_force(fake_repo: Path) -> None:
     assert freeze._missing_baselines() == ([], [])
     assert freeze.write_snapshots() == 0
     assert sorted(p.name for p in freeze.FREEZE_DIR.iterdir()) == [
-        "_frozen_modules.json", "agent.json", "lexicons.json", "llm.json"]
+        "_frozen_modules.json", "agent.json", "extract.json", "lexicons.json", "llm.json"]
     assert freeze._known_modules() == set(freeze.MODULES)
 
 
@@ -358,3 +359,52 @@ def test_same_lexicon_defined_twice_with_different_words_is_an_error(tmp_path: P
 
     with pytest.raises(ValueError, match="en/_SAFETY"):
         union_lexicons({"old.py": extract_lexicons(old), "new.py": extract_lexicons(new)})
+
+
+def _agent_modules() -> set[str]:
+    """Every .py file directly under agent/, as "agent/<name>.py" relative paths."""
+    return {f"agent/{p.name}" for p in (ROOT / "agent").glob("*.py")}
+
+
+def test_every_agent_module_is_scanned_or_explicitly_excused() -> None:
+    """A new agent/ module must be a conscious choice, not a silent blind spot.
+
+    This is the exact gap a reviewer found: agent/extract.py existed for a full task
+    before it was added to MODULES, holding no lexicons of its own only by luck -- the
+    freeze check kept printing "OK" the whole time, having quietly started checking
+    less than it once did. A module that is neither scanned (MODULES) nor named as
+    deliberately lexicon-free (NON_LEXICON_MODULES, with a reason) now fails here the
+    moment it is created, e.g. a future agent/cache.py -- before anyone has to notice
+    on their own.
+
+    Coverage is required to be literal and total, not "most modules": the two lists
+    are asserted exhaustive and disjoint by the tests below, so there is no third,
+    unmentioned bucket a module can quietly fall into.
+    """
+    found = _agent_modules()
+    accounted = set(freeze.MODULES) | set(freeze.NON_LEXICON_MODULES)
+    unaccounted = found - accounted
+    assert not unaccounted, (
+        f"{sorted(unaccounted)} exist under agent/ but are named in neither MODULES nor "
+        "NON_LEXICON_MODULES in eval/check_lexicon_freeze.py. Add each one to MODULES "
+        "(if it may ever hold routing keywords -- then also run --write) or to "
+        "NON_LEXICON_MODULES with a reason (if it structurally cannot)."
+    )
+
+
+def test_non_lexicon_modules_all_still_exist() -> None:
+    """A stale excuse for a deleted module silently shrinks what the test above checks."""
+    stale = set(freeze.NON_LEXICON_MODULES) - _agent_modules()
+    assert not stale, f"NON_LEXICON_MODULES names module(s) that no longer exist: {sorted(stale)}"
+
+
+def test_non_lexicon_modules_each_have_a_real_reason() -> None:
+    """An empty reason would make this list a bare, unexamined bypass."""
+    for rel, reason in freeze.NON_LEXICON_MODULES.items():
+        assert reason.strip(), f"NON_LEXICON_MODULES[{rel!r}] has no reason"
+
+
+def test_modules_and_non_lexicon_modules_do_not_overlap() -> None:
+    """Scanned-for-lexicons and excused-from-scanning are supposed to be exclusive."""
+    overlap = set(freeze.MODULES) & set(freeze.NON_LEXICON_MODULES)
+    assert not overlap, f"listed in both MODULES and NON_LEXICON_MODULES: {sorted(overlap)}"
