@@ -3,9 +3,11 @@ backend added in T6.
 
 Covers: both languages behind extract_facts, the stub backend's False-not-None
 behaviour (the documented asymmetry with the model backend), that resolve_ticket
-routes fact extraction through the seam correctly for a non-English ticket, and
-the model backend's FR-5 error contract -- every way the provider call can fail
-yields `None`, never `False`.
+routes fact extraction through the seam correctly for a non-English ticket, the
+model backend's FR-5 error contract -- every way the provider call can fail yields
+`None`, never `False` -- and the boundary that sits beside it: a broken *setup* (no
+SDK, no credentials) raises instead, and an unknown extractor name raises instead of
+quietly running the keyword path under a model label.
 
 Every model-backend test here fakes the provider by substituting `sys.modules`
 ["anthropic"], so the suite needs no API key and makes no network call (global
@@ -72,9 +74,22 @@ def _install_provider(monkeypatch, response=None, *, raises=None, calls=None):
         return response(**kwargs) if callable(response) else response
 
     fake = types.ModuleType("anthropic")
-    fake.Anthropic = lambda *a, **k: types.SimpleNamespace(
-        messages=types.SimpleNamespace(create=create))
+    fake.Anthropic = lambda *a, **k: _fake_client(create, api_key="not-a-real-key")
     monkeypatch.setitem(sys.modules, "anthropic", fake)
+
+
+def _fake_client(create, **credentials):
+    """A client shaped like the real one: the three credential attributes, then `messages`.
+
+    The real SDK exposes `api_key`, `auth_token` and `credentials` on every constructed
+    client and sets each to `None` when it could not resolve one, so a double that omits
+    them is a double of a client that cannot exist. Default here is *configured* --
+    unconfigured is the special case, and it gets its own tests below.
+    """
+    return types.SimpleNamespace(
+        api_key=credentials.get("api_key"), auth_token=credentials.get("auth_token"),
+        credentials=credentials.get("credentials"),
+        messages=types.SimpleNamespace(create=create))
 
 
 # ---- both languages ----
@@ -222,19 +237,132 @@ def test_llm_backend_does_not_retry_on_a_timeout(monkeypatch):
     assert len(calls) == 1
 
 
-def test_a_broken_setup_raises_instead_of_reading_as_unanswerable(monkeypatch):
-    # A missing key or a missing SDK is the operator failing to set the run up, not
-    # the customer failing to say. Swallowing it into `None` would turn a broken
-    # model arm into a wall of plausible-looking handoffs and report it as data.
+# ---- the configuration boundary: broken setup raises, the provider's answers do not ----
+#
+# A missing key or a missing SDK is the operator failing to set the run up, not the
+# customer failing to say. Swallowing either into `None` would turn a broken model arm
+# into a wall of plausible-looking handoffs and report it as data.
+#
+# The failure has to be injected where the SDK really produces it. `anthropic.Anthropic()`
+# does *not* raise on a missing key -- it constructs fine, leaves all three credential
+# attributes `None`, and raises `TypeError("Could not resolve authentication method...")`
+# from inside `messages.create`, which sits inside the `except Exception`. A double that
+# raises in the constructor tests a code path the SDK does not have.
+
+_SDK_AUTH_TYPEERROR = TypeError(
+    '"Could not resolve authentication method. Expected one of api_key, auth_token, or '
+    'credentials to be set. Or for one of the `X-Api-Key` or `Authorization` headers to '
+    'be explicitly omitted"')
+
+
+def test_an_unconfigured_client_raises_and_never_reaches_the_provider(monkeypatch):
+    # The real shape: construction succeeds, credentials are all None, and create() would
+    # raise the SDK's TypeError. Ours must raise *before* create is ever called -- if it
+    # reached create, the TypeError would be caught and every ticket in the run would read
+    # as "the customer didn't say".
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    calls = []
+
+    def create(**kwargs):
+        calls.append(kwargs)
+        raise _SDK_AUTH_TYPEERROR
+
     fake = types.ModuleType("anthropic")
-
-    def _no_key(*a, **k):
-        raise RuntimeError("Could not resolve authentication method: no api_key")
-
-    fake.Anthropic = _no_key
+    fake.Anthropic = lambda *a, **k: _fake_client(create)  # no credentials at all
     monkeypatch.setitem(sys.modules, "anthropic", fake)
-    with pytest.raises(RuntimeError, match="api_key"):
+    with pytest.raises(RuntimeError, match="ANTHROPIC_API_KEY"):
         extract_facts("hello", lang="en", backend="llm")
+    assert calls == [], "the unconfigured client was allowed to reach the provider"
+
+
+@pytest.mark.parametrize("source", ["api_key", "auth_token", "credentials"])
+def test_any_one_credential_source_is_enough_to_proceed(monkeypatch, source):
+    # The precondition asks whether the client is configured, not whether it holds a key.
+    # A machine authenticated by auth token or by credentials file is set up correctly and
+    # must not be turned away -- that would trade a silent wrong answer for a loud one.
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    fake = types.ModuleType("anthropic")
+    fake.Anthropic = lambda *a, **k: _fake_client(
+        lambda **kw: _tool_use({"defective": "yes"}), **{source: "configured"})
+    monkeypatch.setitem(sys.modules, "anthropic", fake)
+    assert extract_facts("it arrived smashed", lang="en", backend="llm") == {"defective": True}
+
+
+def test_the_real_sdk_constructs_without_a_key_and_the_seam_still_raises(monkeypatch):
+    # The finding itself, against the installed SDK rather than a double: no fake anywhere,
+    # no network (we raise before create), and skipped rather than faked where the SDK is
+    # absent or the machine is genuinely authenticated -- global constraint 4.
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+    anthropic = pytest.importorskip("anthropic", reason="SDK not installed; nothing to check")
+    client = anthropic.Anthropic()  # the point: this does NOT raise
+    if any(getattr(client, name, None) is not None
+           for name in ("api_key", "auth_token", "credentials")):
+        pytest.skip("this machine has Anthropic credentials configured")
+    with pytest.raises(RuntimeError, match="ANTHROPIC_API_KEY"):
+        extract_facts("hello", lang="en", backend="llm")
+
+
+def test_a_missing_sdk_raises_rather_than_reading_as_unanswerable(monkeypatch):
+    # The sibling case, and the state CI is actually in: `anthropic` not installed at all.
+    # Blocked through the import machinery so the failure is the genuine
+    # ModuleNotFoundError, message included, not a sentinel in sys.modules.
+    class _NoAnthropic:
+        def find_spec(self, name, path=None, target=None):
+            if name == "anthropic":
+                raise ModuleNotFoundError(f"No module named {name!r}", name=name)
+            return None
+
+    monkeypatch.delitem(sys.modules, "anthropic", raising=False)
+    monkeypatch.setattr(sys, "meta_path", [_NoAnthropic(), *sys.meta_path])
+    with pytest.raises(ModuleNotFoundError, match="anthropic"):
+        extract_facts("hello", lang="en", backend="llm")
+
+
+def test_an_auth_failure_from_the_wire_stays_on_the_none_side(monkeypatch):
+    # The other side of the same boundary, and the case that says where it is drawn: the
+    # client IS configured, the key is simply wrong, and the provider says 401. That is a
+    # provider answer, not a local misconfiguration -- separating a permanently bad key
+    # from a revoked one, an auth outage or a transient 401 means naming SDK error classes,
+    # which is exactly the coupling FR-5's blanket `except` refuses. So it returns None.
+    class AuthenticationError(Exception):
+        status_code = 401
+
+    _install_provider(monkeypatch, None,
+                      raises=AuthenticationError("authentication_error: invalid x-api-key"))
+    facts = extract_facts("the blender is broken", lang="en", backend="llm")
+    assert facts == {"defective": None}
+    assert facts["defective"] is not False
+
+
+# ---- an unknown extractor name raises rather than silently running the keyword path ----
+
+@pytest.mark.parametrize("name", ["model", "LLM", "Stub", "lmm", "anthropic", ""])
+def test_an_unknown_extractor_name_raises(name):
+    # `resolve_ticket` writes the *requested* extractor into the audit trail without
+    # checking which one ran, so falling through to the keyword path would file keyword
+    # numbers under a model label. Same failure `_route` refuses for a mistyped `lang`.
+    with pytest.raises(ValueError, match="no extractor named") as exc:
+        extract_facts("the blender is broken", lang="en", backend=name)
+    assert repr(name) in str(exc.value)
+
+
+def test_the_unknown_extractor_error_lists_the_known_names():
+    # What makes the error self-correcting, and the reason `_route` lists its lexicons.
+    with pytest.raises(ValueError) as exc:
+        extract_facts("hello", lang="en", backend="model")
+    assert "'stub'" in str(exc.value) and "'llm'" in str(exc.value)
+
+
+def test_an_unknown_extractor_raises_through_resolve_ticket():
+    base = data.tickets()[0]
+    with pytest.raises(ValueError, match="no extractor named 'model'"):
+        resolve_ticket({**base, "id": "unknown-extractor-test"}, backend="stub",
+                       extractor="model")
+
+
+def test_extractors_contract_is_exactly_stub_and_llm():
+    assert extract_mod.EXTRACTORS == frozenset({"stub", "llm"})
 
 
 # ---- the model may not smuggle an order fact out through the seam ----

@@ -16,8 +16,9 @@ Two implementations behind one signature:
             whether this is defective," only "I didn't see one of these words." A
             model backend can tell those apart; the keyword backend structurally
             cannot, and demonstrating that gap is part of what this project is for.
-  - "llm"  (needs ANTHROPIC_API_KEY): one Claude call, temperature 0, structured
-            output. Entitled to return `None` when the message doesn't say.
+  - "llm"  (needs Anthropic credentials, usually ANTHROPIC_API_KEY): one Claude call,
+            temperature 0, structured output. Entitled to return `None` when the
+            message doesn't say.
             `kb/evaluator.py` raises `MissingFact` on a `None` input, so RET-020
             simply cannot fire and the ticket falls through to a human instead of
             being ruled on a fact nobody actually stated.
@@ -29,10 +30,19 @@ answer sail through the gate unnoticed. So every way the call can fail -- a
 timeout, a refusal, an empty or malformed response, a missing or off-enum field --
 lands on `None`. There is no retry: a retry that eventually gives up on a default
 is the same fabrication with extra steps. The only failures allowed to raise are
-configuration failures (no `anthropic` installed, no API key), which are not the
-extractor failing to read a message but the operator failing to set it up; reading
-those as "the customer didn't say" would hide a misconfigured run behind a wall of
-plausible-looking handoffs.
+configuration failures, and the line between those and provider failures is drawn
+at the wire: a configuration failure is one decidable *locally*, before any request
+goes out -- no `anthropic` installed, no credentials on the constructed client.
+Those are not the extractor failing to read a message but the operator failing to
+set the run up, and reading them as "the customer didn't say" would hide a
+misconfigured run behind a wall of plausible-looking handoffs. Anything that needs
+the provider's answer to diagnose -- a 401 on a wrong-but-present key included --
+stays on the `None` side, because telling a permanently wrong key from a revoked
+one, a provider-side auth outage, or a transient 401 means naming SDK error classes,
+and the class we forgot is the one that takes down an eval run. The asymmetry is
+deliberate: a wrong key is a key somebody set, whereas *no* key is the default state
+of every fresh checkout and every CI job, so it is the one that gets set by mistake
+and the one that must not look like data.
 
 D-4 (BRD section 14): the extractor never sees the policy. No `kb/rules.json`, no
 rule text, no rule ids, no hint of what `defective` will be used for. Reading
@@ -61,9 +71,23 @@ from .lexicons import LEXICONS
 # the backend that broke it instead of being dropped where nobody sees it.
 PROSE_FACTS = frozenset({"defective"})
 
+# The extractor names this seam answers to. Unknown values raise rather than falling
+# through to the keyword path: `resolve_ticket` records the *requested* extractor in the
+# audit trail without checking it ran, so `extractor="model"` would file keyword numbers
+# under a model label -- a silent wrong answer on the arm that produces the reported
+# numbers. Same reasoning, same shape as `_route`'s unknown-`lang` ValueError, and the
+# error lists the known names because that is what makes it self-correcting. A frozenset,
+# not a tuple, so `eval/check_lexicon_freeze.py` cannot mistake it for a lexicon.
+EXTRACTORS = frozenset({"stub", "llm"})
+
 
 def extract_facts(msg: str, lang: str = "en", backend: str = "stub") -> dict:
-    facts = _llm_extract(msg) if backend == "llm" else _stub_extract(msg, lang)
+    if backend == "llm":
+        facts = _llm_extract(msg)
+    elif backend == "stub":
+        facts = _stub_extract(msg, lang)
+    else:
+        raise ValueError(f"no extractor named {backend!r}; known: {sorted(EXTRACTORS)}")
     extra = sorted(set(facts) - PROSE_FACTS)
     if extra:
         raise ValueError(
@@ -136,10 +160,28 @@ _ANSWERS = {"yes": True, "no": False, "not_stated": None}
 
 
 def _llm_extract(msg: str) -> dict:
-    # Import and construct outside the try: a missing SDK or a missing key is a broken
-    # setup, not an unreadable message, and must not be laundered into `None`.
+    # Import outside the try: a missing SDK is a broken setup, not an unreadable message.
     import anthropic
     client = anthropic.Anthropic()
+    # Construction is not the boundary, whatever it once was. The SDK (checked against
+    # 0.109.1) builds an unconfigured client happily and only resolves authentication at
+    # request time, raising TypeError from inside `create` -- which is inside the `try`,
+    # and a TypeError is an Exception. Left alone, a run with no key would return
+    # `{"defective": None}` for every ticket without a single network call or warning: a
+    # results file of unanswerables indistinguishable from a real finding. So the check
+    # is here, on local state, before the wire.
+    #
+    # All three of the sources `Anthropic._validate_headers` accepts, read off the client
+    # rather than off the environment: the SDK resolves them from several places
+    # (`ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, a credentials file found by
+    # `default_credentials()`) and the client is the one thing that knows which landed.
+    # Checking only `api_key` would turn away a machine that is correctly authenticated
+    # by credentials file -- trading a silent wrong answer for a loud wrong one.
+    if all(getattr(client, name, None) is None
+           for name in ("api_key", "auth_token", "credentials")):
+        raise RuntimeError(
+            "the model extractor has no Anthropic credentials configured (set "
+            "ANTHROPIC_API_KEY); a missing key is a broken run, not an unreadable message")
     try:
         resp = client.messages.create(
             model=llm.MODEL, max_tokens=128, temperature=0, system=_SYSTEM,
