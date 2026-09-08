@@ -152,22 +152,118 @@ def fake_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 def test_a_first_freeze_needs_no_force(fake_repo: Path) -> None:
     """Nothing frozen yet is not a loss -- the bootstrap path must stay open."""
-    assert freeze._frozen_gaps() == []
+    assert freeze._missing_baselines() == ([], [])
     assert freeze.write_snapshots() == 0
     assert sorted(p.name for p in freeze.FREEZE_DIR.iterdir()) == [
-        "agent.json", "lexicons.json", "llm.json"]
+        "_frozen_modules.json", "agent.json", "lexicons.json", "llm.json"]
+    assert freeze._known_modules() == set(freeze.MODULES)
 
 
 def test_a_deleted_snapshot_is_a_loss_not_a_first_run(fake_repo: Path) -> None:
-    """The gap guard's whole job: tell "never frozen" apart from "frozen, then gone"."""
+    """The guard's whole job: tell "never frozen" apart from "frozen, then gone"."""
     assert freeze.write_snapshots() == 0
     (freeze.FREEZE_DIR / "lexicons.json").unlink()
-    assert freeze._frozen_gaps() == ["agent/lexicons.py"]
+    assert freeze._missing_baselines() == ([], ["agent/lexicons.py"])
 
-    # ... and with every snapshot gone the directory itself is still the witness.
-    for path in list(freeze.FREEZE_DIR.iterdir()):
-        path.unlink()
-    assert freeze._frozen_gaps() == list(freeze.MODULES)
+    # ... and with the record gone, neither reading is available: that is its own refusal.
+    freeze._record_path().unlink()
+    assert freeze._known_modules() is None
+    assert freeze._missing_baselines() == ([], [])
+
+
+def test_a_never_frozen_module_needs_no_force(
+        fake_repo: Path, monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str]) -> None:
+    """Adding a lexicon module to MODULES is a bootstrap, not a loss.
+
+    Round 1 read the *directory* as the witness, so with other modules already frozen a
+    brand-new one looked exactly like a deleted baseline: --write refused, and --force --
+    which also waves through real word loss -- was the only way past it. The record makes
+    the signal per-module.
+    """
+    assert freeze.write_snapshots() == 0
+    (fake_repo / "agent" / "newmod.py").write_text(
+        'LEXICONS = {"en": {"_WISMO": ("track",)}}\n', encoding="utf-8")
+    monkeypatch.setattr(freeze, "MODULES", freeze.MODULES + ("agent/newmod.py",))
+    capsys.readouterr()
+
+    assert freeze._missing_baselines() == (["agent/newmod.py"], [])
+    assert freeze.write_snapshots() == 0
+    out = capsys.readouterr()
+    assert "agent/newmod.py has never been frozen" in out.out
+    assert "deleted" not in out.out and "git checkout" not in out.out
+    assert out.err == ""
+    assert json.loads((freeze.FREEZE_DIR / "newmod.json").read_text()) == {
+        "en": {"_WISMO": ["track"]}}
+    assert freeze._known_modules() == set(freeze.MODULES)
+
+
+def test_a_new_module_does_not_excuse_a_deleted_baseline(
+        fake_repo: Path, monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str]) -> None:
+    """Both states at once: the new one is bootstrapped, the deleted one still refuses."""
+    assert freeze.write_snapshots() == 0
+    (fake_repo / "agent" / "newmod.py").write_text(
+        'LEXICONS = {"en": {"_WISMO": ("track",)}}\n', encoding="utf-8")
+    monkeypatch.setattr(freeze, "MODULES", freeze.MODULES + ("agent/newmod.py",))
+    (freeze.FREEZE_DIR / "lexicons.json").unlink()
+    capsys.readouterr()
+
+    assert freeze._missing_baselines() == (["agent/newmod.py"], ["agent/lexicons.py"])
+    assert freeze.write_snapshots() == 1
+    err = capsys.readouterr().err
+    assert "lexicons.json (the baseline for agent/lexicons.py)" in err
+    assert "newmod" not in err, "a never-frozen module reported as a deleted baseline"
+    assert not (freeze.FREEZE_DIR / "newmod.json").exists(), "refused, yet still wrote"
+
+
+def test_write_refuses_when_the_freeze_record_is_missing(
+        fake_repo: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """The record is the new state, so its own deletion must not be a free pass.
+
+    Without it the two readings collapse back together, and the safe answer is to refuse
+    rather than to guess -- deleting the record must not become the way to launder a
+    deleted baseline past the guard above.
+    """
+    assert freeze.write_snapshots() == 0
+    freeze._record_path().unlink()
+    (freeze.FREEZE_DIR / "lexicons.json").unlink()
+    capsys.readouterr()
+
+    assert freeze.write_snapshots() == 1
+    assert "_frozen_modules.json" in capsys.readouterr().err
+    assert not (freeze.FREEZE_DIR / "lexicons.json").exists(), "refused, yet still wrote"
+
+    assert freeze.check() == 1
+    assert "missing freeze record" in capsys.readouterr().err
+
+
+def test_check_flags_a_baseline_the_record_does_not_name(
+        fake_repo: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """A snapshot the record omits would read as never-frozen once its file went missing.
+
+    Reachable by editing the record, or by hand-adding a snapshot file. Either way the
+    record and the snapshots have to agree, or the three states stop being three.
+    """
+    assert freeze.write_snapshots() == 0
+    freeze._record_path().write_text(
+        json.dumps({"modules": ["agent/agent.py", "agent/llm.py"]}), encoding="utf-8")
+    capsys.readouterr()
+
+    assert freeze.check() == 1
+    err = capsys.readouterr().err
+    assert "frozen but not in" in err and "agent/lexicons.py" in err
+
+
+def test_the_freeze_record_names_every_scanned_module() -> None:
+    """The committed record, checked against the committed MODULES.
+
+    A guard whose state can quietly drift is the failure it was added to fix: if the
+    record stopped naming a module, that module's baseline could be deleted and the
+    deletion would read as a bootstrap.
+    """
+    record = json.loads(freeze._record_path().read_text(encoding="utf-8"))
+    assert record["modules"] == list(freeze.MODULES)
 
 
 def test_write_refuses_to_re_baseline_over_a_deleted_snapshot(
