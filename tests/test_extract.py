@@ -15,9 +15,18 @@ sys.path.insert(0, str(ROOT))
 
 import pytest
 
+from agent import extract as extract_mod
+from agent import llm as llm_mod
 from agent.agent import resolve_ticket
 from agent.extract import extract_facts
 from services_mock import data
+
+
+def _extract_step(res):
+    """The single `extract_facts` entry from a Resolution's audit trail."""
+    steps = [s for s in res.audit_trail if s.name == "extract_facts"]
+    assert len(steps) == 1, f"expected exactly one extract_facts step, got {len(steps)}"
+    return steps[0]
 
 
 # ---- both languages ----
@@ -96,3 +105,113 @@ def test_resolve_ticket_spanish_working_item_is_not_a_defect_claim():
               "message": "el teléfono funciona bien pero ya no lo quiero, quiero una devolución"}
     res = resolve_ticket(ticket, backend="stub", use_gate=True)
     assert res.facts["defective"] is False
+
+
+# ---- the extractor is selected independently of the proposer ----
+
+def test_extractor_defaults_independently_of_backend(monkeypatch):
+    # Passing only backend="llm" must NOT drag the extractor along with it. The
+    # proposer is faked out so this needs no API key (global constraint 4); the
+    # point is which backend string reached extract_facts.
+    seen = []
+    real = extract_mod.extract_facts
+
+    def spy(msg, lang="en", backend="stub"):
+        seen.append(backend)
+        return real(msg, lang, backend=backend)
+
+    monkeypatch.setattr(extract_mod, "extract_facts", spy)
+    monkeypatch.setattr(llm_mod, "propose_return_decision",
+                        lambda *a, **k: {"outcome": "ineligible", "cited_rule_ids": [],
+                                         "rationale": "fake"})
+    base = data.tickets()[0]
+    res = resolve_ticket({**base, "id": "independent-default-test"}, backend="llm")
+    assert seen == ["stub"], f"extractor followed backend instead of its own default: {seen}"
+    assert res.backend == "llm"
+
+
+def test_extractor_argument_is_forwarded_not_the_backend(monkeypatch):
+    # And the reverse: an explicit extractor must reach the seam untouched, even
+    # while backend stays "stub".
+    seen = []
+    monkeypatch.setattr(extract_mod, "extract_facts",
+                        lambda msg, lang="en", backend="stub": seen.append(backend) or
+                        {"defective": False})
+    base = data.tickets()[0]
+    resolve_ticket({**base, "id": "explicit-extractor-test"}, backend="stub", extractor="llm")
+    assert seen == ["llm"]
+
+
+def test_resolve_ticket_llm_backend_does_not_raise_not_implemented(monkeypatch):
+    # The regression this fixes: forwarding `backend` into the extractor made
+    # `--backend llm` raise NotImplementedError before it ever reached the proposer.
+    monkeypatch.setattr(llm_mod, "propose_return_decision",
+                        lambda *a, **k: {"outcome": "ineligible", "cited_rule_ids": [],
+                                         "rationale": "fake"})
+    base = data.tickets()[0]
+    res = resolve_ticket({**base, "id": "llm-backend-reaches-proposer"}, backend="llm",
+                         extractor="stub")
+    assert res.facts["defective"] is False
+
+
+# ---- the extractor may not overwrite order-database facts ----
+
+def test_out_of_contract_key_fails_loudly(monkeypatch):
+    # A future model extractor hallucinating an order fact must not be able to
+    # overwrite the authoritative order record -- and must not be silently dropped
+    # either, which would hide the same bug.
+    monkeypatch.setattr(extract_mod, "_stub_extract",
+                        lambda msg, lang: {"defective": True, "final_sale": False})
+    with pytest.raises(ValueError, match="final_sale"):
+        extract_facts("this is broken", lang="en", backend="stub")
+
+
+def test_out_of_contract_key_fails_loudly_through_resolve_ticket(monkeypatch):
+    monkeypatch.setattr(extract_mod, "_stub_extract",
+                        lambda msg, lang: {"defective": True, "order_value": 9999})
+    base = data.tickets()[0]
+    with pytest.raises(ValueError, match="order_value"):
+        resolve_ticket({**base, "id": "out-of-contract-test"}, backend="stub")
+
+
+def test_prose_facts_contract_is_exactly_defective():
+    assert extract_mod.PROSE_FACTS == frozenset({"defective"})
+
+
+def test_stub_return_is_within_the_prose_contract():
+    assert set(extract_facts("the blender is broken", lang="en")) <= extract_mod.PROSE_FACTS
+
+
+# ---- the audit trail names the extractor and the language ----
+
+def test_audit_entry_records_extractor_and_lang():
+    base = data.tickets()[0]
+    res = resolve_ticket({**base, "id": "audit-extractor-test"}, backend="stub")
+    step = _extract_step(res)
+    assert step.input["extractor"] == "stub"
+    assert step.input["lang"] == "en"
+    assert step.input["order_id"] == res.order_id
+
+
+def test_audit_entry_records_the_extractor_actually_used(monkeypatch):
+    # M-6 needs to tell a keyword-derived fact from a model-derived one; the audit
+    # entry must name the extractor that ran, not the proposer's backend.
+    monkeypatch.setattr(extract_mod, "extract_facts",
+                        lambda msg, lang="en", backend="stub": {"defective": False})
+    monkeypatch.setattr(llm_mod, "propose_return_decision",
+                        lambda *a, **k: {"outcome": "ineligible", "cited_rule_ids": [],
+                                         "rationale": "fake"})
+    base = data.tickets()[0]
+    res = resolve_ticket({**base, "id": "audit-extractor-llm-test"}, backend="llm",
+                         extractor="llm")
+    step = _extract_step(res)
+    assert step.input["extractor"] == "llm"
+    assert res.backend == "llm"
+
+
+def test_audit_entry_records_the_ticket_language():
+    base = data.tickets()[0]
+    ticket = {**base, "id": "audit-lang-test", "lang": "es",
+              "message": "el producto llegó defectuoso, quiero una devolución"}
+    res = resolve_ticket(ticket, backend="stub")
+    assert _extract_step(res).input["lang"] == "es"

@@ -78,7 +78,16 @@ def _route(msg: str, lang: str = "en", audit: AuditLogger | None = None) -> tupl
 
 
 def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True,
-                   use_soft_entailment: bool = False) -> Resolution:
+                   use_soft_entailment: bool = False, extractor: str = "stub") -> Resolution:
+    """`backend` selects the *proposer*; `extractor` selects the *fact reader*, independently.
+
+    They are two separate seams (`llm.propose_return_decision` and
+    `extract.extract_facts`) and must be selectable separately: the extractor metrics
+    are metrics *about the extractor*, so a run that swapped both at once would move
+    two variables and be attributable to neither. `extractor` therefore defaults to
+    "stub" on its own — never to `backend` — so `--backend llm` still reaches the real
+    proposer with the keyword extractor underneath it.
+    """
     audit = AuditLogger()
     msg = ticket["message"]
     # No ticket carries a "lang" key yet -- the fixtures are English-only until a
@@ -118,8 +127,12 @@ def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True,
 
     # --- returns: assemble facts, propose, gate ---
     facts = order_api.order_facts(order)
-    facts.update(extract.extract_facts(msg, lang, backend=backend))
-    audit.tool_call("extract_facts", {"order_id": order["order_id"]}, facts)
+    # Safe to merge over the order facts only because extract_facts enforces
+    # extract.PROSE_FACTS on its own return — it raises rather than handing back a key
+    # that would overwrite the authoritative order record.
+    facts.update(extract.extract_facts(msg, lang, backend=extractor))
+    audit.tool_call("extract_facts", {"order_id": order["order_id"], "extractor": extractor,
+                                      "lang": lang}, facts)
 
     candidates = kb.rules()
     audit.tool_call("search_policies", {"query": "return " + (facts.get("category") or "")},
