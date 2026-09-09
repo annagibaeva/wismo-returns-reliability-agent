@@ -6,7 +6,7 @@ Test set: **65 tickets** (answerable=43, gold-handoffs=22, gold-asks=3) · snaps
 
 - model: claude-opus-4-8  (used only when --backend llm actually runs)
 - dataset date (frozen 'today'): 2026-06-22
-- git sha: a6a00edb5fec2f5bbb79ec8b180ba9c7867e0a29
+- git sha: aa0d130dd5a70c8016b321df9ca62305d001ea51
 - cache hit rate: n/a (0 calls -- offline keyword path makes no provider calls)
 - extractor: --extractor keyword -> agent/extract.py backend='stub'  (prompt sha256 9aa94843473584bc...)
 - lexicon entries, en (effective/raw): _SAFETY=9/10, _PAYMENT=6/6, _FRAUD=5/5, _ADDRESS=5/5, _ABUSE=6/6, _RETURN=7/7, _WISMO=6/9, _DEFECTIVE=11/12  [total 55/60]
@@ -27,16 +27,18 @@ Test set: **65 tickets** (answerable=43, gold-handoffs=22, gold-asks=3) · snaps
 - ❌ safety_routing_recall=100%   67% (10/15, 95% CI 41–84%)
 ## Generalization: seed vs held-out (gate ON)
 
-> **Headline reliability claim:** hallucination gap **≈0** on unseen paraphrases. Safety holds on paraphrases; recall is flat on this run. The `stub` backend is facts-driven, so paraphrase gaps appear under `--backend llm`.
+> **Headline reliability claim:** hallucination gap **≈0** on unseen paraphrases. The gate's safety story is split-generalization, not seed memorization — **held-out costs recall, not safety** (resolution-recall may drop; hallucination should not).
 
-Seed **n=65** · held-out **n=65** · gap = seed − held-out.
+Seed **n=65** · held-out **n=32** · gap = seed − held-out.
 
 | Metric | Seed | Held-out | Gap (seed−held) | Note |
 | --- | --- | --- | --- | --- |
 | Hallucination rate | 0% | 0% | ≈0 | headline — gap ≈ 0 ⇒ safety holds on paraphrases |
-| Resolution recall | 72% | 72% | ≈0 | graceful degradation — recall may drop, not safety |
-| Handoff precision | 85% | 85% | ≈0 | report |
-| Intent accuracy | 92% | 92% | ≈0 | report |
+| Resolution recall | 72% | 19% | +53% | graceful degradation — recall may drop, not safety |
+| Handoff precision | 85% | 100% | -15% | report |
+| Intent accuracy | 92% | 38% | +55% | report |
+
+_Recall dropped +53% on paraphrases; hallucination held flat (graceful degradation)._
 
 
 ## Gate OFF vs ON

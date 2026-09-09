@@ -433,7 +433,7 @@ def _compute(backend: str, extractor_seam: str, *, lang: str, held_out: bool,
                                           use_soft_entailment=use_soft_entailment,
                                           lang=lang, extractor=extractor_seam)
     seed_on = on if not primary_held_out else scorer.aggregate(other_on_rows)
-    heldout_on = scorer.aggregate(other_on_rows) if primary_held_out else on
+    heldout_on = on if primary_held_out else scorer.aggregate(other_on_rows)
     gap = scorer.generalization_gap(seed_on, heldout_on)
 
     errors = off_errors + [e for e in on_errors if e not in off_errors] + \

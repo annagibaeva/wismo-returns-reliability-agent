@@ -267,3 +267,85 @@ def test_report_filename_is_per_language() -> None:
     assert run_eval._report_filename("en") == "report.md"
     assert run_eval._report_filename("es") == "report-es.md"
     assert run_eval._report_filename("es") != run_eval._report_filename("en")
+
+
+# --------------------------------------------------------------------------- #
+# Generalization-fix regression: `_compute`'s seed_on/heldout_on ternaries must
+# bind each label to ITS OWN split's aggregate, on both the default path and
+# `--held-out`. The bug this guards against: an inverted ternary silently set
+# `heldout_on = on` on the default path, so the "held-out" column was actually
+# the seed column re-labeled -- every generalization gap was 0 by construction,
+# not by measurement. The tell was `held-out n == seed n` (65 == 65 instead of
+# 32); these tests assert the real counts and that seed_on/heldout_on are
+# distinct objects, so a reintroduced inversion fails loudly instead of
+# quietly reporting a perfect (fake) gap of zero.
+# --------------------------------------------------------------------------- #
+def test_seed_and_heldout_have_the_real_distinct_ticket_counts() -> None:
+    from services_mock import data as data_mod
+
+    seed_n = len(data_mod.tickets("en"))
+    heldout_n = len(data_mod.held_out_tickets("en"))
+    assert seed_n != heldout_n, "fixture no longer distinguishes seed/held-out sizes"
+
+    r = run_eval._compute("stub", "stub", lang="en", held_out=False, use_soft_entailment=False)
+    assert r["seed_on"]["n"] == seed_n
+    assert r["heldout_on"]["n"] == heldout_n
+    assert r["seed_on"]["n"] != r["heldout_on"]["n"]
+
+
+def test_seed_and_heldout_have_the_real_distinct_ticket_counts_held_out_primary() -> None:
+    """Same assertion with `--held-out` as primary (the OTHER code path through the
+    same ternaries) -- seed_on/heldout_on must still bind to seed/held-out
+    respectively, not to whichever split happens to be primary this run."""
+    from services_mock import data as data_mod
+
+    seed_n = len(data_mod.tickets("en"))
+    heldout_n = len(data_mod.held_out_tickets("en"))
+
+    r = run_eval._compute("stub", "stub", lang="en", held_out=True, use_soft_entailment=False)
+    assert r["seed_on"]["n"] == seed_n
+    assert r["heldout_on"]["n"] == heldout_n
+
+
+def test_seed_on_and_heldout_on_are_distinct_objects_on_both_paths() -> None:
+    """`seed_on is heldout_on` is exactly what the inverted ternary produced on the
+    default path (both bound to the same `on` aggregate). Neither code path may
+    alias the two labels to one summary object."""
+    for held_out in (False, True):
+        r = run_eval._compute("stub", "stub", lang="en", held_out=held_out,
+                              use_soft_entailment=False)
+        assert r["seed_on"] is not r["heldout_on"]
+
+
+def test_reintroducing_the_inverted_ternary_fails_the_distinct_count_test(monkeypatch) -> None:
+    """Demonstrates the regression test actually bites: patch `_compute` to reproduce
+    the original bug (`heldout_on = on if not primary_held_out else aggregate(...)`,
+    i.e. the pre-fix line with the branches swapped) and confirm the assertion above
+    would have failed against it."""
+    from services_mock import data as data_mod
+    from eval import scorer as scorer_mod
+
+    def buggy_compute(backend, extractor_seam, *, lang, held_out, use_soft_entailment):
+        primary_held_out = held_out
+        other_held_out = not primary_held_out
+        on_rows, _, _ = run_eval._run(backend, use_gate=True, held_out=primary_held_out,
+                                      use_soft_entailment=use_soft_entailment,
+                                      lang=lang, extractor=extractor_seam)
+        on = scorer_mod.aggregate(on_rows)
+        other_on_rows, _, _ = run_eval._run(backend, use_gate=True, held_out=other_held_out,
+                                            use_soft_entailment=use_soft_entailment,
+                                            lang=lang, extractor=extractor_seam)
+        seed_on = on if not primary_held_out else scorer_mod.aggregate(other_on_rows)
+        # the original (reverted) bug: branches NOT swapped relative to seed_on
+        heldout_on = scorer_mod.aggregate(other_on_rows) if primary_held_out else on
+        return {"seed_on": seed_on, "heldout_on": heldout_on}
+
+    monkeypatch.setattr(run_eval, "_compute", buggy_compute)
+
+    heldout_n = len(data_mod.held_out_tickets("en"))
+    r = run_eval._compute("stub", "stub", lang="en", held_out=False, use_soft_entailment=False)
+    # This is the failure this whole test class exists to catch: on the buggy
+    # default path, heldout_on silently becomes the SEED aggregate (n=65), not the
+    # real held-out aggregate (n=32) -- reproduced here, then asserted as a FAILURE.
+    assert r["heldout_on"]["n"] != heldout_n
+    assert r["seed_on"] is r["heldout_on"]  # aliased -- the tell, made explicit

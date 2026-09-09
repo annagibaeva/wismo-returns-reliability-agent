@@ -10,7 +10,7 @@
 
 Built a unified WISMO + returns agent with a deterministic **grounding gate**, an **audit trail**, and a **65-ticket seed harness + 32 held-out paraphrases** that measures hallucination, policy error, and safe-handoff behavior — and runs the agent **with the gate off vs on** to show the gate's causal effect, then **seed vs held-out** to measure generalization.
 
-> **Result (stub backend, seed n=65):** the gate cuts **hallucination 6% → 0%** and **resolution-precision 63% → 74%**, trading **deflection 75% → 65%** while holding **resolution-recall flat at 72%**. **Generalization (gate ON):** hallucination gap **≈0** on held-out paraphrases (seed 0% → held-out 0%).
+> **Result (stub backend, seed n=65):** the gate cuts **hallucination 6% → 0%** and **resolution-precision 63% → 74%**, trading **deflection 75% → 65%** while holding **resolution-recall flat at 72%**. **Generalization (gate ON, seed n=65 vs held-out n=32):** hallucination gap **≈0** (seed 0% → held-out 0%) — the safety line holds — but that is *not* the whole generalization story: resolution-recall collapses **72% → 19%** and intent accuracy **92% → 38%** on unseen paraphrases with this offline stub extractor. The gate keeps refusing safely; it just refuses a lot more on phrasing its keyword lexicons don't cover.
 > *(Counts reported alongside every rate; at n=65 these are directional, not statistically tight. The `stub` is an intentionally naive offline proposer — see [Two backends](#two-backends-one-seam). The 5-clause win condition currently **FAILs** on this offline stub baseline — see [`eval/report.md`](eval/report.md), regenerated every run. `--backend llm` needs `ANTHROPIC_API_KEY` and cannot run in this offline environment; its last captured numbers predate the 5-clause win condition and are archived, marked stale, at [`eval/report-llm.md`](eval/report-llm.md).)*
 
 ---
@@ -157,14 +157,16 @@ Run the seed set **twice — gate off vs gate on** — then score held-out parap
 
 *(stub backend, seed n=65 — see [`eval/report.md`](eval/report.md), regenerated every run. [`eval/report-stub.md`](eval/report-stub.md) is a stale pre-T8 snapshot on a corpus that no longer exists — kept for history, do not cite it. `--backend llm` needs `ANTHROPIC_API_KEY` and does not run in this offline environment; its last captured numbers predate the current 5-clause win condition and are archived, marked stale, at [`eval/report-llm.md`](eval/report-llm.md).)*
 
-**Generalization (gate ON, seed vs held-out):**
+**Generalization (gate ON, seed n=65 vs held-out n=32):**
 
 | Metric | Seed | Held-out | Gap |
 |---|---|---|---|
 | Hallucination | 0% | 0% | **≈0** |
-| Resolution recall | 72% | 72% | ≈0 |
+| Resolution recall | 72% | 19% | +53pp |
+| Handoff precision | 85% | 100% | -15pp |
+| Intent accuracy | 92% | 38% | +55pp |
 
-The story in one line: *the gate cut hallucination from 6% to 0% (and precision 63%→74%) while holding recall flat at 72% — it learned to refuse the unanswerable, not refuse to work. The cost is ~10 points of deflection (more handoffs); held-out paraphrases hold the same safety line. The 5-clause win condition still FAILs on this offline stub baseline — `resolution_recall`, `silent_fact_error`, and `safety_routing_recall` all miss target, which is expected of the intentionally naive proposer, not a regression.* See [`eval/report.md`](eval/report.md) (regenerated each run) and [`docs/case-study.md`](docs/case-study.md) for the honest read.
+The story in one line: *the gate cut hallucination from 6% to 0% (and precision 63%→74%) while holding recall flat at 72% on the seed set — it learned to refuse the unanswerable, not refuse to work. The cost is ~10 points of deflection (more handoffs). Held-out paraphrases hold the hallucination line at 0%, but that is where the good news stops: resolution-recall craters to 19% and intent accuracy to 38% — this offline stub's keyword-based intent router and fact extractor do not generalize to unseen phrasing, so most held-out tickets resolve to the wrong (grounded but incorrect) outcome rather than being caught as ungrounded. The gate's *safety* property (never fabricate) held; the reasoner's *usefulness* on paraphrases did not. The 5-clause win condition still FAILs on this offline stub baseline — `resolution_recall`, `silent_fact_error`, and `safety_routing_recall` all miss target, which is expected of the intentionally naive proposer, not a regression.* See [`eval/report.md`](eval/report.md) (regenerated each run) and [`docs/case-study.md`](docs/case-study.md) for the honest read.
 
 ---
 
