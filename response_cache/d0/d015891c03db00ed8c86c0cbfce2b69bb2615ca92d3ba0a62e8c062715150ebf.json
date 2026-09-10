@@ -1,0 +1,14 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "d015891c03db00ed8c86c0cbfce2b69bb2615ca92d3ba0a62e8c062715150ebf",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007",
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The order is still in \"processing\" status and has not been delivered (days_since_delivery is null), so no delivery-window rule can be satisfied. The standard return window rules (RET-007/RET-008) require a delivery to have occurred; RET-007 cannot apply because days_since_delivery is not a value <= 30. No higher-priority rule applies: final_sale is false (RET-012 excluded), defective is not True (RET-020 excluded), and neither goodwill_grant nor fraud_hold is set. Since the item has not been delivered, there is no eligible-return basis and the request cannot be granted at this time."
+  }
+}

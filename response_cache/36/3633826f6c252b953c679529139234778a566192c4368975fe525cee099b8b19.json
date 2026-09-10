@@ -1,0 +1,14 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "3633826f6c252b953c679529139234778a566192c4368975fe525cee099b8b19",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007",
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The order is still in_transit and has not been delivered (days_since_delivery is null), so no return can be processed yet. The standard-window rules (RET-007/RET-008) require a delivery date to evaluate; without delivery, none of the eligibility conditions are satisfied. Electronics rules do not apply (category is 'home'), the item is not final sale, not marked defective, has no goodwill grant, and no fraud hold. Since delivery has not occurred, the return cannot be granted at this time."
+  }
+}

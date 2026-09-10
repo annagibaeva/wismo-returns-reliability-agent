@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "386f75d2e00cbbb60f656cd61e0aaf77bd10275cedb8c8ea8468c32c78876c14",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The order is still in \"processing\" and has not yet been delivered (days_since_delivery is null), so it has not exceeded the 30-day window. The item is not final sale (final_sale == False). Under RET-007, non-final-sale items within the 30-day window are eligible for return. Higher-priority rules do not apply: final-sale (RET-012) is false, defective (RET-020) is not true, and there is no goodwill grant or fraud hold. Electronics rules do not apply since the category is apparel."
+  }
+}

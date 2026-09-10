@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "c30aee45a5177f68cfda37164cacef271f6fb440561a6ea21bbfd18e588aa143",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is marked final_sale == True (intimates category). RET-012, the highest-priority rule (priority 100), makes final-sale items ineligible for return regardless of the standard 30-day window. Although the order is within 10 days of delivery, RET-007 (priority 10) is overridden by RET-012. The item is not defective, so RET-020 does not apply, and no goodwill grant or fraud hold is present."
+  }
+}

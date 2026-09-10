@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "dd8b8c6848a9b5e9a88b8ecd81abc601dfb6cdbf189b0a3dab4df882fd04b498",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (defective == True) and not final sale (final_sale == False), satisfying RET-020, which has the highest applicable priority (90). RET-012 (final-sale, priority 100) does not apply since final_sale is False. The standard-window rule RET-007 also supports eligibility but is superseded by the higher-priority defective rule."
+  }
+}

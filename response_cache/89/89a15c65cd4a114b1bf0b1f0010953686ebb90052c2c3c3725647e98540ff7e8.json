@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "89a15c65cd4a114b1bf0b1f0010953686ebb90052c2c3c3725647e98540ff7e8",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is a home-category product (not electronics), is not final sale, not under fraud hold, and delivered 9 days ago—within the standard 30-day window. RET-007 applies (days_since_delivery <= 30 and final_sale == False). No higher-priority rule is triggered: RET-012 (final sale), RET-020 (defective), RET-050 (goodwill), RET-051 (fraud hold), and the electronics rules all have false conditions on these facts. The customer simply no longer needs the item, which does not affect eligibility."
+  }
+}

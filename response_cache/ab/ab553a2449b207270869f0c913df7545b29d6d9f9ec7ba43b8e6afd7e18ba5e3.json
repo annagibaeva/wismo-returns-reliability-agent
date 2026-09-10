@@ -1,0 +1,10 @@
+{
+  "cache_version": 1,
+  "call": "route.intent",
+  "key": "ab553a2449b207270869f0c913df7545b29d6d9f9ec7ba43b8e6afd7e18ba5e3",
+  "model": "claude-opus-4-8",
+  "response": {
+    "intent": "wismo",
+    "reason": null
+  }
+}

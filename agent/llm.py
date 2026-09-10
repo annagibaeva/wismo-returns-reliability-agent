@@ -9,17 +9,52 @@ Two implementations behind one signature:
             the real failure class — pro-customer bias + precedence blindness. It is
             NOT meant to clear the win condition; it exists to run offline/CI and to
             give the gate something realistic to catch.
-  - "llm"   (needs ANTHROPIC_API_KEY): a real Claude call, temperature 0, structured
-            output. This produces the *reported* numbers; we publish whatever it gives.
+  - "llm"   (needs ANTHROPIC_API_KEY): a real Claude call, structured output.
+            Sampling is temperature 0 on models that still accept it; Opus 4.7+
+            reject `temperature` (HTTP 400), so it is omitted there. This produces
+            the *reported* numbers; we publish whatever it gives.
+
+T7 puts `agent/cache.py` in front of that call, keyed on the whole request as sent.
+The lookup precedes the SDK import, so a run whose rulings are all cached replays with
+no credentials and no `anthropic` installed -- which is what lets a reviewer reproduce
+a published report. A ruling is stored only when it came back in the agreed shape; the
+"no structured output" fallback is a failed call and is never cached.
 """
 from __future__ import annotations
 
 import json
 import os
+import re
 
 from kb.evaluator import evaluate, MissingFact
 
+from . import cache
+
 MODEL = os.environ.get("AGENT_MODEL", "claude-opus-4-8")
+
+
+def sampling_params(model: str) -> dict:
+    """Messages API sampling kwargs for `model`.
+
+    Opus 4.7+ (including 4.8 and the 5.x line) reject `temperature` / `top_p` /
+    `top_k` with HTTP 400. Older models still take `temperature=0`, which is the
+    deterministic setting this project wants. Adaptive models get `{}`: omitting
+    the field is the supported equivalent of "don't sample."
+    """
+    if _rejects_sampling(model):
+        return {}
+    return {"temperature": 0}
+
+
+def _rejects_sampling(model: str) -> bool:
+    name = model.lower()
+    if "fable" in name or "mythos" in name:
+        return True
+    m = re.search(r"(opus|sonnet|haiku)-(\d+)(?:-(\d+))?", name)
+    if m is None:
+        return False
+    major, minor = int(m.group(2)), int(m.group(3) or 0)
+    return major >= 5 or (major == 4 and minor >= 7)
 
 
 def propose_return_decision(facts: dict, candidate_rules: list[dict], message: str,
@@ -83,22 +118,53 @@ _SCHEMA = {
 }
 
 
+_CALL = "llm.return_decision"
+
+
+def _readable(decision) -> bool:
+    """Whether a ruling is one this seam produced cleanly, and so worth storing.
+
+    Also the cache's validity predicate, which is why it is strict about types rather
+    than merely about `outcome`: a stored ruling that fails this is a corrupt entry,
+    and the alternative -- treating it as a miss -- is the silent re-fetch this project
+    does not allow. The fallback ruling below deliberately fails it: "no structured
+    output" is a failed call, and caching a failure freezes it into the artifact.
+    """
+    return (isinstance(decision, dict)
+            and decision.get("outcome") in ("eligible", "ineligible")
+            and isinstance(decision.get("cited_rule_ids"), list)
+            and all(isinstance(r, str) for r in decision["cited_rule_ids"])
+            and isinstance(decision.get("rationale"), str))
+
+
 def _llm_propose(facts: dict, candidate_rules: list[dict], message: str) -> dict:
-    import anthropic
-    client = anthropic.Anthropic()
     user = ("Customer message:\n" + message + "\n\nOrder facts:\n" + json.dumps(facts, default=str)
             + "\n\nCandidate rules:\n" + json.dumps(
                 [{k: r[k] for k in ("rule_id", "condition", "outcome", "priority", "source_text")}
                  for r in candidate_rules], indent=2)
             + "\n\nReturn the structured decision via the return_decision tool.")
-    resp = client.messages.create(
-        model=MODEL, max_tokens=512, system=_SYSTEM,
-        tools=[_SCHEMA], tool_choice={"type": "tool", "name": "return_decision"},
-        messages=[{"role": "user", "content": user}],
-    )
+    # One dict, hashed for the key and then splatted into the call, so no parameter that
+    # shapes the response can be absent from the key. Looked up before the SDK import,
+    # so a fully cached run replays with no `anthropic` and no credentials.
+    request = {
+        "model": MODEL, "max_tokens": 512, "system": _SYSTEM,
+        "tools": [_SCHEMA], "tool_choice": {"type": "tool", "name": "return_decision"},
+        "messages": [{"role": "user", "content": user}],
+        **sampling_params(MODEL),
+    }
+    hit = cache.get(_CALL, request, _readable)
+    if hit is not None:
+        return hit
+
+    import anthropic
+    client = anthropic.Anthropic()
+    resp = client.messages.create(**request)
     for block in resp.content:
         if getattr(block, "type", None) == "tool_use":
             out = block.input
-            return {"outcome": out.get("outcome"), "cited_rule_ids": out.get("cited_rule_ids", []),
-                    "rationale": out.get("rationale", "")}
+            decision = {"outcome": out.get("outcome"), "cited_rule_ids": out.get("cited_rule_ids", []),
+                        "rationale": out.get("rationale", "")}
+            if _readable(decision):
+                cache.put(_CALL, request, decision)
+            return decision
     return {"outcome": "ineligible", "cited_rule_ids": [], "rationale": "llm: no structured output"}

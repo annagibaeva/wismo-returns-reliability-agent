@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "70be581b32b3b7efe642f815998cee515b26a49d0de16837f4fe526901598d13",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is an accessory (not electronics), not final sale, and delivered 6 days ago (within the 30-day standard window). RET-007 applies (days_since_delivery <= 30 and final_sale == False), making it eligible. No higher-priority rule applies: not final sale (RET-012), not defective (RET-020), no fraud hold (RET-051), and not electronics (RET-002/003)."
+  }
+}

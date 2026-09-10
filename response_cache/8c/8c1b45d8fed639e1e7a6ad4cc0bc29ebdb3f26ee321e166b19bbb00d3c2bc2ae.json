@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "8c1b45d8fed639e1e7a6ad4cc0bc29ebdb3f26ee321e166b19bbb00d3c2bc2ae",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a final-sale clearance item (final_sale == True), which triggers RET-012 (priority 100), the highest-priority applicable rule barring returns. Although the customer describes the fan as defective, the facts state defective == false, so the defective exception RET-020 does not apply. Standard-window and electronics rules are outranked by the final-sale rule."
+  }
+}

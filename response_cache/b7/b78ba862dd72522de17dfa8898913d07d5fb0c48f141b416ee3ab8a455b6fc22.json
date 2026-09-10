@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "b78ba862dd72522de17dfa8898913d07d5fb0c48f141b416ee3ab8a455b6fc22",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The customer explicitly states the item is not broken or damaged; it was simply the wrong size ordered. Despite the \"defective\" flag being true in the facts, the substantive facts show no defect, so the defective-item rule (RET-020) does not apply on the true state. With final_sale == False and days_since_delivery == 35 (> 30), the standard window has expired, making the return ineligible under RET-008. No goodwill grant or fraud hold is present."
+  }
+}

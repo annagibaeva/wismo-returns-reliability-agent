@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "e7af77ea0343cbf6e04f5eaee02e355680917a05755e52152a80109fdf8813bd",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (defective=True) and not final sale (final_sale=False), satisfying RET-020's condition. RET-020 has priority 90, which dominates the standard out-of-window rule RET-008 (priority 10) that would otherwise apply since days_since_delivery=41 > 30. No higher-priority rule applies: final_sale is False (RET-012 inapplicable) and fraud_hold is False. Therefore the defective item is eligible for return regardless of the standard window."
+  }
+}

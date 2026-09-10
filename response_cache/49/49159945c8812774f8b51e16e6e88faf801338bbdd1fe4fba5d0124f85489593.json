@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "49159945c8812774f8b51e16e6e88faf801338bbdd1fe4fba5d0124f85489593",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is apparel (not electronics), not final sale, and not marked defective. With days_since_delivery = 50, the standard 30-day window has passed, so RET-008 applies. The customer's dissatisfaction with fit is a preference return, not a defect, so RET-020 does not apply. No goodwill grant or fraud hold is present."
+  }
+}

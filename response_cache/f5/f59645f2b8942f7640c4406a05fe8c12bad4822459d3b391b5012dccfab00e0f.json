@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "f59645f2b8942f7640c4406a05fe8c12bad4822459d3b391b5012dccfab00e0f",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a final-sale clearance item (final_sale == True), which triggers RET-012, the highest-priority applicable rule (priority 100). Final-sale items cannot be returned or exchanged regardless of the standard 30-day window or the gift context. No defect is indicated, no goodwill grant exists, and there is no fraud hold, so no higher- or overriding rule applies."
+  }
+}

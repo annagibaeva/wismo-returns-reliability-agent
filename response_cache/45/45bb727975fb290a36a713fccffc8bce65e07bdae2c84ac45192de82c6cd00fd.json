@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "45bb727975fb290a36a713fccffc8bce65e07bdae2c84ac45192de82c6cd00fd",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The apparel item was delivered 11 days ago (within the 30-day window) and is not final sale, so RET-007 applies for a full refund. Higher-priority rules do not apply: not final sale (RET-012), not electronics (RET-002/003), defective is unknown/not True (RET-020), and no goodwill grant or fraud hold (RET-050/051)."
+  }
+}

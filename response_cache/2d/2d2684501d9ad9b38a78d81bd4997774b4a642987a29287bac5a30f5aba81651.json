@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "2d2684501d9ad9b38a78d81bd4997774b4a642987a29287bac5a30f5aba81651",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a final-sale clearance item (final_sale == True), which triggers RET-012, the highest-priority rule (100). Final-sale items cannot be returned or exchanged. No higher or overriding rule applies: the item is not defective, there is no goodwill grant, and no other applicable rule outranks RET-012. The fact that it was a gift does not affect eligibility."
+  }
+}

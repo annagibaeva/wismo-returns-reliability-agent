@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "cc92752d633132ea020d9db8f3d5a3481d54b9d35e6ee513b918c005c86162df",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a clearance final-sale item (final_sale == True). RET-012 applies and, at priority 100, dominates the standard 30-day window rule (RET-007). Final-sale items cannot be returned or exchanged, so the request is ineligible."
+  }
+}

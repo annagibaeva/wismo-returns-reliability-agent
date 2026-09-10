@@ -1,0 +1,14 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "2525b37823f7a8d23d8010ae3293bfd98362f670e49585b2c643015065dbca0c",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007",
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The order is still in transit and has not been delivered (days_since_delivery is null), so the return window governed by RET-007/RET-008 has not yet begun. No standard-window rule can currently establish eligibility since delivery has not occurred. Higher-priority exceptions do not apply: not final_sale (RET-012), not defective (RET-020), no goodwill grant (RET-050), and no fraud hold (RET-051). A return cannot be processed until the item is delivered."
+  }
+}

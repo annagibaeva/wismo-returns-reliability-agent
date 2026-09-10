@@ -1,0 +1,14 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "780592574bab0fcb4e76dab6ddfb87320f4dd7b3cee90d40c505da99b280574f",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-051",
+      "RET-050"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The sweater is apparel, not final sale, delivered 7 days ago, so the standard window (RET-007) would allow a return, and a goodwill grant (RET-050) also favors eligibility. However, both goodwill (RET-050) and fraud-hold (RET-051) share priority 50, and the account is under a fraud hold. A fraud hold blocks returns pending review, which controls over the goodwill exception and the standard window. Therefore the return is ineligible."
+  }
+}

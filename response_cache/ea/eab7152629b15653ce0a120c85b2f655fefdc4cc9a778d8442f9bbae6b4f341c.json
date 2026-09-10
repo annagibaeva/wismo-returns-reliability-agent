@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "eab7152629b15653ce0a120c85b2f655fefdc4cc9a778d8442f9bbae6b4f341c",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is not final sale and not defective. It was delivered 35 days ago, which exceeds the 30-day standard return window, so RET-008 applies and the return is not accepted. No higher-priority rule (final-sale, defective, goodwill, fraud hold) is triggered on these facts."
+  }
+}

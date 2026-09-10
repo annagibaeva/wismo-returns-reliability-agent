@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "30c211384e46b252a027b754d6855631f599dfd3d75381339e05374d9409d880",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (sole separating from the fabric) and not final sale, so RET-020 (priority 90) applies, allowing a return/exchange regardless of the standard window. This dominates the lower-priority standard-window rule RET-007. Final-sale (RET-012) and fraud-hold (RET-051) do not apply on these facts."
+  }
+}

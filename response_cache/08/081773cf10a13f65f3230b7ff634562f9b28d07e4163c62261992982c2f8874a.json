@@ -1,0 +1,11 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "081773cf10a13f65f3230b7ff634562f9b28d07e4163c62261992982c2f8874a",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [],
+    "outcome": "ineligible",
+    "rationale": "The order status is \"processing\" and days_since_delivery is null, meaning the item has not yet been delivered. No standard-window rule (RET-007/RET-008) can evaluate true because they require a numeric days_since_delivery. RET-020 (defective) is false, RET-012 (final_sale) is false, RET-050 (goodwill) is false, and RET-051 (fraud_hold) is false. Since no rule's condition is satisfied on these facts—there is nothing yet delivered to return—the request cannot be approved as a return."
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "9eab812f8d0ecbf17f1f109d5c2d48e29794473a9bb59ebd4176bbfaf4a7988f",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007",
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The order is still in transit (status: in_transit) and has not been delivered, so days_since_delivery is null. The standard return window rules (RET-007/RET-008) key off days since delivery, which cannot be evaluated as satisfied because delivery has not occurred. Category is 'home', not 'electronics', so RET-002/RET-003 do not apply. Defective is null (unconfirmed), so RET-020 does not apply. Final_sale is false, no goodwill grant, and no fraud hold, so none of those rules apply either. With no delivery yet, no return-eligibility rule is satisfied, so the request cannot be granted as a return at this time."
+  }
+}

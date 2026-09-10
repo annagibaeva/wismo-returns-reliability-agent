@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "d59a33aa97b0940e4b14b03c4db10902e7a3be3880b17d64bc25f00500b26d67",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (defective == True) and not final sale (final_sale == False), satisfying RET-020, which permits returns of defective items regardless of the standard window. Although RET-008 would make the item ineligible (days_since_delivery 41 > 30), RET-020 has higher priority (90 vs 10) and controls. RET-012 does not apply since final_sale is False, and neither goodwill nor fraud-hold rules are triggered."
+  }
+}

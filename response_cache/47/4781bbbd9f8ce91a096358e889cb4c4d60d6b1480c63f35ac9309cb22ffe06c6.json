@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "4781bbbd9f8ce91a096358e889cb4c4d60d6b1480c63f35ac9309cb22ffe06c6",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-003"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is electronics delivered 20 days ago. The electronics-specific rule (priority 20) dominates the standard 30-day window rule (priority 10). Since days_since_delivery (20) > 15, RET-003 applies and the return is not accepted. Final_sale is false so RET-012 doesn't apply, defective is null so RET-020 doesn't apply, and no goodwill grant or fraud hold is present."
+  }
+}

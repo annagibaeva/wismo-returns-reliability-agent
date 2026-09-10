@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "ca6b74a822ac31cd75f648819dfe0bc3a8f3a674906da8b5b1a1e45bcb6b4d5e",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (arrived broken) and not final sale. RET-020 (priority 90) allows returns of defective items regardless of the standard window, overriding RET-008's out-of-window ineligibility (priority 10). No final-sale (RET-012) or fraud-hold (RET-051) conditions apply."
+  }
+}

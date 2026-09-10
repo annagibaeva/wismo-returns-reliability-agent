@@ -1,0 +1,14 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "5d403b97ba7b9cb26886f51a8c911c53bff8188c69a0b140ac7f01829ebc11a9",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007",
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The order is still in_transit and has not been delivered (days_since_delivery is null), so the standard return window (RET-007) has not begun and its condition cannot be satisfied. No return can be processed for an undelivered item. Final-sale (RET-012) does not apply since final_sale is false, defective (RET-020) does not apply since defective is null/not true, and no goodwill grant or fraud hold is present. Since the item has not been delivered, it is not currently eligible for return; the customer should wait until delivery, after which the 30-day standard window (RET-007) would apply."
+  }
+}

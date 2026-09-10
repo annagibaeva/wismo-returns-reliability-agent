@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "ea63f0f7946268a714ece2e692b209c18b823b06de1813e5f8cd44631af9f49a",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item was delivered 35 days ago and is not final sale, so under RET-008 it falls outside the 30-day return window and returns are not accepted. Although the fact record has defective=True (which would trigger RET-020, a higher-priority eligible rule), the customer explicitly states nothing is broken and there is no damage — the issue is a self-reported sizing mistake, not a defect. The condition for RET-020 is not actually true on the real facts, so it does not apply. No goodwill grant or fraud hold is present."
+  }
+}

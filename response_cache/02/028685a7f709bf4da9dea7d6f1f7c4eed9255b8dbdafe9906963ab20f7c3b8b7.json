@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "028685a7f709bf4da9dea7d6f1f7c4eed9255b8dbdafe9906963ab20f7c3b8b7",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-002"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is electronics delivered 9 days ago (<= 15), satisfying RET-002 (eligible). RET-002/RET-003 have priority 20, dominating the standard window rules (RET-007/RET-008, priority 10). Not final sale, so RET-012 does not apply; no goodwill grant or fraud hold; defective is unknown so RET-020 does not apply. RET-002 controls: eligible."
+  }
+}

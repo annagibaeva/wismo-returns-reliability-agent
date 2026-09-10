@@ -1,0 +1,14 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "41fa8c34011eac293da72a6602dc718ab76eabf0112d5a672f84b461de3e9c29",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007",
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The order is still in transit (status \"in_transit\"), so it has not been delivered and days_since_delivery is null. The standard return window (RET-007) requires delivery within the last 30 days, which cannot be satisfied since the item hasn't been delivered. No higher-priority rule applies: not final_sale (RET-012), not defective (RET-020), no goodwill grant (RET-050), and no fraud hold (RET-051). A return cannot be processed for an item that has not yet arrived; the customer must wait until delivery to be eligible under RET-007."
+  }
+}

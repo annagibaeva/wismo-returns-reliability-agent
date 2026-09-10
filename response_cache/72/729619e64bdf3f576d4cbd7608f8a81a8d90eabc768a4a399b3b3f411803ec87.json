@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "729619e64bdf3f576d4cbd7608f8a81a8d90eabc768a4a399b3b3f411803ec87",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The order status is \"processing\" and days_since_delivery is null, meaning the item has not yet been delivered. No window-based eligibility rule (RET-007) can be satisfied since it requires days_since_delivery <= 30, which cannot be evaluated as true when the value is null/undelivered. The item is not final sale (RET-012 inapplicable), not defective (RET-020 inapplicable), no goodwill grant (RET-050 inapplicable), and no fraud hold (RET-051 inapplicable). With no applicable eligibility rule satisfiable on the current facts, the return cannot be approved. Note: the customer's item is not yet delivered, so a return window has not opened; if delivery occurs, RET-007 could apply within 30 days."
+  }
+}

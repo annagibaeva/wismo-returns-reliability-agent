@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "c4aa2396d7f20642f123c45b45160c680991001e1af50b3cd2c591e631004bd8",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-002"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is electronics delivered 9 days ago (<=15), so RET-002 (priority 20) applies and controls over the standard window rule RET-007. No final-sale, fraud-hold, defective, or goodwill conditions are true, so no higher-priority rule overrides. The return is eligible."
+  }
+}

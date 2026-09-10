@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "ce9632ee9399333e5d6357a507d3470d57e07e6176e47db0517a30404178b2d8",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is apparel (not electronics), not final sale, and was delivered 11 days ago (within the 30-day standard window). RET-007 applies. Higher-priority rules do not apply: final_sale is false (RET-012), defective is null not true (RET-020), and no goodwill grant or fraud hold. The customer's tone does not affect the ruling."
+  }
+}

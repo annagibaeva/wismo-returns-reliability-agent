@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "e9ca928519547de3f3fb8920191b14ea222ee1c83080175bae6c3c1ad823dc82",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-002"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is electronics delivered 8 days ago (<= 15), so RET-002 applies and grants eligibility. This is the highest-priority applicable rule (priority 20): RET-012 (final_sale) and RET-020 (defective) do not apply since final_sale and defective are False, and RET-050/RET-051 do not apply since goodwill_grant and fraud_hold are False. The customer's change of mind does not affect eligibility."
+  }
+}

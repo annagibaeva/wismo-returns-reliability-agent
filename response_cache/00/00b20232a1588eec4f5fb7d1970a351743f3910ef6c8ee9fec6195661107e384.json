@@ -1,0 +1,14 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "00b20232a1588eec4f5fb7d1970a351743f3910ef6c8ee9fec6195661107e384",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007",
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The order is still in_transit and has not been delivered (days_since_delivery is null), so the standard return window has not started. No return can be processed for an item that hasn't been delivered yet. Final-sale (RET-012), defective (RET-020), goodwill (RET-050), and fraud-hold (RET-051) rules do not apply on these facts, and the standard-window rules (RET-007/RET-008) cannot be satisfied without a delivery date."
+  }
+}

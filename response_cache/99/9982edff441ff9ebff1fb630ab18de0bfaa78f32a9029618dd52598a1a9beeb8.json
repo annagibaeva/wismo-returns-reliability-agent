@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "9982edff441ff9ebff1fb630ab18de0bfaa78f32a9029618dd52598a1a9beeb8",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is final_sale == True (intimates), which triggers RET-012 (priority 100), the highest-priority applicable rule. Although the return is within the 30-day window (RET-007), the final-sale rule dominates. The item is not marked defective (defective == null), so RET-020 does not apply, and no goodwill grant or fraud hold is present. Final-sale items cannot be returned or exchanged."
+  }
+}

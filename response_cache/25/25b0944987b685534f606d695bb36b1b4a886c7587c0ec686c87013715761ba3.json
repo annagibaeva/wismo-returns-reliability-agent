@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "25b0944987b685534f606d695bb36b1b4a886c7587c0ec686c87013715761ba3",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is footwear (not electronics), not final sale, delivered 10 days ago (within the 30-day window), with no fraud hold. RET-007 applies and grants eligibility. Higher-priority rules do not apply: RET-012 requires final_sale=True, RET-020 requires defective=True, and RET-051 requires a fraud hold—none are met."
+  }
+}

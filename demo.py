@@ -6,6 +6,9 @@ Examples (from repo root):
     python demo.py --id UN-08                  # unanswerable: missing fact -> handoff
     python demo.py --id CR-01 --no-gate        # see the raw proposal without the gate
     python demo.py --message "Return my clearance jacket, it's only been a week" --order ORD-5001
+    python demo.py --id SF-02                       # keyword router: misses hazard, answers WISMO
+    python demo.py --id SF-02 --router model        # model router: safety handoff (needs ANTHROPIC_API_KEY)
+    python demo.py --id ID-SF-02 --router model     # same gold, Indonesian message
 """
 from __future__ import annotations
 
@@ -25,6 +28,7 @@ from services_mock import data                  # noqa: E402
 import kb                                         # noqa: E402
 
 BAR = "-" * 70
+_CLI_TO_SEAM = {"keyword": "stub", "model": "llm"}
 
 
 def _ticket(args) -> dict:
@@ -39,13 +43,14 @@ def _ticket(args) -> dict:
             "order_id": args.order, "message": args.message, "expected": None}
 
 
-def _show(res, ticket, used_gate, used_soft=False):
+def _show(res, ticket, used_gate, used_soft=False, router="keyword", extractor="keyword"):
     print(BAR)
     print(f"TICKET {ticket['id']}  ({ticket.get('customer_email')})")
     print(f"  \"{ticket['message']}\"")
     print(BAR)
     print(f"Backend        : {res.backend}    gate: {'ON' if used_gate else 'OFF'}"
           + (f"    soft: {'ON' if used_soft else 'OFF'}"))
+    print(f"Router         : {router}    extractor: {extractor}")
     print(f"Intent (routed): {res.intent}")
     print(f"Order          : {res.order_id}")
     if res.facts:
@@ -98,15 +103,23 @@ def main():
     ap.add_argument("--email")
     ap.add_argument("--order")
     ap.add_argument("--backend", default="stub", choices=["stub", "llm"])
+    ap.add_argument("--extractor", default="keyword", choices=["keyword", "model"],
+                    help="fact reader: keyword (CI default) or model (needs ANTHROPIC_API_KEY)")
+    ap.add_argument("--router", default="keyword", choices=["keyword", "model"],
+                    help="intent classifier: keyword (CI default) or model (needs ANTHROPIC_API_KEY)")
     ap.add_argument("--no-gate", action="store_true")
     ap.add_argument("--soft-entailment", action="store_true",
                     help="enable soft entailment layer (explanation ⊨ cited source_text)")
     args = ap.parse_args()
     used_gate = not args.no_gate
     ticket = _ticket(args)
+    extractor = _CLI_TO_SEAM[args.extractor]
+    router = _CLI_TO_SEAM[args.router]
     res = resolve_ticket(ticket, backend=args.backend, use_gate=used_gate,
-                         use_soft_entailment=args.soft_entailment)
-    _show(res, ticket, used_gate, args.soft_entailment)
+                         use_soft_entailment=args.soft_entailment,
+                         extractor=extractor, router=router)
+    _show(res, ticket, used_gate, args.soft_entailment,
+          router=args.router, extractor=args.extractor)
 
 
 if __name__ == "__main__":

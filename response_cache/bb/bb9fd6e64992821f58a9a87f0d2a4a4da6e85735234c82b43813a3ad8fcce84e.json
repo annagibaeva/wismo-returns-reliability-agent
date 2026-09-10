@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "bb9fd6e64992821f58a9a87f0d2a4a4da6e85735234c82b43813a3ad8fcce84e",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (defective == True) and not final sale (final_sale == False), so RET-020 applies. At priority 90, it dominates the out-of-window ineligibility rule RET-008 (priority 10), which would otherwise apply since days_since_delivery (48) > 30. RET-012 does not apply because final_sale is False, and no fraud hold or goodwill grant is present."
+  }
+}

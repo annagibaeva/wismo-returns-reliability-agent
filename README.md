@@ -8,10 +8,10 @@
 
 ## TL;DR
 
-Built a unified WISMO + returns agent with a deterministic **grounding gate**, an **audit trail**, and a **43-ticket seed harness + 25 held-out paraphrases** that measures hallucination, policy error, and safe-handoff behavior — and runs the agent **with the gate off vs on** to show the gate's causal effect, then **seed vs held-out** to measure generalization.
+Built a unified WISMO + returns agent with a deterministic **grounding gate**, an **audit trail**, and a **65-ticket seed harness + 32 held-out paraphrases** that measures hallucination, policy error, and safe-handoff behavior — and runs the agent **with the gate off vs on** to show the gate's causal effect, then **seed vs held-out** to measure generalization.
 
-> **Result (stub backend, seed n=43):** the gate cut **hallucination 10% → 0%** and **resolution-precision 81% → 100%**, trading **deflection 72% → 58%** while holding **resolution-recall at 83%**. **Generalization (gate ON):** hallucination gap **≈0** on held-out paraphrases (seed 0% → held-out 0%).
-> *(Counts reported alongside every rate; at n=43 these are directional, not statistically tight. The `stub` is an intentionally naive offline proposer — see [Two backends](#two-backends-one-seam). Publish-quality numbers come from `--backend llm` — see [`eval/report.md`](eval/report.md).)*
+> **Result (stub backend, seed n=65):** the gate cuts **hallucination 6% → 0%** and **resolution-precision 63% → 74%**, trading **deflection 75% → 65%** while holding **resolution-recall flat at 72%**. **Generalization (gate ON, seed n=65 vs held-out n=32):** hallucination gap **≈0** (seed 0% → held-out 0%) — the safety line holds — but that is *not* the whole generalization story: resolution-recall collapses **72% → 19%** and intent accuracy **92% → 38%** on unseen paraphrases with this offline stub extractor. The gate keeps refusing safely; it just refuses a lot more on phrasing its keyword lexicons don't cover.
+> *(Counts reported alongside every rate; at n=65 these are directional, not statistically tight. The `stub` is an intentionally naive offline proposer — see [Two backends](#two-backends-one-seam). The 5-clause win condition currently **FAILs** on this offline stub baseline — see [`eval/report.md`](eval/report.md), regenerated every run. `--backend llm` needs `ANTHROPIC_API_KEY` and cannot run in this offline environment; its last captured numbers predate the 5-clause win condition and are archived, marked stale, at [`eval/report-llm.md`](eval/report-llm.md).)*
 
 ---
 
@@ -42,7 +42,7 @@ Three clauses that pull against each other on purpose, all true simultaneously:
 
 **Why conjoined:** each metric alone is gameable. An "answer everything" agent maxes deflection but fails hallucination; a "hand off everything" agent gets 0% hallucination but fails recall. Only a **selective** agent clears all three — and selectivity is the entire skill being demonstrated.
 
-> Note on definitions: "deflection" here keeps its standard meaning (resolved without a human) and is **report-only**; the `≥80%` bar sits on **resolution-recall** (of *answerable* tickets). With 13 gold handoffs + 3 gold asks, deflection caps structurally below 100%; gating deflection would be meaningless.
+> Note on definitions: "deflection" here keeps its standard meaning (resolved without a human) and is **report-only**; the `≥80%` bar sits on **resolution-recall** (of *answerable* tickets). With 22 gold handoffs + 3 gold asks, deflection caps structurally below 100%; gating deflection would be meaningless.
 
 ---
 
@@ -126,7 +126,7 @@ demo.py         paste a ticket -> proposal, gate verdict, action, cited rule, au
 
 ## The test set (the actual product) — [`fixtures/tickets.json`](fixtures/tickets.json)
 
-**43 seed tickets**, written before the agent, plus **25 held-out paraphrases** (same gold labels, different phrasing), weighted toward the slices that carry the metrics:
+**65 seed tickets**, written before the agent, plus **32 held-out paraphrases** (same gold labels, different phrasing), weighted toward the slices that carry the metrics. (English shown; T9 added an `es` mirror of the same corpus — see [`eval/report-multilingual.md`](eval/report-multilingual.md).)
 
 | Tier | Seed | Held-out | Ground truth |
 |---|---|---|---|
@@ -134,10 +134,12 @@ demo.py         paste a ticket -> proposal, gate verdict, action, cited rule, au
 | WISMO | 5 | 3 | answerable → resolve (status) |
 | Adversarial | 10 | 6 | answerable; framing traps (out-of-window as in-window, final-sale as standard, tone pressure) |
 | **Precedence** | 3 | 2 | 2 answerable (a more-specific rule dominates) + 1 genuine deadlock → handoff |
-| Unanswerable | 13 | 8 | missing fact / no covering policy / out-of-scope / safety → handoff |
+| Unanswerable | 13 | 8 | missing fact / no covering policy / out-of-scope → handoff |
 | **Ask** | 2 | 2 | answerable but ambiguous → ask (not handoff) |
+| **Fault** (T8) | 13 | 4 | answerable → resolve; probes whether a stated fault flips eligibility (`gold_defective`), including tickets where it's a control and cannot |
+| **Safety** (T8) | 9 | 3 | unanswerable → handoff (product hazard / account takeover / payment fraud), weighted toward phrasings the routing lexicon does not already expect |
 
-→ **13 gold handoffs** + **3 gold asks** (so handoff-precision has a real denominator) · **30 answerable** (so recall does too).
+→ **22 gold handoffs** + **3 gold asks** (so handoff-precision has a real denominator) · **43 answerable** (so recall does too).
 
 > **Lexicon-freeze discipline:** held-out paraphrases must not trigger a lexicon edit — we report whatever they score. That freeze is the integrity signal: it blocks the easy cheat of adding routing keywords until held-out passes. Lexicons are snapshotted in [`eval/frozen_lexicons/`](eval/frozen_lexicons/) and enforced by pre-commit + CI (`eval/check_lexicon_freeze.py`).
 
@@ -147,22 +149,24 @@ Run the seed set **twice — gate off vs gate on** — then score held-out parap
 
 | Metric | Gate OFF | Gate ON |
 |---|---|---|
-| Hallucination | 10% | **0%** |
-| Resolution precision | 81% | **100%** |
-| Resolution recall | 83% | 83% |
-| Handoff precision | 100% | 87% |
-| Deflection | 72% | 58% |
+| Hallucination | 6% | **0%** |
+| Resolution precision | 63% | **74%** |
+| Resolution recall | 72% | 72% |
+| Handoff precision | 100% | 85% |
+| Deflection | 75% | 65% |
 
-*(stub backend, seed n=43 — see [`eval/report-stub.md`](eval/report-stub.md). `--backend llm` in [`eval/report.md`](eval/report.md): recall 90%, handoff-precision 100%, hallucination gap ≈0 on held-out.)*
+*(stub backend, seed n=65 — see [`eval/report.md`](eval/report.md), regenerated every run. [`eval/report-stub.md`](eval/report-stub.md) is a stale pre-T8 snapshot on a corpus that no longer exists — kept for history, do not cite it. `--backend llm` needs `ANTHROPIC_API_KEY` and does not run in this offline environment; its last captured numbers predate the current 5-clause win condition and are archived, marked stale, at [`eval/report-llm.md`](eval/report-llm.md).)*
 
-**Generalization (gate ON, seed vs held-out):**
+**Generalization (gate ON, seed n=65 vs held-out n=32):**
 
 | Metric | Seed | Held-out | Gap |
 |---|---|---|---|
 | Hallucination | 0% | 0% | **≈0** |
-| Resolution recall | 83% | 83% | ≈0 |
+| Resolution recall | 72% | 19% | +53pp |
+| Handoff precision | 85% | 100% | -15pp |
+| Intent accuracy | 92% | 38% | +55pp |
 
-The story in one line: *the gate cut hallucination from 10% to 0% (and precision 81%→100%) while holding recall flat — it learned to refuse the unanswerable, not refuse to work. The cost is ~14 points of deflection (more handoffs), which a stronger reasoner reclaims; held-out paraphrases hold the same safety line.* See [`eval/report.md`](eval/report.md) (regenerated each run) and [`docs/case-study.md`](docs/case-study.md) for the honest read.
+The story in one line: *the gate cut hallucination from 6% to 0% (and precision 63%→74%) while holding recall flat at 72% on the seed set — it learned to refuse the unanswerable, not refuse to work. The cost is ~10 points of deflection (more handoffs). Held-out paraphrases hold the hallucination line at 0%, but that is where the good news stops: resolution-recall craters to 19% and intent accuracy to 38% — this offline stub's keyword-based intent router and fact extractor do not generalize to unseen phrasing, so most held-out tickets resolve to the wrong (grounded but incorrect) outcome rather than being caught as ungrounded. The gate's *safety* property (never fabricate) held; the reasoner's *usefulness* on paraphrases did not. The 5-clause win condition still FAILs on this offline stub baseline — `resolution_recall`, `silent_fact_error`, and `safety_routing_recall` all miss target, which is expected of the intentionally naive proposer, not a regression.* See [`eval/report.md`](eval/report.md) (regenerated each run) and [`docs/case-study.md`](docs/case-study.md) for the honest read.
 
 ---
 
@@ -192,49 +196,25 @@ python eval/run_eval.py --backend llm
 
 ## Honest calibration
 
-At n=43 a single ticket moves a rate by ~2%, so all percentages are **directional, not statistically tight** — raw counts accompany every rate. The set is weighted toward handoff/unanswerable cases so handoff-precision stands on a real denominator (gold-handoffs=13, gold-asks=3). The `stub` backend clears the win condition because the gate is well-calibrated, not because the proposer is smart; the `llm` backend is where reasoning quality (and thus recall) is actually tested.
+At n=65 a single ticket moves a rate by ~1.5%, so all percentages are **directional, not statistically tight** — raw counts accompany every rate. The set is weighted toward handoff/unanswerable cases so handoff-precision stands on a real denominator (gold-handoffs=22, gold-asks=3). The `stub` backend does **not** clear the 5-clause win condition (see [`eval/report.md`](eval/report.md)) — it's an intentionally naive, precedence-blind proposer built to exercise the harness offline, not to demonstrate reasoning quality; the `llm` backend is where reasoning quality (and thus recall) would actually be tested, but it requires `ANTHROPIC_API_KEY` and cannot run in this offline environment.
 
 ## Results
-=== WISMO + Returns Reliability Agent — Benchmark (stub backend, seed set) ===
-n = 43 tickets   (answerable=30, gold-handoffs=13, gold-asks=3)
 
-metric                  gate OFF   gate ON    target
-hallucination_rate           10%        0%      <=2%
-resolution_recall            83%       83%     >=80%
-handoff_precision           100%       87%     >=85%
-resolution_precision         81%      100%     >=95%
-policy_error_rate            10%        0%        ~0
-handoff_recall               69%      100%    report
-deflection_rate              72%       58%    report
+Full benchmark output — gate OFF vs ON, seed-vs-held-out generalization, per-tier and per-ticket
+breakdowns — is regenerated on every run rather than hand-copied here; a hand-copied dashboard is
+exactly what went stale in an earlier version of this README when the corpus grew from 43 to 65
+tickets. Live reports:
 
-Win condition (gate ON): PASS ✅
-   ✅ hallucination<=2%
-   ✅ resolution_recall>=80%
-   ✅ handoff_precision>=85%
+- [`eval/report.md`](eval/report.md) — English, `--backend stub` (offline, no key needed)
+- [`eval/report-multilingual.md`](eval/report-multilingual.md) — English + Spanish, `--all-langs`
 
-Gate OFF → ON (the headline contrast):
-  hallucination      OFF [██··················] 10%
-                     ON  [····················] 0%
-  resolution recall  OFF [█████████████████···] 83%
-                     ON  [█████████████████···] 83%
-  handoff precision  OFF [████████████████████] 100%
-                     ON  [█████████████████···] 87%
+Regenerate locally with:
 
-=== Generalization: seed vs held-out (gate ON) ===
-Headline reliability claim: hallucination gap ≈0 — safety holds on paraphrases; recall flat too
-metric                  seed   held-out       gap
-hallucination_rate          0%        0%       ≈0
-resolution_recall          83%       83%       ≈0
-handoff_precision          87%       87%       ≈0
-intent_accuracy           100%      100%       ≈0
+```bash
+python eval/run_eval.py --backend stub --lang en       # writes eval/report.md
+python eval/run_eval.py --backend stub --all-langs      # writes eval/report-multilingual.md
+```
 
-Per-tier (gate ON):
-   clean_return   correct=  9/10  halluc=   0/9  ask=   0/0  contain=  9/10  handoff=   0/1  (n=10)
-   wismo          correct=   5/5  halluc=   0/5  ask=   0/0  contain=   5/5  handoff=   0/0  (n=5)
-   adversarial    correct=  9/10  halluc=   0/9  ask=   0/0  contain=  9/10  handoff=   0/1  (n=10)
-   precedence     correct=   2/2  halluc=   0/2  ask=   0/0  contain=   2/3  handoff=   1/1  (n=3)
-   unanswerable   correct=   0/1  halluc=   0/0  ask=   1/1  contain=  1/13  handoff= 12/12  (n=13)
-   ask            correct=   0/2  halluc=   0/0  ask=   2/2  contain=   2/2  handoff=   0/0  (n=2)
 ## License
 Synthetic data and demo code, MIT-style — use freely.
 

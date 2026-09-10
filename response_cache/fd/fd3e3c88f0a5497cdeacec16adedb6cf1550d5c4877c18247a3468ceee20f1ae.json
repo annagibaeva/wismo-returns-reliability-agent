@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "fd3e3c88f0a5497cdeacec16adedb6cf1550d5c4877c18247a3468ceee20f1ae",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The denim jacket is apparel (not electronics), not final sale, no goodwill grant, no fraud hold, and defective is null (not True). At 43 days since delivery, it falls outside the standard 30-day return window. RET-008 applies (days_since_delivery > 30 and final_sale == False), rendering the return ineligible. No higher-priority rule (final-sale, defective, goodwill) is satisfied on these facts."
+  }
+}

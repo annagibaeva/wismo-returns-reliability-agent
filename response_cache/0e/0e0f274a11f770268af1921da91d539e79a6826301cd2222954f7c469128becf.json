@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "0e0f274a11f770268af1921da91d539e79a6826301cd2222954f7c469128becf",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is marked final_sale == True (intimates category). RET-012 applies and has the highest priority (100), overriding the standard 30-day window. The item is not defective, so RET-020 does not apply, and no goodwill grant exists. Therefore the return is ineligible."
+  }
+}

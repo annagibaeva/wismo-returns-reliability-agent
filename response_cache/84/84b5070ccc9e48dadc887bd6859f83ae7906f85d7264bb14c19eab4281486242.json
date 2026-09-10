@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "84b5070ccc9e48dadc887bd6859f83ae7906f85d7264bb14c19eab4281486242",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is apparel (not electronics), delivered 10 days ago (within the 30-day window), and final_sale is null/not True, so RET-007 applies. No higher-priority rule is satisfied: RET-012 (final sale) is not True, RET-020 (defective) is False, RET-050 and RET-051 conditions are not met. Thus the return is eligible."
+  }
+}

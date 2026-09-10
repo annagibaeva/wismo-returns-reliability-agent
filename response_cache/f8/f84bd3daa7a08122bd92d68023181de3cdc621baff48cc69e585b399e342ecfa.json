@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "f84bd3daa7a08122bd92d68023181de3cdc621baff48cc69e585b399e342ecfa",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (defective == True) and not final sale (final_sale == False), so RET-020 applies (priority 90), which allows returns of defective items regardless of the standard window. This overrides RET-008 (priority 10), which would otherwise deny the return for being past 30 days. Final-sale (RET-012) does not apply since final_sale is False, and fraud/goodwill rules do not apply."
+  }
+}

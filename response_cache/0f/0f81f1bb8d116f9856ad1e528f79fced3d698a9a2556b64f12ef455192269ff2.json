@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "0f81f1bb8d116f9856ad1e528f79fced3d698a9a2556b64f12ef455192269ff2",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The defective flag is False on the facts, so the defective-item exception (RET-020) does not apply despite the customer's description. The item is apparel (not electronics), not final sale, and is 41 days since delivery—beyond the 30-day window—so RET-008 controls and the return is ineligible."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "5e79f5a8e2089383b3d40a77ffa143d262698f779ea8e73e0525280e1d31dbac",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The footwear order was delivered 10 days ago (within the 30-day window) and is not final sale, so RET-007 applies (eligible). Electronics rules don't apply (category is footwear), the defective rule requires defective==True (it is null), and no final-sale, goodwill, or fraud-hold conditions are met."
+  }
+}

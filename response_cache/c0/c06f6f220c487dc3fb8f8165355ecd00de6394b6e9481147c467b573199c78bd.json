@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "c06f6f220c487dc3fb8f8165355ecd00de6394b6e9481147c467b573199c78bd",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a final-sale clearance item (final_sale == True), which triggers RET-012 (priority 100), the highest-priority applicable rule barring any return or exchange. Although the customer describes a grinding/failing fan, the facts show defective == False, so the defective exception RET-020 does not apply (and it also requires final_sale == False). No goodwill grant or other higher-priority rule applies."
+  }
+}

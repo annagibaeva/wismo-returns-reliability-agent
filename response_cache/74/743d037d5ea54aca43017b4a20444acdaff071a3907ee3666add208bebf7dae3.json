@@ -1,0 +1,10 @@
+{
+  "cache_version": 1,
+  "call": "route.intent",
+  "key": "743d037d5ea54aca43017b4a20444acdaff071a3907ee3666add208bebf7dae3",
+  "model": "claude-opus-4-8",
+  "response": {
+    "intent": "out_of_scope",
+    "reason": "address_change"
+  }
+}

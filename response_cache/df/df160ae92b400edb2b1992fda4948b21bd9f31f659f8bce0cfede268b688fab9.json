@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "df160ae92b400edb2b1992fda4948b21bd9f31f659f8bce0cfede268b688fab9",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is apparel (not electronics), not final sale, and not defective, so the standard window rules apply. It has been 50 days since delivery, exceeding the 30-day return window. RET-008 (days_since_delivery > 30 and final_sale == False) applies, making the return ineligible. No higher-priority rules apply since final_sale, defective, goodwill_grant, and fraud_hold are all false."
+  }
+}

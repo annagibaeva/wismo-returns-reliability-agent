@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "4ba98a4834e652d83f4c5b43b00f2f899ff3200dc07b70e886015454f96a4d08",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-002"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is electronics delivered 9 days ago (<= 15 days), so RET-002 applies (priority 20) and controls over the standard 30-day window rule RET-007. Final sale is false, no fraud hold, and defectiveness is not established. The customer's stated reason (too loud) does not affect eligibility since the return falls within the electronics window."
+  }
+}

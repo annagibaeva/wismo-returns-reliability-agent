@@ -24,3 +24,25 @@ jobs:
 
       - name: Run tests
         run: python -m pytest tests/ -v
+
+      - name: Stub-backend eval (offline; regenerates the report)
+        # `--backend stub` needs no API key, so this is the harness's CI smoke test:
+        # it catches a break in eval/run_eval.py or a report that silently stops
+        # regenerating. The stub is deliberately naive and is not meant to clear
+        # the win condition (run_eval.py exits 1 when it doesn't), so that exit
+        # code is tolerated here -- only an actual crash (a traceback) or a report
+        # that failed to write fails this step.
+        run: |
+          rm -f eval/report.md eval/report-es.md eval/report-multilingual.md eval_stub_ci.log
+          python eval/run_eval.py --backend stub --lang en >> eval_stub_ci.log 2>&1 || true
+          python eval/run_eval.py --backend stub --lang es >> eval_stub_ci.log 2>&1 || true
+          python eval/run_eval.py --backend stub --all-langs >> eval_stub_ci.log 2>&1 || true
+          cat eval_stub_ci.log
+          if grep -q "Traceback (most recent call last)" eval_stub_ci.log; then
+            echo "::error::eval/run_eval.py raised an unhandled exception"
+            exit 1
+          fi
+          test -s eval/report.md
+          test -s eval/report-es.md
+          test -s eval/report-multilingual.md
+          rm -f eval_stub_ci.log

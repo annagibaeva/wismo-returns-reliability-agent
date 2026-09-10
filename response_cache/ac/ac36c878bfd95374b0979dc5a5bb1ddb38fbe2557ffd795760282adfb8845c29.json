@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "ac36c878bfd95374b0979dc5a5bb1ddb38fbe2557ffd795760282adfb8845c29",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-002"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is electronics delivered 9 days ago. The highest-priority applicable rule is RET-002 (electronics returnable within 15 days), which is satisfied since days_since_delivery (9) <= 15. Final-sale (RET-012), defective (RET-020), goodwill (RET-050), and fraud-hold (RET-051) rules do not apply as their conditions are false. Thus the return is eligible."
+  }
+}

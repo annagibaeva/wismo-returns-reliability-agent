@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "dbb057a73f7b225c3fb805b57a27eb938ccd985ce4e528967aca3c2de9714e23",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The order is apparel, not final sale, delivered 41 days ago (>30). Although the customer describes deformation and fraying, the structured facts list defective == False, so the defective exception (RET-020) does not apply. With final_sale False and days_since_delivery > 30, RET-008 controls and the return is not accepted."
+  }
+}

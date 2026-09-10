@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "75fa6ae96d1aa9ae87e11f0d2fb189658f8697fc12e948f95298d75918e81585",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The footwear was delivered 10 days ago (within the 30-day window) and is not final sale, so RET-007 applies for a full refund. Electronics-specific rules don't apply (category is footwear), and no higher-priority conditions (final_sale, defective, goodwill, fraud_hold) are true."
+  }
+}

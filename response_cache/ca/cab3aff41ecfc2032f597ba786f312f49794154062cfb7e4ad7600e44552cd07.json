@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "cab3aff41ecfc2032f597ba786f312f49794154062cfb7e4ad7600e44552cd07",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is a non-final-sale accessory delivered 6 days ago, within the 30-day standard return window. RET-007 applies (days_since_delivery <= 30 and final_sale == False). No higher-priority rule applies: not final sale (RET-012), not defective (RET-020), no fraud hold (RET-051), category is accessories not electronics (RET-002/003)."
+  }
+}

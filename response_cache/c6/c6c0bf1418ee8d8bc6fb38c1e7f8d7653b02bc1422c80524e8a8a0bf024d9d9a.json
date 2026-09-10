@@ -1,0 +1,14 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "c6c0bf1418ee8d8bc6fb38c1e7f8d7653b02bc1422c80524e8a8a0bf024d9d9a",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007",
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The order status is \"processing\" and days_since_delivery is null, meaning the item has not yet been delivered. The standard return window rules (RET-007 eligible within 30 days; RET-008 ineligible after 30 days) both depend on days_since_delivery, which cannot be evaluated because the item is not delivered. No higher-priority rule applies: final_sale is False (RET-012 inapplicable), defective is False (RET-020 inapplicable), goodwill_grant is False (RET-050 inapplicable), fraud_hold is False (RET-051 inapplicable), and category is apparel, not electronics (RET-002/003 inapplicable). Since the return-window conditions cannot be satisfied on the current facts (no delivery date), the return cannot be approved at this time."
+  }
+}

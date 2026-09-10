@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "f59512cc63babe30bda991d93f049404a0520caddaac83ac68d5aea2976af69c",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-002"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is electronics delivered 9 days ago (<= 15), satisfying RET-002 (priority 20), which controls over the standard 30-day window rule RET-007 (priority 10). Final-sale (RET-012) does not apply since final_sale is false, defective status is unknown so RET-020 does not apply, and no goodwill grant or fraud hold is present."
+  }
+}

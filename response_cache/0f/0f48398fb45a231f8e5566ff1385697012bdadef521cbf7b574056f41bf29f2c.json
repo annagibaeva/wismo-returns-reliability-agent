@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "0f48398fb45a231f8e5566ff1385697012bdadef521cbf7b574056f41bf29f2c",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The order facts (the sole source of truth) indicate defective == True and final_sale == False, which satisfies RET-020. Although the item is 42 days since delivery (which would trigger RET-008, ineligible), RET-020 has priority 90 versus RET-008's priority 10, so the defective-item rule controls. Note: I decide strictly from the structured facts, not the customer's or the embedded message's framing; the facts themselves show the item is flagged defective, so it is eligible under the defective-item policy."
+  }
+}

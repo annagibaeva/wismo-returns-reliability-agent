@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "de8bf1eb55bcb2f6911298e68dc06264aa4f280e686728c32220f9e802435040",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item was delivered 53 days ago (>30) and is not final sale. It is apparel (not electronics), and it is not defective (item quality is fine, just wrong size), so the defective exception does not apply. No goodwill grant or fraud hold is present. Per RET-008, returns are not accepted more than 30 days after delivery."
+  }
+}

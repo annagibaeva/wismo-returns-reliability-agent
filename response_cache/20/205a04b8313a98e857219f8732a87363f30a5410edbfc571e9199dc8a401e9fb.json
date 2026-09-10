@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "205a04b8313a98e857219f8732a87363f30a5410edbfc571e9199dc8a401e9fb",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is final_sale (clearance), which triggers RET-012 (priority 100), the highest-priority applicable rule. Final-sale items cannot be returned or exchanged, overriding the standard 30-day window (RET-007). The defective exception (RET-020) does not apply since defective is null/not true."
+  }
+}

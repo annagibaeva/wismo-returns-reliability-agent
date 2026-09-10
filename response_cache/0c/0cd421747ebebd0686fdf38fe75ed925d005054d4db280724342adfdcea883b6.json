@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "0cd421747ebebd0686fdf38fe75ed925d005054d4db280724342adfdcea883b6",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-003"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The defective flag is False on the facts, so the defective-exception rule (RET-020) does not apply regardless of the customer's description. The highest-priority applicable rule is RET-003: this is an electronics item and days_since_delivery is 33 (> 15), making it ineligible under the shorter electronics window. RET-012 (final sale) does not apply since final_sale is False, and neither goodwill_grant nor fraud_hold is set."
+  }
+}

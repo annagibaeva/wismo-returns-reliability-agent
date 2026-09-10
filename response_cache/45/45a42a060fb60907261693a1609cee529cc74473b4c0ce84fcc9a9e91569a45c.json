@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "45a42a060fb60907261693a1609cee529cc74473b4c0ce84fcc9a9e91569a45c",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a final-sale clearance item (final_sale == True), which triggers RET-012 (priority 100), the highest-priority applicable rule, making the item ineligible for return. Although the customer describes a defect, the facts show defective == False, so RET-020 does not apply; and RET-020 requires final_sale == False in any case. No goodwill grant or other override is present."
+  }
+}

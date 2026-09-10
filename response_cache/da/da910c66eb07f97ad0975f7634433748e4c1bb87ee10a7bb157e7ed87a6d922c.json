@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "da910c66eb07f97ad0975f7634433748e4c1bb87ee10a7bb157e7ed87a6d922c",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is apparel, not final sale, and delivered 48 days ago. Since days_since_delivery (48) > 30 and final_sale is False, RET-008 applies and the return is outside the standard 30-day window. No higher-priority rule applies: not final sale (RET-012), not defective (RET-020, defective is null), no goodwill grant (RET-050), and no fraud hold (RET-051). The customer's change of mind does not override the expired window."
+  }
+}

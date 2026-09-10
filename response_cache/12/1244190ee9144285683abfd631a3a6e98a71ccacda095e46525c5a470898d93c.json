@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "1244190ee9144285683abfd631a3a6e98a71ccacda095e46525c5a470898d93c",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a final-sale intimates product (final_sale == true). RET-012, the highest-priority rule (100), makes final-sale items ineligible for return or exchange, overriding the standard 30-day window (RET-007). Although within the plazo, final-sale status controls."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "33fbc31a283fd2adb1c55f814826a0152d512a35c97162273385fc47364f5f2c",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item was delivered 9 days ago (within the 30-day window) and is not final sale, so RET-007 applies and makes it eligible. Although the customer describes a sole separating, the facts explicitly state defective == False, so the defective rule RET-020 does not apply. No final-sale, goodwill, or fraud-hold conditions are true."
+  }
+}

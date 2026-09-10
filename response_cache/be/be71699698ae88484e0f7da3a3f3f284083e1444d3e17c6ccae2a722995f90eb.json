@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "be71699698ae88484e0f7da3a3f3f284083e1444d3e17c6ccae2a722995f90eb",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (defective == True) and not final sale (final_sale == False), satisfying RET-020, which permits returns regardless of the standard window. At priority 90, RET-020 dominates the out-of-window electronics rules (RET-003, RET-008). Final-sale (RET-012) and fraud-hold (RET-051) rules do not apply since those facts are false, and no goodwill grant is present."
+  }
+}

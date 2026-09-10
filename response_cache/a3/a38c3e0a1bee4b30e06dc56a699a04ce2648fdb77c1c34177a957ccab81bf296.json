@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "a38c3e0a1bee4b30e06dc56a699a04ce2648fdb77c1c34177a957ccab81bf296",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (defective == True) and not final sale (final_sale == False), so RET-020 applies. At priority 90 it dominates the standard out-of-window rule RET-008 (priority 10). No final-sale or fraud-hold conditions are true, so RET-012 and RET-051 do not apply. Defective items may be returned regardless of the standard 30-day window, so despite 63 days since delivery, the return is eligible."
+  }
+}

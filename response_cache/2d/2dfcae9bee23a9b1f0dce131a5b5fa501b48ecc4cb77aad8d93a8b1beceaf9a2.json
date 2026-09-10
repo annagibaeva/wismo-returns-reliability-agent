@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "2dfcae9bee23a9b1f0dce131a5b5fa501b48ecc4cb77aad8d93a8b1beceaf9a2",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is apparel (not electronics), delivered 10 days ago (within the 30-day standard window), and final_sale is not true. No higher-priority rule applies: RET-012 requires final_sale == True (it is null/false), RET-020 requires defective == True (it is false), and neither goodwill_grant nor fraud_hold is set. Therefore RET-007 controls, making the return eligible."
+  }
+}

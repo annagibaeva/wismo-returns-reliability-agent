@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "753a23f0755a2fcbccdc846853876873b6cdda130f66869401b77db03ddbee0b",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The order has not yet been delivered (status \"processing\", days_since_delivery is null) and is not a final-sale item. No final-sale (RET-012), defective (RET-020), goodwill (RET-050), or fraud-hold (RET-051) rules apply. Since the item is a non-final-sale apparel item still within/before the standard 30-day window (delivery has not occurred, so it is not past 30 days), RET-007 applies and the return is eligible. The customer's stated reason (no longer needed) does not affect eligibility."
+  }
+}

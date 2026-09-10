@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "832077bdd38e87308fa506cc6b324bbe556f0bf5f111355cb4b4ea68061fd3d7",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (defective == True) and not final sale (final_sale == False), so RET-020 applies (priority 90), the highest-priority applicable rule, making the item eligible for return regardless of the standard window. RET-012 does not apply since final_sale is False, and RET-051/RET-050 do not apply since fraud_hold and goodwill_grant are False."
+  }
+}

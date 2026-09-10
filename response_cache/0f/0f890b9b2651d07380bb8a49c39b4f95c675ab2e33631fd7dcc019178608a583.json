@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "0f890b9b2651d07380bb8a49c39b4f95c675ab2e33631fd7dcc019178608a583",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a final-sale gift card (final_sale == True), which triggers RET-012 (priority 100), the highest-priority applicable rule. Final-sale items cannot be returned or exchanged. The standard 30-day window (RET-007) does not apply because it requires final_sale == False, and RET-020 does not apply since the item is not defective. Thus the return is ineligible regardless of the customer's change of mind."
+  }
+}

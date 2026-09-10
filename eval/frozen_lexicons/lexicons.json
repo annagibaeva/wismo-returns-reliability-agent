@@ -1,0 +1,285 @@
+{
+  "en": {
+    "_ABUSE": [
+      "sue",
+      "lawyer",
+      "legal action",
+      "reviews everywhere",
+      "garbage",
+      "trash"
+    ],
+    "_ADDRESS": [
+      "change the delivery address",
+      "change my address",
+      "change the address",
+      "reroute",
+      "different address"
+    ],
+    "_DEFECTIVE": [
+      "defective",
+      "broken",
+      "faulty",
+      "doesn't work",
+      "does not work",
+      "not working",
+      "leak",
+      "leaking",
+      "cracked",
+      "won't turn on",
+      "dead",
+      "malfunction"
+    ],
+    "_FRAUD": [
+      "fraud",
+      "took over my account",
+      "account takeover",
+      "didn't make",
+      "didn't place"
+    ],
+    "_PAYMENT": [
+      "unauthorized",
+      "dispute",
+      "disputing",
+      "chargeback",
+      "charge back",
+      "my bank"
+    ],
+    "_RETURN": [
+      "return",
+      "send back",
+      "send it back",
+      "send this back",
+      "refund",
+      "money back",
+      "exchange"
+    ],
+    "_SAFETY": [
+      "caught fire",
+      "fire",
+      "smoke",
+      "smoking",
+      "shock",
+      "spark",
+      "burn",
+      "hazard",
+      "dangerous",
+      "explod"
+    ],
+    "_WISMO": [
+      "where",
+      "track",
+      "tracking",
+      "arrive",
+      "arriving",
+      "shipped",
+      "ship",
+      "delivery",
+      "deliver"
+    ]
+  },
+  "es": {
+    "_ABUSE": [
+      "demandar",
+      "abogado",
+      "acciones legales",
+      "medidas legales",
+      "denunci",
+      "rese\u00f1",
+      "resena",
+      "redes sociales",
+      "basura",
+      "porquer"
+    ],
+    "_ADDRESS": [
+      "cambiar la direcci",
+      "cambiar mi direcci",
+      "cambiar de direcci",
+      "cambio de direcci",
+      "otra direcci",
+      "nueva direcci",
+      "cambio de domicilio",
+      "otro domicilio",
+      "redirig",
+      "desviar"
+    ],
+    "_DEFECTIVE": [
+      "defectuos",
+      "roto",
+      "rota",
+      "rotos",
+      "rotas",
+      "rompi",
+      "da\u00f1ad",
+      "descompuest",
+      "quebrad",
+      "agrietad",
+      "no funciona",
+      "no sirve",
+      "de funcionar",
+      "no enciende",
+      "no prende",
+      "no anda",
+      "falla",
+      "fallo",
+      "fall\u00f3",
+      "mal funcionamiento",
+      "gotea",
+      "goteo",
+      "fuga"
+    ],
+    "_FRAUD": [
+      "fraude",
+      "suplant",
+      "hacke",
+      "robaron",
+      "no reconozco",
+      "no hice el pedido",
+      "no hice ese pedido",
+      "no realic"
+    ],
+    "_PAYMENT": [
+      "no autoric",
+      "no autorizad",
+      "disput",
+      "contracargo",
+      "mi banco",
+      "al banco"
+    ],
+    "_RETURN": [
+      "devolv",
+      "devoluc",
+      "devu",
+      "reembols",
+      "de vuelta",
+      "mi dinero",
+      "regresarl",
+      "cambiarl",
+      "cambiar por",
+      "cambio por",
+      "cambio de talla",
+      "cambiar de talla"
+    ],
+    "_SAFETY": [
+      "fuego",
+      "incendi",
+      "humo",
+      "chisp",
+      "quem",
+      "descarga el\u00e9ctr",
+      "descarga electr",
+      "electrocut",
+      "calambre",
+      "explot",
+      "explos",
+      "peligro"
+    ],
+    "_WISMO": [
+      "d\u00f3nde",
+      "donde",
+      "rastre",
+      "seguimiento",
+      "gu\u00eda",
+      "guia",
+      "env",
+      "entreg",
+      "lleg",
+      "paquete"
+    ]
+  },
+  "id": {
+    "_ABUSE": [
+      "gugat",
+      "pengacara",
+      "tindakan hukum",
+      "proses hukum",
+      "review di mana-mana",
+      "review dimana-mana",
+      "sampah",
+      "ancam"
+    ],
+    "_ADDRESS": [
+      "ubah alamat",
+      "ganti alamat",
+      "ganti alamat pengiriman",
+      "alamat lain",
+      "alamat berbeda",
+      "alamat baru",
+      "alamat kantor"
+    ],
+    "_DEFECTIVE": [
+      "rusak",
+      "cacat",
+      "pecah",
+      "retak",
+      "bocor",
+      "tidak berfungsi",
+      "tidak nyala",
+      "tidak menyala",
+      "ga nyala",
+      "gak nyala",
+      "mati",
+      "bermasalah",
+      "tidak bisa dipakai"
+    ],
+    "_FRAUD": [
+      "penipuan",
+      "penipu",
+      "diretas",
+      "akun diambil",
+      "bukan saya yang pesan",
+      "tidak memesan",
+      "tidak pesan",
+      "bukan pesanan saya"
+    ],
+    "_PAYMENT": [
+      "tidak sah",
+      "tak sah",
+      "tidak diotorisasi",
+      "tanpa izin",
+      "sengketa",
+      "chargeback",
+      "bank saya",
+      "ke bank"
+    ],
+    "_RETURN": [
+      "pengembalian",
+      "kembalikan",
+      "mengembalikan",
+      "retur",
+      "refund",
+      "uang kembali",
+      "tukar",
+      "penukaran"
+    ],
+    "_SAFETY": [
+      "kebakaran",
+      "terbakar",
+      "kebakar",
+      "asap",
+      "percik",
+      "tersengat",
+      "kejutan listrik",
+      "kesetrum",
+      "setrum",
+      "nyetrum",
+      "meledak",
+      "ledakan",
+      "bahaya",
+      "berbahaya",
+      "hangus"
+    ],
+    "_WISMO": [
+      "dimana",
+      "di mana",
+      "lacak",
+      "pelacak",
+      "tracking",
+      "resi",
+      "pengirim",
+      "dikirim",
+      "mengirim",
+      "ngirim",
+      "paket"
+    ]
+  }
+}

@@ -1,12 +1,24 @@
 # Benchmark Report — llm backend (seed set)
 
+> ⚠️ **STALE — not reproducible by the current harness, do not cite.** This file predates T8
+> (which added the `fault` and `safety` tiers, growing the corpus from 43 to 65+ tickets) and T11
+> (which grew the win condition from 3 clauses to 5: `hallucination<=2%`, `resolution_recall>=80%`,
+> `handoff_precision>=85%`, `silent_fact_error<=2%`, `safety_routing_recall=100%`). The **✅ PASS**
+> below reflects only the 3 clauses `win_condition` checked at the time this file was written, on a
+> corpus that no longer exists — `eval/run_eval.py` no longer writes to this path at all, and
+> `--backend llm` requires live Anthropic credentials this environment does not have, so it cannot
+> be regenerated offline. For a current, live-regenerated report see
+> [`eval/report.md`](report.md) (English, `--backend stub`, offline) or
+> [`eval/report-multilingual.md`](report-multilingual.md) (`--all-langs`). Kept for historical
+> reference only.
+
 Test set: **43 tickets** (answerable=30, gold-handoffs=13, gold-asks=3) · snapshot 2026-06-22
 
 > **Handoff denominators:** UN-13 is gold `action=ask` (ambiguous multi-order WISMO), not handoff. Gold-handoffs are **13** (down from 14 when ask was lumped with the escalation slice); handoff precision/recall exclude asks from both numerator and denominator.
 
-## Win condition (gate ON)
+## Win condition (gate ON) — STALE, 3-clause definition, see banner above
 
-**✅ PASS** — hallucination ≤2% AND resolution-recall ≥80% AND handoff-precision ≥85%, simultaneously.
+**✅ PASS (stale — under the 3-clause definition this file was written against; the current 5-clause `win_condition` cannot be evaluated from this file's numbers)**
 
 - ✅ hallucination<=2%
 - ✅ resolution_recall>=80%

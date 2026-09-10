@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "9b35866bc26906777eb9a9a54abf4de2c13b3f82b74a2050eac19e318ae38f26",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a clearance item with final_sale == True, which triggers RET-012 (priority 100), the highest-priority applicable rule. Final-sale items cannot be returned or exchanged, overriding the standard 30-day window (RET-007). The item is not defective, so RET-020 does not apply, and no goodwill grant or fraud hold is present."
+  }
+}

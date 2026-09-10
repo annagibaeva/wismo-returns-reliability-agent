@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "01a7a20dee453d870f0babe44f5b616121b1e857bba636d11e62f00a2b0c9da9",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a clearance, final-sale item (final_sale == True), which makes RET-012 apply. RET-012 has the highest priority (100) and dominates the standard 30-day window rule (RET-007). Although delivery was only 12 days ago, final-sale items cannot be returned or exchanged. The defective flag is null, so the defective exception (RET-020) does not apply."
+  }
+}

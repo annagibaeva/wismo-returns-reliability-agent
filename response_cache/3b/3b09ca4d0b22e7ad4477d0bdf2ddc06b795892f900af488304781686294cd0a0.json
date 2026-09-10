@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "3b09ca4d0b22e7ad4477d0bdf2ddc06b795892f900af488304781686294cd0a0",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-002"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is electronics delivered 8 days ago, within the 15-day electronics window (RET-002, priority 20). This category-specific rule outranks the standard 30-day window (RET-007). Final sale is false, no fraud hold, no goodwill grant, and defective status is null so the defective rule does not apply. Highest applicable rule (RET-002) grants eligibility."
+  }
+}

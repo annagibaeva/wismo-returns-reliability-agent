@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "ec463ee7c315136ea9b1e72140edf1a21b4bd3e9e4e14548ed9b277d7ba041ce",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (arrived broken in three pieces) and is not final sale, so RET-020 applies. As the highest-priority applicable rule (priority 90), it overrides the out-of-window ineligibility of RET-008 (37 days since delivery). RET-012 does not apply since final_sale is false, and RET-050/RET-051 do not apply."
+  }
+}

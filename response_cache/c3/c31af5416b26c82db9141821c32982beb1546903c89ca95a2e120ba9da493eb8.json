@@ -1,0 +1,14 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "c31af5416b26c82db9141821c32982beb1546903c89ca95a2e120ba9da493eb8",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-051",
+      "RET-050"
+    ],
+    "outcome": "ineligible",
+    "rationale": "Applicable rules: RET-007 (eligible, priority 10) since within 30 days and not final sale; RET-050 (eligible, priority 50) goodwill grant; and RET-051 (ineligible, priority 50) fraud hold. RET-012 does not apply (final_sale is false), RET-020 does not apply (defective is null), and the electronics rules do not apply (category is apparel). RET-050 and RET-051 tie at the highest priority (50), but the fraud hold is a blocking condition pending review, so the account is ineligible for returns despite the goodwill grant."
+  }
+}

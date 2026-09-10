@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "6545d9af0a0b3eb7f1ca27e5aa345fdb72672bcd1302aa3b6a4685aefa9c5f7e",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The apparel item was delivered 10 days ago (within the 30-day window) and is not final sale (final_sale is null/not True). No higher-priority rule applies: it is not final sale (RET-012), not defective (RET-020), no goodwill grant (RET-050), no fraud hold (RET-051), and it is not electronics (RET-002/003). Thus RET-007 controls and the return is eligible."
+  }
+}

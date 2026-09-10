@@ -6,58 +6,68 @@ agent acts on its raw proposal — that's the baseline arm of the eval.
 """
 from __future__ import annotations
 
+import re
+from functools import lru_cache
+
 import kb
 import gate as grounding_gate
 from services_mock import order_api, returns_system, ticketing
-from . import llm
+from . import extract, llm, route
+from .lexicons import LEXICONS
 from .schemas import AuditLogger, Resolution
 
-# --- intent / safety lexicons ---
-_SAFETY = ("caught fire", "fire", "smoke", "smoking", "shock", "spark", "burn", "hazard", "dangerous", "explod")
-_PAYMENT = ("unauthorized", "dispute", "disputing", "chargeback", "charge back", "my bank")
-_FRAUD = ("fraud", "took over my account", "account takeover", "didn't make", "didn't place")
-_ADDRESS = ("change the delivery address", "change my address", "change the address", "reroute", "different address")
-_ABUSE = ("sue", "lawyer", "legal action", "reviews everywhere", "garbage", "trash")
-_RETURN = ("return", "send back", "send it back", "send this back", "refund", "money back", "exchange")
-_WISMO = ("where", "track", "tracking", "arrive", "arriving", "shipped", "ship", "delivery", "deliver")
-_DEFECTIVE = ("defective", "broken", "faulty", "doesn't work", "does not work", "not working",
-              "leak", "leaking", "cracked", "won't turn on", "dead", "malfunction")
+
+@lru_cache(maxsize=None)
+def _matcher(words: tuple[str, ...]) -> re.Pattern[str]:
+    r"""One alternation per lexicon, cached — `_has` runs eight of these per ticket.
+
+    `(?<!\w)` is a *leading* boundary only. Trailing is deliberately absent: the
+    entries are stems, and `devoluc` has to keep matching *devolución*, `explod`
+    *explodes*, `disputing` *disputing*. The lookbehind is what a raw substring test
+    lacked, and lacking it inverted polarity in Spanish — any token ending `-no`
+    completed `no funciona`, so *el teléfono funciona bien* read as a defect claim.
+
+    `\w` is Unicode-aware here (str pattern, no `re.ASCII`), so `ñ` and the accented
+    vowels count as word characters and *año* / *dañado* are not split mid-word.
+    """
+    return re.compile(r"(?<!\w)(?:" + "|".join(re.escape(w) for w in words) + ")")
 
 
 def _has(t, words):
-    return any(w in t for w in words)
+    # An empty lexicon must match nothing; an empty alternation would match everywhere.
+    return bool(words) and _matcher(tuple(words)).search(t) is not None
 
 
-def _route(msg: str) -> tuple[str, str | None]:
-    t = msg.lower()
-    if _has(t, _SAFETY):
-        return "out_of_scope", "safety"
-    if _has(t, _FRAUD):
-        return "out_of_scope", "fraud"
-    if _has(t, _PAYMENT):
-        return "out_of_scope", "payment_dispute"
-    if _has(t, _ADDRESS):
-        return "out_of_scope", "address_change"
-    if _has(t, _ABUSE):
-        return "out_of_scope", "abuse"
-    # explicit return verbs OR a defect complaint (a faulty-item report is a return/replacement intent)
-    if _has(t, _RETURN) or _has(t, _DEFECTIVE):
-        return "return", None
-    if _has(t, _WISMO):
-        return "wismo", None
-    return "wismo", None
+def _route(msg: str, lang: str = "en", audit: AuditLogger | None = None,
+           backend: str = "stub") -> tuple[str, str | None]:
+    """Classify a message into an intent. `backend` selects the router seam
+    (`agent/route.py`): stub = keyword lists, llm = Claude classifier.
+    """
+    return route.route_intent(msg, lang, backend=backend, audit=audit)
 
 
 def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True,
-                   use_soft_entailment: bool = False) -> Resolution:
+                   use_soft_entailment: bool = False, extractor: str = "stub",
+                   router: str = "stub") -> Resolution:
+    """`backend` selects the proposer; `extractor` the fact reader; `router` the
+    intent classifier. Independent on purpose — swapping two at once would make
+    the delta attributable to neither. Each defaults to stub so `--backend llm`
+    still uses the keyword router and keyword extractor unless asked otherwise.
+    """
     audit = AuditLogger()
     msg = ticket["message"]
-    intent, oos_reason = _route(msg)
-    audit.decision("route_intent", msg, {"intent": intent, "reason": oos_reason})
+    # Non-English tickets carry lang="es" or lang="id" (see fixtures/tickets.json);
+    # English tickets still omit the key, so the default keeps old fixtures and any
+    # caller that predates the extra-language arms working unchanged.
+    lang = ticket.get("lang", "en")
+    intent, oos_reason = _route(msg, lang, audit, backend=router)
+    audit.decision("route_intent", msg, {"intent": intent, "reason": oos_reason, "lang": lang,
+                                        "router": router})
 
     if intent == "out_of_scope":
-        return _handoff(ticket, audit, intent, oos_reason, {}, backend,
-                        "This needs a specialist — I've escalated it and someone will follow up directly.",
+        return _handoff(ticket, audit, intent, oos_reason, {},
+                        body="This needs a specialist — I've escalated it and someone will follow up directly.",
+                        backend=backend,
                         priority="high" if oos_reason in ("safety", "fraud") else "normal")
 
     # --- resolve the order (by id, else by email) ---
@@ -65,8 +75,9 @@ def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True,
     if lookup_err == "ambiguous_order":
         return _ask(ticket, audit, intent, ambiguous_matches, backend)
     if lookup_err:
-        return _handoff(ticket, audit, intent, lookup_err, {}, backend,
-                        "I couldn't find a single matching order to act on, so I've passed this to our team.")
+        return _handoff(ticket, audit, intent, lookup_err, {},
+                        body="I couldn't find a single matching order to act on, so I've passed this to our team.",
+                        backend=backend)
 
     if intent == "return":
         amb_items = _ambiguous_items(order, msg)
@@ -83,8 +94,12 @@ def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True,
 
     # --- returns: assemble facts, propose, gate ---
     facts = order_api.order_facts(order)
-    facts["defective"] = _has(msg.lower(), _DEFECTIVE)
-    audit.tool_call("extract_facts", {"order_id": order["order_id"]}, facts)
+    # Safe to merge over the order facts only because extract_facts enforces
+    # extract.PROSE_FACTS on its own return — it raises rather than handing back a key
+    # that would overwrite the authoritative order record.
+    facts.update(extract.extract_facts(msg, lang, backend=extractor))
+    audit.tool_call("extract_facts", {"order_id": order["order_id"], "extractor": extractor,
+                                      "lang": lang}, facts)
 
     candidates = kb.rules()
     audit.tool_call("search_policies", {"query": "return " + (facts.get("category") or "")},
@@ -103,7 +118,7 @@ def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True,
         reason = gres.primary_reason()
         body = ("I can't confirm the right policy outcome here with confidence, so I've routed this to a "
                 f"specialist (reason: {reason}).")
-        return _handoff(ticket, audit, "return", reason, facts, body, backend,
+        return _handoff(ticket, audit, "return", reason, facts, body=body, backend=backend,
                         proposed=proposal["outcome"], gate=gate_dict,
                         cited=proposal.get("cited_rule_ids", []))
 
@@ -118,7 +133,7 @@ def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True,
             reason = eres.primary_reason() or "explanation does not entail cited policy"
             body = ("I can't confirm the cited policy supports this explanation with confidence, "
                     f"so I've routed this to a specialist (reason: {reason}).")
-            return _handoff(ticket, audit, "return", reason, facts, body, backend,
+            return _handoff(ticket, audit, "return", reason, facts, body=body, backend=backend,
                             proposed=proposal["outcome"], gate=gate_dict,
                             cited=proposal.get("cited_rule_ids", []))
 
@@ -218,7 +233,7 @@ def _ask(ticket, audit, intent, matches, backend) -> Resolution:
                       clarifying_question=question)
 
 
-def _handoff(ticket, audit, intent, reason, facts, body, backend, *, priority="normal",
+def _handoff(ticket, audit, intent, reason, facts, *, body, backend, priority="normal",
              proposed=None, gate=None, cited=None) -> Resolution:
     rec = ticketing.handoff(ticket["id"], "specialist", reason or "needs_human", priority)
     audit.tool_call("handoff", {"reason": reason, "priority": priority}, rec)

@@ -1,0 +1,14 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "40864c9ee5683a99c2e03091d2a3ccba479f8d8793c9af9cc73d748ca917bfd2",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-051",
+      "RET-050"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is apparel, not final sale, delivered 7 days ago, so RET-007 (eligible) and RET-050 goodwill grant (eligible) apply. However, both RET-050 and RET-051 are priority 50 and conflict. RET-051 applies because fraud_hold == True, blocking returns pending review. Among the applicable rules, the fraud hold and goodwill grant tie at priority 50; the fraud hold controls the outcome as a blocking condition (returns not permitted pending review), rendering the item ineligible."
+  }
+}

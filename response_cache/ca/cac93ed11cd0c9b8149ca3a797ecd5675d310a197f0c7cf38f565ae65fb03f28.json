@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "cac93ed11cd0c9b8149ca3a797ecd5675d310a197f0c7cf38f565ae65fb03f28",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The jacket is apparel (not electronics), not final sale, not defective, no goodwill grant, and no fraud hold. With days_since_delivery = 43 (> 30) and final_sale == False, RET-008 applies and makes the return ineligible. No higher-priority rule (defective, final-sale, goodwill, fraud) has a true condition."
+  }
+}
