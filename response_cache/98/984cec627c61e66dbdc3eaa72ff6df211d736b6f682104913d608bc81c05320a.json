@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "984cec627c61e66dbdc3eaa72ff6df211d736b6f682104913d608bc81c05320a",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item was delivered 38 days ago, which exceeds the 30-day standard return window. Per RET-008 (days_since_delivery > 30 and final_sale == False), returns are not accepted more than 30 days after delivery. No higher-priority rule applies: the item is not final sale, not defective, and there is no goodwill grant or fraud hold. The customer's claim of \"only a month\" does not match the facts."
+  }
+}

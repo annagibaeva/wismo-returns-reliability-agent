@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "6582d6faa9f22376eec0aafa01f5d003e0d100bd27780af60b24d768dbf59c4a",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The sweatshirt is defective (defective == True) and not final sale (final_sale == False), which satisfies RET-020 (priority 90). This defective-item rule outranks the standard out-of-window rule RET-008 (priority 10), which would otherwise deny the return at 41 days. No final-sale (RET-012) or fraud-hold (RET-051) conditions apply. Therefore the return is eligible for a refund or replacement."
+  }
+}

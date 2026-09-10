@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "c0f50de1624c30d43b96bc7bfb7f1699da5da864235a8c82dc6bff662b170b4a",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-003"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is electronics delivered 16 days ago. The highest-priority applicable rule is RET-003 (electronics returns not accepted after 15 days), which controls over the standard 30-day window (RET-007). Final-sale, defective, goodwill, and fraud-hold rules do not apply since those facts are false. Therefore the return is ineligible."
+  }
+}

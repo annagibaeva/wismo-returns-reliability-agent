@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "1d8eb246f1429439164e30d6758a8c16721984cb7dda4a6e253bce4e44a4067d",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (busted zipper, seams separating) and not final sale, so RET-020 (priority 90) applies and controls over the standard-window rule RET-007 (priority 10). RET-012 and RET-051 do not apply since final_sale and fraud_hold are false. The jacket is returnable for refund or replacement."
+  }
+}

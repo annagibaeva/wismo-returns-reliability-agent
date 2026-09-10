@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "44a0170a5f2f8e95ad31edaf4af674fe5eada79d1c0425f75d351b11643df77c",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-003"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is electronics delivered 33 days ago (>15 days), so RET-003 applies making it ineligible. This priority-20 electronics rule dominates the standard-window rule RET-008 (priority 10). Higher-priority rules do not apply: not final sale (RET-012), not defective (RET-020, defective is null), no goodwill grant (RET-050), and no fraud hold (RET-051). Loyalty is framing and not a policy factor."
+  }
+}

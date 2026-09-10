@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "7c93816b39732f69384bda728954863347f2bf5ea9a54a0be62ce481a68b2134",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-003"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The defective flag is False in the order facts, so the defective-item exception (RET-020) does not apply despite the customer's description. This is an electronics item delivered 33 days ago (>15 days), so RET-003 applies and controls at priority 20, which dominates the standard-window rule RET-008 (priority 10). No final-sale, goodwill, or fraud-hold conditions are met. Item is ineligible for return."
+  }
+}

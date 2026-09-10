@@ -1,0 +1,10 @@
+{
+  "cache_version": 1,
+  "call": "route.intent",
+  "key": "5d9e3661dfe5dd918fe1d1497f7455aee45a4702f7eccc4f1e7ad551762d9200",
+  "model": "claude-opus-4-8",
+  "response": {
+    "intent": "return",
+    "reason": null
+  }
+}

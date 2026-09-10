@@ -31,6 +31,10 @@ def _es(id_, variant_of, expected):
     return {"id": id_, "split": "seed", "lang": "es", "variant_of": variant_of, "expected": expected}
 
 
+def _id(id_, variant_of, expected):
+    return {"id": id_, "split": "seed", "lang": "id", "variant_of": variant_of, "expected": expected}
+
+
 def test_validate_tickets_accepts_a_variant_whose_expected_matches_its_source():
     tickets = [_en("CR-01", {"outcome": "eligible", "action": "resolve"}),
                _es("ES-CR-01", "CR-01", {"outcome": "eligible", "action": "resolve"})]
@@ -55,6 +59,15 @@ def test_validate_tickets_rejects_divergence_in_a_single_nested_field():
         _en("FA-01", {"outcome": "eligible", "action": "resolve", "gold_defective": True}),
         _es("ES-FA-01", "FA-01",
             {"outcome": "eligible", "action": "resolve", "gold_defective": False}),
+    ]
+    with pytest.raises(ValueError, match="expected block does not match"):
+        _validate_tickets(tickets)
+
+
+def test_validate_tickets_rejects_an_indonesian_variant_whose_expected_diverges():
+    tickets = [
+        _en("CR-01", {"outcome": "eligible", "action": "resolve"}),
+        _id("ID-CR-01", "CR-01", {"outcome": "ineligible", "action": "resolve"}),
     ]
     with pytest.raises(ValueError, match="expected block does not match"):
         _validate_tickets(tickets)

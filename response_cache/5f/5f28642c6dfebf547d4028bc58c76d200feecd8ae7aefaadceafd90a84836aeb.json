@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "5f28642c6dfebf547d4028bc58c76d200feecd8ae7aefaadceafd90a84836aeb",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item was delivered 35 days ago and is not final sale, so RET-008 (no returns after 30 days) applies. Although the facts list defective=true (which would trigger RET-020), the customer explicitly states the item is not damaged and the return reason is an ordering mistake (wrong size). Setting the defect flag aside based on the actual facts of the situation, the only applicable rule is the standard out-of-window rule RET-008, making this return ineligible."
+  }
+}

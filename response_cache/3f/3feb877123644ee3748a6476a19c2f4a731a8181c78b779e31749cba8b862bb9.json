@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "3feb877123644ee3748a6476a19c2f4a731a8181c78b779e31749cba8b862bb9",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (defective == True) and not final sale (final_sale == False), satisfying RET-020, which at priority 90 dominates the out-of-window electronics/standard rules (RET-003, RET-008). No final-sale (RET-012) or fraud-hold (RET-051) rule applies. Defective items may be returned regardless of the standard window."
+  }
+}

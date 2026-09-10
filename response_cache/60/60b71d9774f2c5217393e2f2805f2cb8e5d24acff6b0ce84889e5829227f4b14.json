@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "60b71d9774f2c5217393e2f2805f2cb8e5d24acff6b0ce84889e5829227f4b14",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (screen went black on day 3 and won't turn on, confirmed by testing multiple cables and another laptop) and is not a final-sale item. RET-020 (priority 90) applies and dominates the out-of-window electronics/standard rules (RET-003, RET-008), allowing return regardless of the standard window. Final-sale (RET-012) does not apply since final_sale is false, and no fraud hold is present."
+  }
+}

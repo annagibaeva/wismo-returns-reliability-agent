@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "105b7dcaf29c76a1de8a0a5174ab956079e4893ab26b210c6b8852ceb33a33ac",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-003"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is electronics with days_since_delivery = 16, which is greater than 15. The electronics-specific rule RET-003 (priority 20) applies and makes the return ineligible, overriding the standard 30-day window rules (priority 10). No defective, final-sale, goodwill, or fraud conditions apply."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "b115917e37f00caf2e84c613d2fff1f436d3d39c2e726fac95b3ba8608d19af6",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a final-sale clearance item (final_sale == True), which triggers RET-012 (priority 100), the highest-priority applicable rule. Final-sale items cannot be returned. RET-007's standard window does not apply because final_sale is True, and RET-020 does not apply because the item is not defective."
+  }
+}

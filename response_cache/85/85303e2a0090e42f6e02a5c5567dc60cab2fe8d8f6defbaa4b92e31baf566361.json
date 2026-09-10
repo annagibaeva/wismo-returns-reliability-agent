@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "85303e2a0090e42f6e02a5c5567dc60cab2fe8d8f6defbaa4b92e31baf566361",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is apparel (not electronics), final_sale is null/not True, and days_since_delivery is 10 (<= 30). RET-007 applies for eligibility. Higher-priority rules do not apply: RET-012 requires final_sale == True (it is null), RET-020 requires defective == True (it is null), and RET-050/RET-051 require goodwill_grant/fraud_hold flags which are false."
+  }
+}

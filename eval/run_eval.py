@@ -4,15 +4,17 @@ writes the report, and always compares seed vs held-out (gate ON) for generaliza
 Usage (from repo root):
     python eval/run_eval.py                        # stub backend, seed set, English, keyword extractor
     python eval/run_eval.py --lang es               # Spanish tickets only
-    python eval/run_eval.py --all-langs             # English + Spanish, cross-language table
+    python eval/run_eval.py --lang id               # Indonesian tickets only
+    python eval/run_eval.py --all-langs             # English + Spanish + Indonesian, cross-language table
     python eval/run_eval.py --extractor model       # the LLM fact-reader (needs ANTHROPIC_API_KEY)
+    python eval/run_eval.py --router model          # the LLM intent classifier (needs ANTHROPIC_API_KEY)
     python eval/run_eval.py --held-out              # held-out paraphrases as primary; seed still compared
     python eval/run_eval.py --backend llm           # real Claude proposer (needs ANTHROPIC_API_KEY)
 
 `--backend` selects the *proposer* (`agent/llm.py`); `--extractor` selects the *fact
-reader* (`agent/extract.py`). They are independent flags on purpose — see the T12
-task brief and `agent/agent.py::resolve_ticket`'s own docstring: conflating them would
-make M-6 (extractor agreement) meaningless and confound M-1 (silent fact error).
+reader* (`agent/extract.py`); `--router` selects the *intent classifier*
+(`agent/route.py`). They are independent flags on purpose — see
+`agent/agent.py::resolve_ticket`'s own docstring.
 """
 from __future__ import annotations
 
@@ -35,6 +37,7 @@ from agent.agent import resolve_ticket, _has   # noqa: E402
 from agent import cache as cache_mod           # noqa: E402
 from agent import extract as extract_mod       # noqa: E402
 from agent import llm as llm_mod               # noqa: E402
+from agent import route as route_mod           # noqa: E402
 from agent.lexicons import LEXICONS            # noqa: E402
 from services_mock import data                 # noqa: E402
 from eval import scorer                        # noqa: E402
@@ -55,31 +58,37 @@ from eval import stats                         # noqa: E402
 _SEAM_TO_CLI = {"stub": "keyword", "llm": "model"}
 _CLI_TO_SEAM = {cli: seam for seam, cli in _SEAM_TO_CLI.items()}
 _EXTRACTOR_CHOICES = sorted(_SEAM_TO_CLI[seam] for seam in extract_mod.EXTRACTORS)
+_ROUTER_CHOICES = sorted(_SEAM_TO_CLI[seam] for seam in route_mod.ROUTERS)
+ALL_LANGS = ("en", "es", "id")
+LANG_LABELS = {"en": "English", "es": "Spanish", "id": "Indonesian"}
 
 
-def _preflight_extractor(seam: str) -> str | None:
-    """`None` when the extractor is ready to run; otherwise one clear line of why not.
+def _preflight_llm_seam(seam: str, *, flag: str, role: str) -> str | None:
+    """`None` when the llm seam is ready; otherwise one line of why not.
 
-    Mirrors the SAME local-only credential check `agent/extract.py::_llm_extract`
-    performs before it ever reaches the wire (no SDK import, no client construction
-    beyond checking which credential attribute landed) — never `extract_facts` itself,
-    because a configured machine would then make a REAL (paid) network call as a
-    "preflight probe". This fails fast, once, before any ticket runs, so a run with no
-    key degrades with one message instead of a stack trace or -- worse -- a wall of
-    per-ticket ``None`` facts that look like real unanswerable findings.
+    Local credential check only — never the seam function itself, which would
+    make a paid call as a "preflight probe".
     """
     if seam != "llm":
         return None
     try:
         import anthropic
     except ModuleNotFoundError as exc:
-        return (f"the model extractor needs the 'anthropic' package installed ({exc}); "
-                "use --extractor keyword (the offline default), or install it")
+        return (f"the model {role} needs the 'anthropic' package installed ({exc}); "
+                f"use --{flag} keyword (the offline default), or install it")
     client = anthropic.Anthropic()
     if all(getattr(client, name, None) is None for name in ("api_key", "auth_token", "credentials")):
-        return ("the model extractor has no Anthropic credentials configured (set "
-                "ANTHROPIC_API_KEY); use --extractor keyword for the offline default")
+        return (f"the model {role} has no Anthropic credentials configured (set "
+                f"ANTHROPIC_API_KEY); use --{flag} keyword for the offline default")
     return None
+
+
+def _preflight_extractor(seam: str) -> str | None:
+    return _preflight_llm_seam(seam, flag="extractor", role="extractor")
+
+
+def _preflight_router(seam: str) -> str | None:
+    return _preflight_llm_seam(seam, flag="router", role="router")
 
 
 # --------------------------------------------------------------------------- #
@@ -96,12 +105,13 @@ def _ticket_set(held_out: bool, lang: str = "en") -> list[dict]:
 
 
 def _run(backend: str, use_gate: bool, *, held_out: bool = False, use_soft_entailment: bool = False,
-         lang: str = "en", extractor: str = "stub"):
+         lang: str = "en", extractor: str = "stub", router: str = "stub"):
     rows, resolutions, errors = [], [], []
     for t in _ticket_set(held_out, lang):
         try:
             res = resolve_ticket(t, backend=backend, use_gate=use_gate,
-                                 use_soft_entailment=use_soft_entailment, extractor=extractor)
+                                 use_soft_entailment=use_soft_entailment,
+                                 extractor=extractor, router=router)
         except ValueError as exc:
             errors.append({"ticket_id": t.get("id", "?"), "lang": t.get("lang", lang), "error": str(exc)})
             continue
@@ -183,6 +193,7 @@ def _sha256_json(value) -> str:
 
 
 _EXTRACTOR_PROMPT_PARTS = ("_SYSTEM", "_USER", "_SCHEMA", "_ANSWERS")
+_ROUTER_PROMPT_PARTS = ("_SYSTEM", "_USER", "_SCHEMA")
 
 
 def _extractor_prompt_hash() -> str:
@@ -195,6 +206,11 @@ def _extractor_prompt_hash() -> str:
     this value moves with it, on the same input.
     """
     parts = {name: _sha256_json(getattr(extract_mod, name)) for name in _EXTRACTOR_PROMPT_PARTS}
+    return _sha256_json(parts)
+
+
+def _router_prompt_hash() -> str:
+    parts = {name: _sha256_json(getattr(route_mod, name)) for name in _ROUTER_PROMPT_PARTS}
     return _sha256_json(parts)
 
 
@@ -268,7 +284,8 @@ def _track_cache():
         cache_mod.get = orig_get
 
 
-def _build_header(*, extractor_cli: str, extractor_seam: str, cache_stats: _CacheStats) -> dict:
+def _build_header(*, extractor_cli: str, extractor_seam: str, cache_stats: _CacheStats,
+                  router_cli: str = "keyword", router_seam: str = "stub") -> dict:
     return {
         "model": llm_mod.MODEL,
         "dataset_date": str(data.TODAY),
@@ -276,6 +293,8 @@ def _build_header(*, extractor_cli: str, extractor_seam: str, cache_stats: _Cach
         "cache": {"calls": cache_stats.calls, "hits": cache_stats.hits, "rate": cache_stats.rate},
         "extractor": {"cli": extractor_cli, "seam": extractor_seam,
                       "prompt_sha256": _extractor_prompt_hash()},
+        "router": {"cli": router_cli, "seam": router_seam,
+                   "prompt_sha256": _router_prompt_hash()},
         "lexicons": _effective_lexicon_counts(),
     }
 
@@ -291,6 +310,8 @@ def _header_lines(header: dict) -> list[str]:
         f"cache hit rate: {cache_str}",
         f"extractor: --extractor {header['extractor']['cli']} -> agent/extract.py backend="
         f"{header['extractor']['seam']!r}  (prompt sha256 {header['extractor']['prompt_sha256'][:16]}...)",
+        f"router: --router {header['router']['cli']} -> agent/route.py backend="
+        f"{header['router']['seam']!r}  (prompt sha256 {header['router']['prompt_sha256'][:16]}...)",
     ]
     for lang, info in header["lexicons"].items():
         per_list = ", ".join(f"{name}={v['effective']}/{v['raw']}" for name, v in info["lists"].items())
@@ -377,7 +398,7 @@ def _ask_containment_payload(off: dict, on: dict) -> tuple[dict, dict]:
 
 def _extractor_agreement_result(backend: str, lang: str, *, held_out: bool,
                                 use_soft_entailment: bool, current_seam: str,
-                                current_rows: list[dict]) -> dict:
+                                current_rows: list[dict], router: str = "stub") -> dict:
     """M-6 (`scorer.extractor_agreement`): keyword-vs-model agreement, wired into the
     harness (it had no caller before this fix -- the same "implemented but never
     called" defect this task existed to fix for `fmt_rate`).
@@ -401,13 +422,13 @@ def _extractor_agreement_result(backend: str, lang: str, *, held_out: bool,
                           "ANTHROPIC_API_KEY configured, to compute M-6"}
     keyword_rows, _, _ = _run(backend, use_gate=True, held_out=held_out,
                               use_soft_entailment=use_soft_entailment,
-                              lang=lang, extractor="stub")
+                              lang=lang, extractor="stub", router=router)
     return {"available": True, "reason": None,
             "result": scorer.extractor_agreement(keyword_rows, current_rows)}
 
 
 def _compute(backend: str, extractor_seam: str, *, lang: str, held_out: bool,
-            use_soft_entailment: bool) -> dict:
+            use_soft_entailment: bool, router_seam: str = "stub") -> dict:
     """Everything one language/backend/extractor combination needs to report: gate
     OFF vs ON, win condition, per-tier, reasoner-alone agreement, extractor
     agreement (M-6), and the seed-vs-held-out generalization gap. Shared by the
@@ -417,21 +438,22 @@ def _compute(backend: str, extractor_seam: str, *, lang: str, held_out: bool,
     other_held_out = not primary_held_out
 
     off_rows, _, off_errors = _run(backend, use_gate=False, held_out=primary_held_out,
-                                   lang=lang, extractor=extractor_seam)
+                                   lang=lang, extractor=extractor_seam, router=router_seam)
     on_rows, on_res, on_errors = _run(backend, use_gate=True, held_out=primary_held_out,
                                       use_soft_entailment=use_soft_entailment,
-                                      lang=lang, extractor=extractor_seam)
+                                      lang=lang, extractor=extractor_seam, router=router_seam)
     off, on = scorer.aggregate(off_rows), scorer.aggregate(on_rows)
     won, clauses = scorer.win_condition(on)
     tiers = scorer.by_tier(on_rows)
     agreement = scorer.reasoner_agreement(off_rows)
     m6 = _extractor_agreement_result(backend, lang, held_out=primary_held_out,
                                      use_soft_entailment=use_soft_entailment,
-                                     current_seam=extractor_seam, current_rows=on_rows)
+                                     current_seam=extractor_seam, current_rows=on_rows,
+                                     router=router_seam)
 
     other_on_rows, _, other_errors = _run(backend, use_gate=True, held_out=other_held_out,
                                           use_soft_entailment=use_soft_entailment,
-                                          lang=lang, extractor=extractor_seam)
+                                          lang=lang, extractor=extractor_seam, router=router_seam)
     seed_on = on if not primary_held_out else scorer.aggregate(other_on_rows)
     heldout_on = on if primary_held_out else scorer.aggregate(other_on_rows)
     gap = scorer.generalization_gap(seed_on, heldout_on)
@@ -452,46 +474,55 @@ def main() -> int:
     ap.add_argument("--extractor", default="keyword", choices=_EXTRACTOR_CHOICES,
                     help="the FACT-READING backend (agent/extract.py) -- independent of --backend; "
                          "keyword (default, offline) or model (needs ANTHROPIC_API_KEY)")
+    ap.add_argument("--router", default="keyword", choices=_ROUTER_CHOICES,
+                    help="the INTENT-CLASSIFIER backend (agent/route.py) -- independent of "
+                         "--backend/--extractor; keyword (default, offline) or model "
+                         "(needs ANTHROPIC_API_KEY)")
     ap.add_argument("--held-out", action="store_true",
                     help="score held-out paraphrases as primary (win condition); still compares seed")
     ap.add_argument("--soft-entailment", action="store_true",
                     help="enable soft entailment layer on gate-ON runs (off by default)")
     lang_group = ap.add_mutually_exclusive_group()
-    lang_group.add_argument("--lang", default="en", choices=["en", "es"],
+    lang_group.add_argument("--lang", default="en", choices=list(ALL_LANGS),
                             help="ticket language for a single-language run (default: en)")
     lang_group.add_argument("--all-langs", action="store_true",
-                            help="run English AND Spanish; print/write the cross-language report")
+                            help="run English, Spanish AND Indonesian; print/write the cross-language report")
     args = ap.parse_args()
 
     extractor_seam = _CLI_TO_SEAM[args.extractor]
-    reason = _preflight_extractor(extractor_seam)
-    if reason is not None:
-        print(f"error: {reason}", file=sys.stderr)
-        return 2
+    router_seam = _CLI_TO_SEAM[args.router]
+    for reason in (_preflight_extractor(extractor_seam), _preflight_router(router_seam)):
+        if reason is not None:
+            print(f"error: {reason}", file=sys.stderr)
+            return 2
 
     with _track_cache() as cache_stats:
         header = _build_header(extractor_cli=args.extractor, extractor_seam=extractor_seam,
+                               router_cli=args.router, router_seam=router_seam,
                                cache_stats=cache_stats)
         if args.all_langs:
-            en = _compute(args.backend, extractor_seam, lang="en", held_out=args.held_out,
-                          use_soft_entailment=args.soft_entailment)
-            es = _compute(args.backend, extractor_seam, lang="es", held_out=args.held_out,
-                          use_soft_entailment=args.soft_entailment)
-            # re-read the header's cache stats now that both runs have completed
+            results = {
+                lang: _compute(args.backend, extractor_seam, lang=lang, held_out=args.held_out,
+                               use_soft_entailment=args.soft_entailment, router_seam=router_seam)
+                for lang in ALL_LANGS
+            }
+            # re-read the header's cache stats now that all runs have completed
             header = _build_header(extractor_cli=args.extractor, extractor_seam=extractor_seam,
+                                   router_cli=args.router, router_seam=router_seam,
                                    cache_stats=cache_stats)
-            deep = _multilingual_deep_dive(args.backend, extractor_seam)
-            _console_multilingual(header, en, es, deep)
-            _write_multilingual_report(header, en, es, deep)
-            (ROOT / "eval" / "results-multilingual.json").write_text(json.dumps({
-                "header": header, "en": _summary_payload(en), "es": _summary_payload(es),
-                "deep_dive": deep,
-            }, indent=2, default=str), encoding="utf-8")
-            return 0 if (en["won"] and es["won"]) else 1
+            deep = _multilingual_deep_dive(args.backend, extractor_seam, router_seam=router_seam)
+            _console_multilingual(header, results, deep)
+            _write_multilingual_report(header, results, deep)
+            payload = {"header": header, "deep_dive": deep}
+            payload.update({lang: _summary_payload(results[lang]) for lang in ALL_LANGS})
+            (ROOT / "eval" / "results-multilingual.json").write_text(
+                json.dumps(payload, indent=2, default=str), encoding="utf-8")
+            return 0 if all(results[lang]["won"] for lang in ALL_LANGS) else 1
 
         r = _compute(args.backend, extractor_seam, lang=args.lang, held_out=args.held_out,
-                    use_soft_entailment=args.soft_entailment)
+                    use_soft_entailment=args.soft_entailment, router_seam=router_seam)
         header = _build_header(extractor_cli=args.extractor, extractor_seam=extractor_seam,
+                               router_cli=args.router, router_seam=router_seam,
                                cache_stats=cache_stats)
         _console(header, args.backend, r)
         _write_report(header, args.backend, r)
@@ -840,11 +871,13 @@ def _scope_tickets(lang: str, tiers: frozenset[str] | None) -> list[dict]:
     return [t for t in ts if tiers is None or t["tier"] in tiers]
 
 
-def _run_scope(backend: str, extractor_seam: str, lang: str, tiers: frozenset[str] | None) -> dict:
+def _run_scope(backend: str, extractor_seam: str, lang: str, tiers: frozenset[str] | None,
+               router_seam: str = "stub") -> dict:
     rows, resolutions, errors = [], [], []
     for t in _scope_tickets(lang, tiers):
         try:
-            res = resolve_ticket(t, backend=backend, use_gate=True, extractor=extractor_seam)
+            res = resolve_ticket(t, backend=backend, use_gate=True, extractor=extractor_seam,
+                                 router=router_seam)
         except ValueError as exc:
             errors.append({"ticket_id": t.get("id", "?"), "lang": t.get("lang", lang), "error": str(exc)})
             continue
@@ -856,13 +889,15 @@ def _run_scope(backend: str, extractor_seam: str, lang: str, tiers: frozenset[st
             "won": won, "clauses": clauses, "errors": errors}
 
 
-def _run_full_corpus(backend: str, extractor_seam: str, lang: str) -> dict:
+def _run_full_corpus(backend: str, extractor_seam: str, lang: str,
+                     router_seam: str = "stub") -> dict:
     """Seed + held-out combined, all 8 tiers -- the scope M-1's headline and M-4's
     membership are defined against (see task-12 brief Part 3b)."""
     rows, resolutions, errors = [], [], []
     for t in data.all_tickets(lang):
         try:
-            res = resolve_ticket(t, backend=backend, use_gate=True, extractor=extractor_seam)
+            res = resolve_ticket(t, backend=backend, use_gate=True, extractor=extractor_seam,
+                                 router=router_seam)
         except ValueError as exc:
             errors.append({"ticket_id": t.get("id", "?"), "lang": t.get("lang", lang), "error": str(exc)})
             continue
@@ -872,55 +907,68 @@ def _run_full_corpus(backend: str, extractor_seam: str, lang: str) -> dict:
     return {"rows": rows, "resolutions": resolutions, "sfe": sfe, "errors": errors}
 
 
-def _multilingual_deep_dive(backend: str, extractor_seam: str) -> dict:
+def _multilingual_deep_dive(backend: str, extractor_seam: str, router_seam: str = "stub") -> dict:
     """Part 3b's corrected numbers, computed live (never hardcoded) against the
     current fixtures/kb: M-1 six-tier vs full-corpus, both win-condition scopes with
     all three original clauses, M-4 membership, and fault_decisive. Same computation
-    for both languages, so the multilingual comparison is apples-to-apples.
+    for every language, so the multilingual comparison is apples-to-apples.
     """
     out = {"scopes": {}, "full_corpus": {}, "route_fallback": {}, "fault_decisive": {}}
-    for lang in ("en", "es"):
+    for lang in ALL_LANGS:
         out["scopes"][lang] = {
-            "six_tier": _run_scope(backend, extractor_seam, lang, _ORIGINAL_SIX_TIERS),
-            "eight_tier": _run_scope(backend, extractor_seam, lang, None),
+            "six_tier": _run_scope(backend, extractor_seam, lang, _ORIGINAL_SIX_TIERS,
+                                   router_seam=router_seam),
+            "eight_tier": _run_scope(backend, extractor_seam, lang, None,
+                                     router_seam=router_seam),
         }
-        out["full_corpus"][lang] = _run_full_corpus(backend, extractor_seam, lang)
+        out["full_corpus"][lang] = _run_full_corpus(backend, extractor_seam, lang,
+                                                    router_seam=router_seam)
         out["fault_decisive"][lang] = scorer.fault_decisive(data.all_tickets(lang))
 
-    en_res = out["full_corpus"]["en"]["resolutions"]
-    es_res = out["full_corpus"]["es"]["resolutions"]
-    m4_en = scorer.route_fallback(en_res)
-    m4_es = scorer.route_fallback(es_res)
     from eval import gold as gold_mod
     vmap = gold_mod._variant_of_map()
-    es_canon = {vmap.get(i, i) for i in m4_es["ticket_ids"]}
-    en_set = set(m4_en["ticket_ids"])
-    out["route_fallback"] = {
-        "en": m4_en, "es": m4_es,
-        "common": sorted(en_set & es_canon),
-        "en_only": sorted(en_set - es_canon),
-        "es_only_canon": sorted(es_canon - en_set),
-    }
+    m4 = {lang: scorer.route_fallback(out["full_corpus"][lang]["resolutions"])
+          for lang in ALL_LANGS}
+    en_set = set(m4["en"]["ticket_ids"])
+    pairs = {}
+    for lang in ALL_LANGS:
+        if lang == "en":
+            continue
+        other_canon = {vmap.get(i, i) for i in m4[lang]["ticket_ids"]}
+        pairs[lang] = {
+            "common": sorted(en_set & other_canon),
+            "en_only": sorted(en_set - other_canon),
+            "other_only_canon": sorted(other_canon - en_set),
+        }
+    out["route_fallback"] = {"by_lang": m4, "pairs": pairs}
     return out
 
 
-def _console_multilingual(header, en, es, deep):
+def _console_multilingual(header, results, deep):
     print("\n=== WISMO + Returns Reliability Agent — Multilingual Benchmark ===")
     for line in _header_lines(header):
         print(f"   {line}")
-    for lang, r in (("en", en), ("es", es)):
+    for lang, r in results.items():
         for line in _errors_lines(r["errors"]):
             print(f"   [{lang}] {line}")
 
-    print(f"\n{'metric':<32}{'english':>28}{'spanish':>28}{'target':>10}")
+    col = 28
+    header_row = f"{'metric':<32}" + "".join(f"{LANG_LABELS[lang].lower():>{col}}" for lang in ALL_LANGS) + f"{'target':>10}"
+    print(f"\n{header_row}")
     for key, name, target in _CROSS_METRIC_ROWS:
-        print(f"{name:<32}{_fmt(en['on'], key):>28}{_fmt(es['on'], key):>28}{target:>10}")
+        row = f"{name:<32}"
+        for lang in ALL_LANGS:
+            row += f"{_fmt(results[lang]['on'], key):>{col}}"
+        row += f"{target:>10}"
+        print(row)
 
-    print("\nWin condition (gate ON, seed set, both languages):")
-    print(f"   english: {'PASS' if en['won'] else 'FAIL'}   spanish: {'PASS' if es['won'] else 'FAIL'}")
+    print("\nWin condition (gate ON, seed set, all languages):")
+    print("   " + "   ".join(
+        f"{LANG_LABELS[lang].lower()}: {'PASS' if results[lang]['won'] else 'FAIL'}"
+        for lang in ALL_LANGS))
 
-    print("\n--- Both win-condition scopes, English and Spanish (Part 3b) ---")
-    for lang in ("en", "es"):
+    print("\n--- Both win-condition scopes (Part 3b) ---")
+    for lang in ALL_LANGS:
         for scope_name, scope_label in (("six_tier", "original six (n=43)"), ("eight_tier", "all eight (n=65)")):
             s = deep["scopes"][lang][scope_name]["summary"]
             won = deep["scopes"][lang][scope_name]["won"]
@@ -931,7 +979,7 @@ def _console_multilingual(header, en, es, deep):
                   f"-> {'WIN' if won else 'FAIL'}")
 
     print("\n--- M-1 silent fact error: six-tier scope vs full corpus (Part 3b) ---")
-    for lang in ("en", "es"):
+    for lang in ALL_LANGS:
         six_sfe = scorer.silent_fact_error(deep["scopes"][lang]["six_tier"]["rows"])
         full_sfe = deep["full_corpus"][lang]["sfe"]
         print(f"   [{lang}] six-tier (n={six_sfe['n']}): {stats.fmt_rate(six_sfe['count'], six_sfe['n'])}"
@@ -941,19 +989,22 @@ def _console_multilingual(header, en, es, deep):
 
     print("\n--- M-4 route_fallback membership (Part 3b) ---")
     rf = deep["route_fallback"]
-    print(f"   en: {rf['en']['count']}/{rf['en']['n']}   es: {rf['es']['count']}/{rf['es']['n']}"
-          f"   common (via variant_of): {len(rf['common'])}")
-    print(f"   en-only: {rf['en_only']}")
-    print(f"   es-only: {rf['es_only_canon']}")
+    counts = "   ".join(
+        f"{lang}: {rf['by_lang'][lang]['count']}/{rf['by_lang'][lang]['n']}"
+        for lang in ALL_LANGS)
+    print(f"   {counts}")
+    for lang, pair in rf["pairs"].items():
+        print(f"   vs {lang}: common={len(pair['common'])}  en-only={pair['en_only']}  "
+              f"{lang}-only={pair['other_only_canon']}")
 
     print("\n--- fault_decisive (Part 3b) ---")
-    for lang in ("en", "es"):
+    for lang in ALL_LANGS:
         fd = deep["fault_decisive"][lang]
         print(f"   [{lang}] decisive={fd['decisive']}/{fd['n']}  inert={fd['inert_ids']}")
 
     print("\n--- extractor agreement (M-6, keyword vs model, gate ON, seed set) ---")
-    print(f"   [en] {_m6_line(en['m6'])}")
-    print(f"   [es] {_m6_line(es['m6'])}")
+    for lang in ALL_LANGS:
+        print(f"   [{lang}] {_m6_line(results[lang]['m6'])}")
 
 
 _CAVEATS = [
@@ -979,7 +1030,11 @@ _CAVEATS = [
     "\"X dejó de funcionar\", including *\"mi contraseña dejó de funcionar\"* -- a password, not an item.",
     "The Spanish arm has fewer usable controls than English: `FA-04` (the fault tier's false-positive "
     "control) and `ASK-01` (half the ask tier) both lose the branch they exist to exercise once "
-    "translated -- see the M-4 route_fallback membership above, where both appear on the es-only side.",
+    "translated -- see the M-4 route_fallback membership above.",
+    "The Indonesian lexicons (`agent/lexicons.py`'s `\"id\"` entries) were authored in one pass from "
+    "the English/Spanish *categories* and frozen before any `ID-*` ticket existed. Known "
+    "pre-registered collisions (by design, not a bug to fix): `retur` matches English *return* "
+    "(intended code-switch); `mati` is a broad defective stem.",
 ]
 
 
@@ -1008,25 +1063,32 @@ def _zero_success_2pct_threshold() -> tuple[int, float, float]:
     return n, stats.wilson_interval(0, n - 1)[1], stats.wilson_interval(0, n)[1]
 
 
-def _write_multilingual_report(header, en, es, deep):
+def _write_multilingual_report(header, results, deep):
+    en = results["en"]
+    scope = " + ".join(LANG_LABELS[lang] for lang in ALL_LANGS)
     L = ["# Multilingual Benchmark Report", "",
-         f"Backend: **{en['backend']}** · lang scope: **English + Spanish** (`--all-langs`) · "
+         f"Backend: **{en['backend']}** · lang scope: **{scope}** (`--all-langs`) · "
          f"snapshot {header['dataset_date']}", "", "## Run header", ""]
     L += [f"- {line}" for line in _header_lines(header)]
-    for lang, r in (("en", en), ("es", es)):
+    for lang, r in results.items():
         if r["errors"]:
             L += ["", f"## Routing errors ({lang}, isolated, not fatal)", ""]
             L += [f"- `{e['ticket_id']}` (lang={e['lang']!r}): {e['error']}" for e in r["errors"]]
     L += [""]
-    for lang in ("en", "es"):
+    for lang in ALL_LANGS:
         L += _calibration_disclaimer(lang)
+    ns = " · ".join(f"{LANG_LABELS[lang]} n={results[lang]['on']['n']}" for lang in ALL_LANGS)
     L += ["## Cross-language table (gate ON, seed set)", "",
-          f"English n={en['on']['n']} · Spanish n={es['on']['n']}.", "",
-          "| Metric | English | Spanish | Target |", "| --- | --- | --- | --- |"]
+          f"{ns}.", "",
+          "| Metric | " + " | ".join(LANG_LABELS[lang] for lang in ALL_LANGS) + " | Target |",
+          "| --- | " + " | ".join("---" for _ in ALL_LANGS) + " | --- |"]
     for key, name, target in _CROSS_METRIC_ROWS:
-        L.append(f"| {name} | {_fmt(en['on'], key)} | {_fmt(es['on'], key)} | {target} |")
-    L += ["", f"Win condition (seed set, all five clauses): English "
-          f"**{'PASS' if en['won'] else 'FAIL'}**, Spanish **{'PASS' if es['won'] else 'FAIL'}**.", ""]
+        cells = " | ".join(_fmt(results[lang]["on"], key) for lang in ALL_LANGS)
+        L.append(f"| {name} | {cells} | {target} |")
+    verdicts = ", ".join(
+        f"{LANG_LABELS[lang]} **{'PASS' if results[lang]['won'] else 'FAIL'}**"
+        for lang in ALL_LANGS)
+    L += ["", f"Win condition (seed set, all five clauses): {verdicts}.", ""]
 
     L += ["## Both win-condition scopes, all three original clauses (Part 3b)", "",
           "The win condition was calibrated against six tiers (`clean_return`, `wismo`, `adversarial`, "
@@ -1035,18 +1097,18 @@ def _write_multilingual_report(header, en, es, deep):
           "verdict. Both scopes, raw counts beside every rate:", "",
           "| Lang | Scope | n | Recall | Hallucination | Handoff precision | Verdict |",
           "| --- | --- | --- | --- | --- | --- | --- |"]
-    for lang in ("en", "es"):
+    for lang in ALL_LANGS:
         for scope_name, scope_label in (("six_tier", "original six"), ("eight_tier", "all eight")):
             d = deep["scopes"][lang][scope_name]
             s = d["summary"]
             L.append(f"| {lang} | {scope_label} | {d['n']} | {_fmt(s, 'resolution_recall')} | "
                      f"{_fmt(s, 'hallucination_rate')} | {_fmt(s, 'handoff_precision')} | "
                      f"{'WIN' if d['won'] else 'FAIL'} |")
-    hp_es8 = deep["scopes"]["es"]["eight_tier"]["summary"]["handoff_precision"]
-    hp_en8 = deep["scopes"]["en"]["eight_tier"]["summary"]["handoff_precision"]
-    L += ["", f"_English's all-eight handoff precision sits at exactly {hp_en8:.4f} against a >= 0.85 "
-          "threshold -- zero margin, and invisible in a recall-only summary. "
-          f"(Spanish, same scope: {hp_es8:.4f}.)_", ""]
+    hp_notes = []
+    for lang in ALL_LANGS:
+        hp = deep["scopes"][lang]["eight_tier"]["summary"]["handoff_precision"]
+        hp_notes.append(f"{LANG_LABELS[lang]} {hp:.4f}")
+    L += ["", f"_All-eight handoff precision against a >= 0.85 threshold: {', '.join(hp_notes)}._", ""]
 
     L += ["## M-1 (silent fact error): six-tier scope vs the full-corpus headline (Part 3b)", "",
           "M-1 is zero only under the six-tier scope that excludes `fault` and `safety` -- the two tiers "
@@ -1055,7 +1117,7 @@ def _write_multilingual_report(header, en, es, deep):
           ""]
     L += ["| Lang | Scope | n (resolved) | M-1 (refined) | M-1 (literal reading) |",
           "| --- | --- | --- | --- | --- |"]
-    for lang in ("en", "es"):
+    for lang in ALL_LANGS:
         six_sfe = scorer.silent_fact_error(deep["scopes"][lang]["six_tier"]["rows"])
         full_sfe = deep["full_corpus"][lang]["sfe"]
         L.append(f"| {lang} | six-tier | {six_sfe['n']} | {stats.fmt_rate(six_sfe['count'], six_sfe['n'])} "
@@ -1075,24 +1137,26 @@ def _write_multilingual_report(header, en, es, deep):
           f"{hi_at*100:.4f}%). The interval still prints beside the count above; it is not the gate._", ""]
 
     L += ["## M-4 route_fallback: membership, not just the rate (Part 3b)", "",
-          "English and Spanish land on nearly the SAME rate over the full corpus (seed + held-out, "
-          "97 tickets each) -- but only some of those tickets are the same ticket once Spanish ids are "
-          "mapped through `variant_of`.", ""]
+          "Each language is scored over the full corpus (seed + held-out, 97 tickets). Non-English "
+          "ids are mapped through `variant_of` before comparing membership with English.", ""]
     rf = deep["route_fallback"]
-    L += [f"- English: **{rf['en']['count']}/{rf['en']['n']}**",
-          f"- Spanish: **{rf['es']['count']}/{rf['es']['n']}**",
-          f"- Common to both (mapped through `variant_of`): **{len(rf['common'])}**",
-          f"- English-only ({len(rf['en_only'])}): `{', '.join(rf['en_only'])}`",
-          f"- Spanish-only, canonical id ({len(rf['es_only_canon'])}): `{', '.join(rf['es_only_canon'])}`",
-          ""]
+    for lang in ALL_LANGS:
+        m = rf["by_lang"][lang]
+        L.append(f"- {LANG_LABELS[lang]}: **{m['count']}/{m['n']}**")
+    for lang, pair in rf["pairs"].items():
+        L += [f"- Common with English (mapped through `variant_of`, {lang}): **{len(pair['common'])}**",
+              f"- English-only vs {lang} ({len(pair['en_only'])}): `{', '.join(pair['en_only'])}`",
+              f"- {LANG_LABELS[lang]}-only, canonical id ({len(pair['other_only_canon'])}): "
+              f"`{', '.join(pair['other_only_canon'])}`"]
+    L += [""]
 
     L += ["## fault_decisive: the fault tier's real denominator (Part 3b)", "",
           "Of the 17 fault-tier tickets, some have a gold `defective` that cannot change the licensed "
           "outcome (a higher-priority rule already fixes it) -- a flat fault-tier average credits the "
-          "extractor on tickets where the fact it read could not have mattered. Identical for both "
+          "extractor on tickets where the fact it read could not have mattered. Identical across "
           "languages: gold facts resolve through `variant_of` to the same English record and the same "
           "`kb/rules.json`.", ""]
-    for lang in ("en", "es"):
+    for lang in ALL_LANGS:
         fd = deep["fault_decisive"][lang]
         L.append(f"- {lang}: decisive **{fd['decisive']}/{fd['n']}**, "
                  f"inert `{', '.join(fd['inert_ids'])}`")
@@ -1102,7 +1166,7 @@ def _write_multilingual_report(header, en, es, deep):
           "How often the keyword and model extractors read `defective` the SAME way on the same "
           "tickets (agreement, not accuracy against gold). `scorer.extractor_agreement` had no "
           "caller before this fix -- wired in here, seed set, gate ON.", ""]
-    for lang, r in (("en", en), ("es", es)):
+    for lang, r in results.items():
         m6 = r["m6"]
         if m6["available"]:
             res = m6["result"]

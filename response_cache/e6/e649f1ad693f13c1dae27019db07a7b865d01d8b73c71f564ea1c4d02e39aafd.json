@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "e649f1ad693f13c1dae27019db07a7b865d01d8b73c71f564ea1c4d02e39aafd",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is an accessory (leather belt) delivered 6 days ago, which is within the 30-day window, and it is not final sale. RET-007 applies (days_since_delivery <= 30 and final_sale == False), making it eligible. No higher-priority rule applies: not electronics, not defective, not final sale, no fraud hold, no goodwill grant. The customer's reason (\"doesn't match anything\") is irrelevant to eligibility."
+  }
+}

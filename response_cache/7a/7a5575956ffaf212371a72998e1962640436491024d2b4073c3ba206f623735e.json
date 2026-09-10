@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "7a5575956ffaf212371a72998e1962640436491024d2b4073c3ba206f623735e",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The order is still in \"processing\" status and has not been delivered (days_since_delivery is null), so no delivery-window rule has expired. The item is not final sale, not on fraud hold, and not defective. Since final_sale == False and the standard 30-day window has not lapsed, RET-007 applies and the return is eligible. Note: because the order is still processing, cancellation may be the appropriate mechanism, but under the return-policy rules the item qualifies as returnable."
+  }
+}

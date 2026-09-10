@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "117664caf220531736b628a6e1b14e830bb6e0701761750c2d129c93d231ecc3",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (defective == True) and not final sale (final_sale == False), so RET-020 applies. This rule has priority 90, which dominates the out-of-window ineligibility rule RET-008 (priority 10). Final-sale rule RET-012 does not apply since final_sale is False, and no goodwill grant or fraud hold is present. Defective items are returnable regardless of the standard 30-day window, so despite 48 days since delivery, the return is eligible."
+  }
+}

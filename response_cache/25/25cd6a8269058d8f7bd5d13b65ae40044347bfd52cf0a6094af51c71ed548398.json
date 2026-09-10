@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "25cd6a8269058d8f7bd5d13b65ae40044347bfd52cf0a6094af51c71ed548398",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a final-sale gift card (final_sale == True). RET-012, the highest-priority rule (100), makes final-sale items non-returnable regardless of the standard 30-day window. Although delivery was only 4 days ago, the final-sale rule dominates."
+  }
+}

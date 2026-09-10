@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "9eac3a13f106b54b9440177817df7c1f3e66755ba81778901588fc9f281b7147",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-002"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is electronics delivered 9 days ago (<= 15 days), so RET-002 applies and grants eligibility. RET-002 (priority 20) dominates the standard-window RET-007 (priority 10). No higher-priority rules apply: final_sale is False (RET-012 inactive), defective is False (RET-020 inactive), goodwill_grant and fraud_hold are False. The customer's reason for returning (too loud) does not affect eligibility."
+  }
+}

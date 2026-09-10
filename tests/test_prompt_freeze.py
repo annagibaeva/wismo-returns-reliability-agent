@@ -48,6 +48,7 @@ sys.path.insert(0, str(ROOT))
 
 from agent import extract as extract_mod
 from agent import llm as llm_mod
+from agent import route as route_mod
 
 
 def _sha256(value) -> str:
@@ -80,6 +81,13 @@ PROPOSER_PROMPT_SHA256 = {
     "_SCHEMA": "2a1ac9a70d96a33b51bd194d7c8544306c659942111b643d379de10ce84c63e6",
 }
 
+ROUTER_PARTS = ("_SYSTEM", "_USER", "_SCHEMA")
+ROUTER_PROMPT_SHA256 = {
+    "_SYSTEM": "28321f45dbfb0b46a724101231fb6a85430732084a39a3f6a77f38090bafd8a2",
+    "_USER": "a497c8855248f2acfc08f2e91e28543b9fecf0d4a11686d3879e3923cc1350c8",
+    "_SCHEMA": "063984eddde01901e5442726f1efc846f5a95762826e78edb2962ed78b1ffd86",
+}
+
 _UPDATE_HINT = (
     "\n\nIf this change is intentional, update the hash literal in "
     "tests/test_prompt_freeze.py in the same commit — and say in the commit message why "
@@ -98,6 +106,11 @@ def test_extractor_prompt_is_frozen() -> None:
 def test_proposer_prompt_is_frozen() -> None:
     assert _hashes(llm_mod, PROPOSER_PARTS) == PROPOSER_PROMPT_SHA256, (
         "the proposer prompt in agent/llm.py has changed." + _UPDATE_HINT)
+
+
+def test_router_prompt_is_frozen() -> None:
+    assert _hashes(route_mod, ROUTER_PARTS) == ROUTER_PROMPT_SHA256, (
+        "the intent-router prompt in agent/route.py has changed." + _UPDATE_HINT)
 
 
 # --- the pins are not vacuous ------------------------------------------------ #
@@ -150,6 +163,10 @@ _NOT_PROMPT = {
                  "another model's answers.",
         "_CALL": "the cache-key label for this call site; never sent to the model",
     },
+    "agent/route.py": {
+        "_CALL": "the cache-key label for this call site; never sent to the model",
+        "_UNREADABLE": "fail-closed sentinel reason; never sent to the model",
+    },
 }
 
 
@@ -175,6 +192,7 @@ def _module_constants(module) -> set[str]:
 _MODULES = [
     ("agent/extract.py", extract_mod, EXTRACTOR_PARTS),
     ("agent/llm.py", llm_mod, PROPOSER_PARTS),
+    ("agent/route.py", route_mod, ROUTER_PARTS),
 ]
 
 

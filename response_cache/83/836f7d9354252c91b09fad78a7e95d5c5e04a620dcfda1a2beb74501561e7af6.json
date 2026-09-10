@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "836f7d9354252c91b09fad78a7e95d5c5e04a620dcfda1a2beb74501561e7af6",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is a home category product (not electronics), not final sale, and delivered 9 days ago (within the 30-day standard window). RET-007 applies (days_since_delivery <= 30 and final_sale == False). No higher-priority rule applies: not final sale (RET-012), not defective (RET-020), no fraud hold (RET-051), no goodwill grant needed (RET-050). The customer's reason for returning (no longer needed) does not affect eligibility."
+  }
+}

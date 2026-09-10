@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "55a404c240357ad81537b64bae51ee505427ef9cc93b44ad2cc426119b8b61b6",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-003"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The customer describes a defect, but the structured facts state defective == False, so the defective-item rule (RET-020) does not apply. Among applicable rules, the highest-priority is the electronics-specific window (priority 20). With category == 'electronics' and days_since_delivery == 33 (> 15), RET-003 applies and controls over the standard-window rule RET-008 (priority 10). No final_sale, goodwill_grant, or fraud_hold conditions are met. Result: ineligible."
+  }
+}

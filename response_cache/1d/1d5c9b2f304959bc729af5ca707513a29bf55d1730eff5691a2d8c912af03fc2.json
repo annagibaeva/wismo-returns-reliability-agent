@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "1d5c9b2f304959bc729af5ca707513a29bf55d1730eff5691a2d8c912af03fc2",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The linen shirt is apparel, not final sale, not defective, and 50 days have passed since delivery. RET-008 applies (days_since_delivery > 30 and final_sale == False), making the return ineligible. No higher-priority rule applies: not final sale (RET-012), not defective (RET-020), no goodwill grant (RET-050), and no fraud hold (RET-051)."
+  }
+}

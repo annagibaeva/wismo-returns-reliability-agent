@@ -23,7 +23,10 @@ There is still no tokenisation and no accent folding. Spanish handles accents in
 the data, by truncating stems before the accented vowel (`devoluc`, `direcci`,
 `lleg`) so one string matches both spellings. Folding is not added because it would
 edit the matcher English also runs through, and because naive NFD stripping maps
-`año` to `ano`.
+`año` to `ano`. Indonesian needs no accent folding; stems are written in standard
+Latin orthography. Known collisions (frozen with the lists, not bugs to patch):
+`retur` matches English *return* (code-switch, intended); `mati` is a broad
+defective stem.
 """
 from __future__ import annotations
 
@@ -63,5 +66,29 @@ LEXICONS = {
                        "no funciona", "no sirve", "de funcionar", "no enciende", "no prende", "no anda",
                        "falla", "fallo", "falló", "mal funcionamiento",
                        "gotea", "goteo", "fuga"),
+    },
+    # Indonesian (T14): authored from the English/Spanish *categories*, before any
+    # ID-* ticket existed. Freeze immediately; do not add words after seeing tickets.
+    "id": {
+        "_SAFETY": ("kebakaran", "terbakar", "kebakar", "asap", "percik",
+                    "tersengat", "kejutan listrik", "kesetrum", "setrum", "nyetrum",
+                    "meledak", "ledakan", "bahaya", "berbahaya", "hangus"),
+        "_PAYMENT": ("tidak sah", "tak sah", "tidak diotorisasi", "tanpa izin",
+                     "sengketa", "chargeback", "bank saya", "ke bank"),
+        "_FRAUD": ("penipuan", "penipu", "diretas", "akun diambil",
+                   "bukan saya yang pesan", "tidak memesan", "tidak pesan",
+                   "bukan pesanan saya"),
+        "_ADDRESS": ("ubah alamat", "ganti alamat", "ganti alamat pengiriman",
+                     "alamat lain", "alamat berbeda", "alamat baru", "alamat kantor"),
+        "_ABUSE": ("gugat", "pengacara", "tindakan hukum", "proses hukum",
+                   "review di mana-mana", "review dimana-mana", "sampah", "ancam"),
+        "_RETURN": ("pengembalian", "kembalikan", "mengembalikan", "retur",
+                    "refund", "uang kembali", "tukar", "penukaran"),
+        "_WISMO": ("dimana", "di mana", "lacak", "pelacak", "tracking", "resi",
+                   "pengirim", "dikirim", "mengirim", "ngirim", "paket"),
+        "_DEFECTIVE": ("rusak", "cacat", "pecah", "retak", "bocor",
+                       "tidak berfungsi", "tidak nyala", "tidak menyala",
+                       "ga nyala", "gak nyala", "mati", "bermasalah",
+                       "tidak bisa dipakai"),
     },
 }

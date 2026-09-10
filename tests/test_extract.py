@@ -114,6 +114,16 @@ def test_extract_facts_spanish_no_defect():
                          backend="stub") == {"defective": False}
 
 
+def test_extract_facts_indonesian_defect():
+    assert extract_facts("barangnya rusak, saya ingin pengembalian", lang="id",
+                         backend="stub") == {"defective": True}
+
+
+def test_extract_facts_indonesian_no_defect():
+    assert extract_facts("barang berfungsi baik tapi ukurannya tidak pas", lang="id",
+                         backend="stub") == {"defective": False}
+
+
 def test_extract_facts_defaults_to_english_lexicon():
     assert extract_facts("this is broken") == {"defective": True}
 
@@ -138,6 +148,8 @@ def test_stub_backend_never_produces_none():
         ("I'd like to exchange this for a different size", "en"),
         ("el ventilador interno funciona correctamente", "es"),
         ("está roto y quiero un reembolso", "es"),
+        ("barangnya rusak", "id"),
+        ("ukuran tidak pas, berfungsi baik", "id"),
     ]
     for msg, lang in messages:
         result = extract_facts(msg, lang=lang, backend="stub")

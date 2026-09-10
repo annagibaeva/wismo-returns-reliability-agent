@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "4c3b50902bbfbe3b0f0358ac3a221457c696accfe08f646a544eba9633ccb603",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a gift card marked final_sale=True. RET-012 (priority 100) applies and dominates all lower-priority rules, making the item ineligible for return regardless of the 4-day delivery window."
+  }
+}

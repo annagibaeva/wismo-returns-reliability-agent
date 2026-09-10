@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "957114e6fcf6375595be28763bcc3b06da022bf47d549178bb96ea4b31f3cfef",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is apparel (not electronics), not final sale, not defective, no goodwill grant, and no fraud hold. With days_since_delivery = 48, which exceeds the standard 30-day window, RET-008 applies: returns are not accepted more than 30 days after delivery. The customer's reason (changed their mind, unworn) does not create any exception."
+  }
+}

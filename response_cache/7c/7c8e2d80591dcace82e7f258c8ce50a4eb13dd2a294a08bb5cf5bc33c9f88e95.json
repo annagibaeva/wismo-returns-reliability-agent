@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "7c8e2d80591dcace82e7f258c8ce50a4eb13dd2a294a08bb5cf5bc33c9f88e95",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is footwear (not electronics), not final sale, and delivered 10 days ago (within the 30-day standard window). RET-007 applies with the standard return window. No higher-priority rule applies: final_sale is false (RET-012 does not apply), defective is null (RET-020 does not apply), and there is no goodwill grant or fraud hold. Therefore the return is eligible for a full refund."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "1423b611b97ed28790dd2a3ca44191d613c31b8661cc0464bc2725a4b9e1df8e",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is not defective (defective == False), not final sale, and it has been 35 days since delivery, which exceeds the 30-day standard return window. RET-008 applies (days_since_delivery > 30 and final_sale == False) making the return ineligible. No higher-priority rule applies: final_sale, defective, goodwill_grant, and fraud_hold are all False, and the category is home, not electronics."
+  }
+}

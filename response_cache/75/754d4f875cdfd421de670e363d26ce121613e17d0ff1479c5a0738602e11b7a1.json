@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "754d4f875cdfd421de670e363d26ce121613e17d0ff1479c5a0738602e11b7a1",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a clearance final-sale item (final_sale == True), which triggers RET-012 (priority 100), the highest-priority applicable rule. Final-sale items cannot be returned or exchanged. The defect exception (RET-020) does not apply since defective is null, not True. Customer's dissatisfaction with appearance does not override the final-sale policy."
+  }
+}

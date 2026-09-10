@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "b7598e56cf7dbcbc9cc25e4f6cb462959cbaa43c2874a99fdcd45ab1c1854405",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is 41 days past delivery and not final-sale, so RET-008 (ineligible after 30 days) applies. Although the facts flag defective == True, the described damage resulted from the customer washing the sweatshirt twice (loss of shape, frayed cuffs from laundering), which reflects customer-caused wear rather than an inherent product defect. RET-020's higher priority only controls when a genuine defect exists; here the defect condition is not truly met on the facts, so the standard out-of-window rule governs."
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "ec475992b797060c545945dd9c530995f4c449c0e58aa470e45ce1615de55dd4",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020",
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (sole peeling from fabric) and not final sale, so RET-020 (priority 90) applies and grants eligibility regardless of the standard window. RET-007 (standard 30-day window) also supports eligibility since it's within 9 days and not final sale, but RET-020 is the controlling highest-priority applicable rule. Final-sale rule RET-012 does not apply (final_sale is false), and no fraud hold is present."
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "d850474e3c8b41654805c7c6508d05eee19004414f7e4f30074ede275c9cd335",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-050",
+      "RET-051"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The sweater is apparel, not final sale, delivered 7 days ago, so the standard window (RET-007) would allow it. However, two higher-priority rules both apply at priority 50: RET-050 (goodwill grant, eligible) and RET-051 (fraud hold, ineligible). When rules of equal priority conflict, the fraud hold controls because returns cannot proceed while an account is under fraud review pending resolution; the goodwill exception cannot be applied over an active fraud hold. Therefore the return is ineligible."
+  }
+}

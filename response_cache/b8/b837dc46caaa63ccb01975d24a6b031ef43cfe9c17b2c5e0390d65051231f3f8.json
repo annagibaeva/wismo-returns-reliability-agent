@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "b837dc46caaa63ccb01975d24a6b031ef43cfe9c17b2c5e0390d65051231f3f8",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-003"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is electronics with days_since_delivery of 33, exceeding the 15-day electronics window. RET-003 applies (priority 20), which controls over the standard-window rules (priority 10). No higher-priority exceptions apply: not final_sale (RET-012), not defective (RET-020), no goodwill grant (RET-050), and no fraud hold. Customer loyalty framing does not affect eligibility."
+  }
+}

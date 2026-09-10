@@ -12,7 +12,7 @@ from functools import lru_cache
 import kb
 import gate as grounding_gate
 from services_mock import order_api, returns_system, ticketing
-from . import extract, llm
+from . import extract, llm, route
 from .lexicons import LEXICONS
 from .schemas import AuditLogger, Resolution
 
@@ -38,64 +38,31 @@ def _has(t, words):
     return bool(words) and _matcher(tuple(words)).search(t) is not None
 
 
-def _route(msg: str, lang: str = "en", audit: AuditLogger | None = None) -> tuple[str, str | None]:
-    """Classify a message into an intent using the lexicon for `lang`.
-
-    `audit` is optional and only ever written to, never read back here — that's what
-    keeps this directly unit-testable: call it bare to check routing, or hand it a
-    fresh `AuditLogger` to also inspect the fallback event it records. An unknown
-    `lang` raises rather than quietly matching against English: a mistyped or
-    unsupported language code would otherwise route every ticket in that language
-    through the wrong keywords while looking like ordinary English traffic, which is
-    a worse failure than a loud one at the call site.
+def _route(msg: str, lang: str = "en", audit: AuditLogger | None = None,
+           backend: str = "stub") -> tuple[str, str | None]:
+    """Classify a message into an intent. `backend` selects the router seam
+    (`agent/route.py`): stub = keyword lists, llm = Claude classifier.
     """
-    try:
-        lex = LEXICONS[lang]
-    except KeyError:
-        raise ValueError(f"no lexicon for lang={lang!r}; known: {sorted(LEXICONS)}") from None
-    t = msg.lower()
-    if _has(t, lex["_SAFETY"]):
-        return "out_of_scope", "safety"
-    if _has(t, lex["_FRAUD"]):
-        return "out_of_scope", "fraud"
-    if _has(t, lex["_PAYMENT"]):
-        return "out_of_scope", "payment_dispute"
-    if _has(t, lex["_ADDRESS"]):
-        return "out_of_scope", "address_change"
-    if _has(t, lex["_ABUSE"]):
-        return "out_of_scope", "abuse"
-    # explicit return verbs OR a defect complaint (a faulty-item report is a return/replacement intent)
-    if _has(t, lex["_RETURN"]) or _has(t, lex["_DEFECTIVE"]):
-        return "return", None
-    if _has(t, lex["_WISMO"]):
-        return "wismo", None
-    # Nothing matched -- this is a genuine fallback, not a WISMO match, and FR-2
-    # requires it to be visible: it's the denominator of the route-fallback rate.
-    if audit is not None:
-        audit.decision("route_fallback", {"lang": lang, "message": msg},
-                       {"intent": "wismo", "reason": "no_lexicon_match"})
-    return "wismo", None
+    return route.route_intent(msg, lang, backend=backend, audit=audit)
 
 
 def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True,
-                   use_soft_entailment: bool = False, extractor: str = "stub") -> Resolution:
-    """`backend` selects the *proposer*; `extractor` selects the *fact reader*, independently.
-
-    They are two separate seams (`llm.propose_return_decision` and
-    `extract.extract_facts`) and must be selectable separately: the extractor metrics
-    are metrics *about the extractor*, so a run that swapped both at once would move
-    two variables and be attributable to neither. `extractor` therefore defaults to
-    "stub" on its own — never to `backend` — so `--backend llm` still reaches the real
-    proposer with the keyword extractor underneath it.
+                   use_soft_entailment: bool = False, extractor: str = "stub",
+                   router: str = "stub") -> Resolution:
+    """`backend` selects the proposer; `extractor` the fact reader; `router` the
+    intent classifier. Independent on purpose — swapping two at once would make
+    the delta attributable to neither. Each defaults to stub so `--backend llm`
+    still uses the keyword router and keyword extractor unless asked otherwise.
     """
     audit = AuditLogger()
     msg = ticket["message"]
-    # Spanish tickets carry lang="es" (see fixtures/tickets.json); English tickets
-    # still omit the key, so the default keeps old fixtures and any caller that
-    # predates the "es" arm working unchanged.
+    # Non-English tickets carry lang="es" or lang="id" (see fixtures/tickets.json);
+    # English tickets still omit the key, so the default keeps old fixtures and any
+    # caller that predates the extra-language arms working unchanged.
     lang = ticket.get("lang", "en")
-    intent, oos_reason = _route(msg, lang, audit)
-    audit.decision("route_intent", msg, {"intent": intent, "reason": oos_reason, "lang": lang})
+    intent, oos_reason = _route(msg, lang, audit, backend=router)
+    audit.decision("route_intent", msg, {"intent": intent, "reason": oos_reason, "lang": lang,
+                                        "router": router})
 
     if intent == "out_of_scope":
         return _handoff(ticket, audit, intent, oos_reason, {},

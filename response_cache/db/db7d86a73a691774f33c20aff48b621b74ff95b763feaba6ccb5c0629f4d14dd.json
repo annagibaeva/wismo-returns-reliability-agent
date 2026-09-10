@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "db7d86a73a691774f33c20aff48b621b74ff95b763feaba6ccb5c0629f4d14dd",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (sole separating from the fabric) and not final sale, so RET-020 (priority 90) applies and controls over the standard within-window rule RET-007. Final-sale and fraud-hold rules do not apply since final_sale is false and fraud_hold is false."
+  }
+}

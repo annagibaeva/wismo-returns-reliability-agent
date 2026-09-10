@@ -1,0 +1,14 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "11da96cce155cd22fefe3be32b7a7728ceb9a3b6bb48cefd2d46f1c6fb2a6ff3",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007",
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The order is still in transit and has not been delivered (days_since_delivery is null), so the return window has not yet begun. The standard window rule RET-007 requires days_since_delivery <= 30, which cannot be satisfied because delivery hasn't occurred; likewise RET-008 does not apply. No defective, final-sale, goodwill, or fraud conditions are triggered. Since no rule affirmatively establishes eligibility on the current facts, the item cannot yet be returned."
+  }
+}

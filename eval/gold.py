@@ -44,17 +44,13 @@ def all_facts() -> dict[str, dict]:
 
 @lru_cache(maxsize=None)
 def _variant_of_map() -> dict[str, str]:
-    """`{spanish_id: english_source_id}` for every T10 translation, read straight off
+    """`{variant_id: english_source_id}` for every translation, read straight off
     `fixtures/tickets.json`'s own `variant_of` field.
 
-    `gold_facts.json` has one entry per *English* ticket and none of the 97 `ES-*`
-    ids (see its own docstring/comment: the gold record is deliberately
-    language-independent, one entry serving every translation of a ticket). Before
-    this map, `facts_for`/`defective_for` on an `ES-*` id raised `KeyError` for 80 of
-    97 — `defective_for` happened to survive on the other 17 (the fault tier) only
-    because it short-circuits on `expected["gold_defective"]`, which a translation
-    carries unchanged, before ever reaching `facts_for`. This resolves the id
-    structurally instead: a translation's facts *are* its English source's facts.
+    `gold_facts.json` has one entry per *English* ticket and none of the `ES-*` or
+    `ID-*` ids (the gold record is deliberately language-independent, one entry
+    serving every translation of a ticket). A translation's facts *are* its English
+    source's facts.
     """
     raw = json.loads(_TICKETS_PATH.read_text(encoding="utf-8"))["tickets"]
     return {t["id"]: t["variant_of"] for t in raw if t.get("variant_of")}

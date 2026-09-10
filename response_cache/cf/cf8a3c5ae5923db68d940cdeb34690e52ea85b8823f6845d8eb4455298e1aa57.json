@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "cf8a3c5ae5923db68d940cdeb34690e52ea85b8823f6845d8eb4455298e1aa57",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-003"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The smartwatch is an electronics item delivered 16 days ago. Electronics have a stricter 15-day return window (RET-003, priority 20), which dominates the standard 30-day rule (RET-007, priority 10). Since 16 > 15, the return is not accepted. No higher-priority exceptions apply: the item is not defective (RET-020), not final sale (RET-012), no goodwill grant (RET-050), and no fraud hold (RET-051)."
+  }
+}

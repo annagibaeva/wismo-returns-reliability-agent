@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "f018e5203be162162ae8c003f15e18c8d790c29effeba5defbf0479b1934e72d",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-003"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is electronics delivered 33 days ago (>15 days), so RET-003 (priority 20) controls and makes it ineligible. This dominates the standard-window rule RET-008 (priority 10). No higher-priority rule applies: not final sale, not defective, no goodwill grant, no fraud hold. Customer loyalty is not a policy factor."
+  }
+}

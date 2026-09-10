@@ -1,0 +1,11 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "74ede036a359585bc29ffe05385062b962aed87cdacb4b4216857b60aa32b9f7",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [],
+    "outcome": "ineligible",
+    "rationale": "The order status is \"processing\" and days_since_delivery is null, meaning the item has not yet been delivered. None of the candidate rules apply on the current facts: the standard-window rules (RET-007/RET-008) require a known days_since_delivery value, which is missing; the electronics rules do not apply (category is apparel); defective is null so RET-020 does not fire; final_sale is False so RET-012 does not apply; and goodwill_grant and fraud_hold are both False. Since no return-eligibility rule condition is satisfied, there is no basis to grant a return at this time (the item is still processing and not yet delivered)."
+  }
+}

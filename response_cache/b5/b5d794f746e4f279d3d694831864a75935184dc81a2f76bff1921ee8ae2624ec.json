@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "b5d794f746e4f279d3d694831864a75935184dc81a2f76bff1921ee8ae2624ec",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a final-sale clearance item. RET-012 (priority 100) applies since final_sale == True and controls over lower-priority rules. Defective is false so RET-020 does not apply, and no goodwill grant exists. Final-sale items cannot be returned."
+  }
+}

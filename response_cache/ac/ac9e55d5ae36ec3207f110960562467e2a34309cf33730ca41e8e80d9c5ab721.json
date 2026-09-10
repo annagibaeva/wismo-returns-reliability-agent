@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "ac9e55d5ae36ec3207f110960562467e2a34309cf33730ca41e8e80d9c5ab721",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (defective == True) and not final sale (final_sale == False), satisfying RET-020, which at priority 90 is the highest-priority applicable rule. RET-012 (final sale) does not apply since final_sale is False. RET-007 also supports eligibility but is dominated by RET-020."
+  }
+}

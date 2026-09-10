@@ -150,6 +150,44 @@ def test_spanish_words_unchanged_since_t3() -> None:
     assert live["es"] == SPANISH_AT_T3
 
 
+# The eight Indonesian lexicons as authored in T14, verbatim and in order.
+# Written from the English/Spanish *categories* before any ID-* ticket existed.
+# Same rule as Spanish: never regenerate this from agent/lexicons.py.
+INDONESIAN_AT_T14 = {
+    '_ABUSE': ['gugat', 'pengacara', 'tindakan hukum', 'proses hukum',
+               'review di mana-mana', 'review dimana-mana', 'sampah', 'ancam'],
+    '_ADDRESS': ['ubah alamat', 'ganti alamat', 'ganti alamat pengiriman',
+                 'alamat lain', 'alamat berbeda', 'alamat baru', 'alamat kantor'],
+    '_DEFECTIVE': ['rusak', 'cacat', 'pecah', 'retak', 'bocor',
+                   'tidak berfungsi', 'tidak nyala', 'tidak menyala',
+                   'ga nyala', 'gak nyala', 'mati', 'bermasalah',
+                   'tidak bisa dipakai'],
+    '_FRAUD': ['penipuan', 'penipu', 'diretas', 'akun diambil',
+               'bukan saya yang pesan', 'tidak memesan', 'tidak pesan',
+               'bukan pesanan saya'],
+    '_PAYMENT': ['tidak sah', 'tak sah', 'tidak diotorisasi', 'tanpa izin',
+                 'sengketa', 'chargeback', 'bank saya', 'ke bank'],
+    '_RETURN': ['pengembalian', 'kembalikan', 'mengembalikan', 'retur',
+                'refund', 'uang kembali', 'tukar', 'penukaran'],
+    '_SAFETY': ['kebakaran', 'terbakar', 'kebakar', 'asap', 'percik',
+                'tersengat', 'kejutan listrik', 'kesetrum', 'setrum', 'nyetrum',
+                'meledak', 'ledakan', 'bahaya', 'berbahaya', 'hangus'],
+    '_WISMO': ['dimana', 'di mana', 'lacak', 'pelacak', 'tracking', 'resi',
+               'pengirim', 'dikirim', 'mengirim', 'ngirim', 'paket'],
+}
+
+
+def test_indonesian_words_unchanged_since_t14() -> None:
+    """Fails if a single Indonesian word is added, removed, or reordered.
+
+    The counterpart to the Spanish pin: a `--force` re-freeze that drops Indonesian
+    cannot erase this witness.
+    """
+    live = union_lexicons(current_snapshots())
+    assert "id" in live, "no Indonesian lexicons are visible to the freeze checker at all"
+    assert live["id"] == INDONESIAN_AT_T14
+
+
 def test_flat_tuples_are_recorded_as_english(tmp_path: Path) -> None:
     module = tmp_path / "flat.py"
     module.write_text('_SAFETY = ("fire", "smoke")\n_HELPER = 3\nNOT_PRIVATE = ("x",)\n',
@@ -196,6 +234,7 @@ def fake_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         encoding="utf-8")
     (tmp_path / "agent" / "extract.py").write_text("Z = 1\n", encoding="utf-8")
     (tmp_path / "agent" / "cache.py").write_text("W = 1\n", encoding="utf-8")
+    (tmp_path / "agent" / "route.py").write_text("R = 1\n", encoding="utf-8")
     monkeypatch.setattr(freeze, "ROOT", tmp_path)
     monkeypatch.setattr(freeze, "FREEZE_DIR", tmp_path / "eval" / "frozen_lexicons")
     return tmp_path
@@ -207,7 +246,7 @@ def test_a_first_freeze_needs_no_force(fake_repo: Path) -> None:
     assert freeze.write_snapshots() == 0
     assert sorted(p.name for p in freeze.FREEZE_DIR.iterdir()) == [
         "_frozen_modules.json", "agent.json", "cache.json", "extract.json", "lexicons.json",
-        "llm.json"]
+        "llm.json", "route.json"]
     assert freeze._known_modules() == set(freeze.MODULES)
 
 

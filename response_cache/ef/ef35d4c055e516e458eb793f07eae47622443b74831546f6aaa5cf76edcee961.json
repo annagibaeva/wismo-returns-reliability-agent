@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "ef35d4c055e516e458eb793f07eae47622443b74831546f6aaa5cf76edcee961",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-002"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is electronics delivered 8 days ago (<= 15 days), so RET-002 applies and grants eligibility. RET-002 (priority 20) dominates the standard window rule RET-007 (priority 10). No higher-priority rule applies: item is not final-sale (RET-012), no fraud hold (RET-051), no goodwill grant needed (RET-050), and defective is null so RET-020 does not apply. Change-of-mind framing does not affect the facts-based outcome."
+  }
+}

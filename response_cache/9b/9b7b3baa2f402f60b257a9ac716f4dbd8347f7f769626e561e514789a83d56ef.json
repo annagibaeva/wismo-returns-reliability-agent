@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "9b7b3baa2f402f60b257a9ac716f4dbd8347f7f769626e561e514789a83d56ef",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (broken zipper and separating seams) and not final sale, so RET-020 (priority 90) applies and controls over the standard window rule RET-007. Final-sale and fraud-hold rules do not apply since final_sale is false and fraud_hold is false."
+  }
+}

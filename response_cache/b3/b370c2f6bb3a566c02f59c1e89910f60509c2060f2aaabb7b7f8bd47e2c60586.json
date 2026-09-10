@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "b370c2f6bb3a566c02f59c1e89910f60509c2060f2aaabb7b7f8bd47e2c60586",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is footwear, not final sale, and only 9 days since delivery, which falls within the standard 30-day window (RET-007). Although the customer describes the sole detaching, the facts list defective=false, so the defective rule (RET-020) does not apply on the facts. No higher-priority rule (final_sale, fraud_hold) is triggered, so the standard window controls and the return is eligible."
+  }
+}

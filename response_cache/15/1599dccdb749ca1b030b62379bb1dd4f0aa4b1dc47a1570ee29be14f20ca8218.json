@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "1599dccdb749ca1b030b62379bb1dd4f0aa4b1dc47a1570ee29be14f20ca8218",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a final-sale clearance mug (final_sale == True), which triggers RET-012, the highest-priority rule (priority 100). Final-sale items cannot be returned or exchanged. No higher-priority exception applies: there is no goodwill grant, and the defective flag is null (not True), so the defective exception RET-020 does not apply."
+  }
+}

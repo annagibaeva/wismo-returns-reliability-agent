@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "4b10193ae9f63306846b63eef7df3d26e2ed25c4de66985c8812714f85142627",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a clearance, final-sale item (final_sale == True), which triggers RET-012 (priority 100). Although the return is within 30 days, the standard-window rule RET-007 requires final_sale == False and does not apply. The highest-priority applicable rule, RET-012, controls and makes final-sale items ineligible for return or exchange."
+  }
+}

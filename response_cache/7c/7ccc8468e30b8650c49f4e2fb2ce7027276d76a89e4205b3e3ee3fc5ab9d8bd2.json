@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "7ccc8468e30b8650c49f4e2fb2ce7027276d76a89e4205b3e3ee3fc5ab9d8bd2",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The order is apparel, not final sale, and delivered 41 days ago. Although the customer describes the sweatshirt stretching and unraveling, the facts record defective == False, so the defective-item rule (RET-020) does not apply. With days_since_delivery (41) > 30 and final_sale == False, RET-008 controls and the return is not accepted beyond the 30-day window."
+  }
+}

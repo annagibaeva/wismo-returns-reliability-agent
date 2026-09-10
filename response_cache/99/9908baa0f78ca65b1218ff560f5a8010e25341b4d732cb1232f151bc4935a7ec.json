@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "9908baa0f78ca65b1218ff560f5a8010e25341b4d732cb1232f151bc4935a7ec",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The defective flag on the facts is False, so the defective-return rule (RET-020) does not apply regardless of the customer's description. Final-sale is False, and days_since_delivery is 9 (<= 30), so the standard return window rule RET-007 applies, making the item eligible. No higher-priority rule (final-sale, fraud hold) is triggered on the facts."
+  }
+}

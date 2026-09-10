@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "d3bc5b0dde8ac0ce6873638b98cd14f43fd50f49c5bf942cee10f4f43b15cac5",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a final-sale clearance item (final_sale == True), which per RET-012 (priority 100, the highest) cannot be returned or exchanged. This dominates the standard window rules, and no goodwill grant or defect applies."
+  }
+}

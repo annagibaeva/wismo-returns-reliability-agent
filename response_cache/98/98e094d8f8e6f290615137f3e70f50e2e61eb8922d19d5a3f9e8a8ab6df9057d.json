@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "98e094d8f8e6f290615137f3e70f50e2e61eb8922d19d5a3f9e8a8ab6df9057d",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a gift card marked final_sale == True, which triggers RET-012 (priority 100), the highest-priority applicable rule. Final-sale items cannot be returned regardless of the standard 30-day window. RET-007 does not apply because final_sale is True, and RET-020 does not apply because the item is not defective."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "3fd7919e579b3c61117926dfa98657945586459980843f5384404e75c366ff0a",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (defective == True) and not final sale (final_sale == False), satisfying RET-020, which at priority 90 dominates the out-of-window ineligibility rule RET-008 (priority 10). Final-sale rule RET-012 does not apply since final_sale is False. Thus the defective item is eligible regardless of the 48-day elapsed window."
+  }
+}

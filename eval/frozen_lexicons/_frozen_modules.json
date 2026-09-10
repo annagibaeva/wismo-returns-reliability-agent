@@ -4,6 +4,7 @@
     "agent/llm.py",
     "agent/lexicons.py",
     "agent/extract.py",
-    "agent/cache.py"
+    "agent/cache.py",
+    "agent/route.py"
   ]
 }

@@ -336,6 +336,12 @@ def test_route_selects_spanish_lexicon():
     assert _route("¿dónde está mi pedido?", lang="es") == ("wismo", None)
 
 
+def test_route_selects_indonesian_lexicon():
+    assert _route("saya ingin pengembalian pesanan", lang="id") == ("return", None)
+    assert _route("ada kebakaran dan asap di kotak", lang="id") == ("out_of_scope", "safety")
+    assert _route("dimana pesanan saya?", lang="id") == ("wismo", None)
+
+
 def test_route_unknown_language_raises():
     # A mistyped or unsupported language code must be loud, not a silent fall-through
     # to English -- that would route every ticket in that language through the wrong

@@ -1,10 +1,11 @@
 """Fixture loading + the dataset's frozen 'today'.
 
-`fixtures/tickets.json` holds English tickets and, per T10, one Spanish `lang="es"`
-variant of each (`variant_of` pointing at the English `id`). `_validate_tickets`
-is where the project's central integrity claim for T10 is enforced: a variant's
-`expected` block must equal its English source's exactly, so a translation can
-change the words but never the gold answer it is scored against.
+`fixtures/tickets.json` holds English tickets and, per T10/T15, one Spanish
+`lang="es"` and one Indonesian `lang="id"` variant of each (`variant_of` pointing
+at the English `id`). `_validate_tickets` is where the project's central integrity
+claim is enforced: a variant's `expected` block must equal its English source's
+exactly, so a translation can change the words but never the gold answer it is
+scored against.
 """
 from __future__ import annotations
 
@@ -28,7 +29,7 @@ def orders() -> list[dict]:
 
 
 _SPLITS = frozenset({"seed", "heldout"})
-_LANGS = frozenset({"en", "es"})
+_LANGS = frozenset({"en", "es", "id"})
 
 
 def _validate_tickets(tickets: list[dict]) -> None:
@@ -48,7 +49,7 @@ def _validate_tickets(tickets: list[dict]) -> None:
                 raise ValueError(f"ticket {tid}: paraphrase_of {paraphrase_of!r} is not a seed id")
         lang = t.get("lang", "en")
         if lang not in _LANGS:
-            raise ValueError(f"ticket {tid}: lang must be en|es, got {lang!r}")
+            raise ValueError(f"ticket {tid}: lang must be en|es|id, got {lang!r}")
         variant_of = t.get("variant_of")
         if lang == "en":
             if variant_of is not None:

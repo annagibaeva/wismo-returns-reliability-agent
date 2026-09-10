@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "3f533ca032e28bfc397a9fcf44ece34b4446ad316a3c152131807e5855e84acb",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is apparel, not final sale, and was delivered 12 days ago (within the 30-day standard window). RET-007 applies (eligible). Electronics-specific rules don't apply (category is apparel), the item isn't defective (RET-020 inapplicable), it isn't final sale (RET-012 inapplicable), and there is no goodwill grant or fraud hold. RET-007 is the only applicable rule."
+  }
+}

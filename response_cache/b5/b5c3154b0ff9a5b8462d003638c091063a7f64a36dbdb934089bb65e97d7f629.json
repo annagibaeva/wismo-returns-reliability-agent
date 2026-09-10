@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "b5c3154b0ff9a5b8462d003638c091063a7f64a36dbdb934089bb65e97d7f629",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a non-final-sale home category product delivered 35 days ago. Since days_since_delivery (35) > 30 and final_sale is False, RET-008 applies, making the return ineligible. The item is not defective (customer confirms nothing is wrong; wrong size ordered), so RET-020 does not apply. No goodwill grant or fraud hold is present."
+  }
+}

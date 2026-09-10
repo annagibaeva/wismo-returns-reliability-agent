@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "cc7bfb2f8a35de6efffb782e41103926b94586bc9f9b9e0891e79e409d7c1fa7",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (arrived broken in three pieces) and not a final-sale item. RET-020 (priority 90) allows defective, non-final-sale items to be returned regardless of the standard window, which dominates RET-008 (priority 10) that would otherwise make the 37-day-old return ineligible. Final-sale (RET-012) and fraud-hold (RET-051) rules do not apply since final_sale and fraud_hold are false."
+  }
+}

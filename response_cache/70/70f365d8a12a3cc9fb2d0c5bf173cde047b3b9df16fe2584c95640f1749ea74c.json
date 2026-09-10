@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "70f365d8a12a3cc9fb2d0c5bf173cde047b3b9df16fe2584c95640f1749ea74c",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-003"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is electronics with days_since_delivery = 16, which is greater than 15. The electronics-specific rule RET-003 (priority 20) controls over the standard window rule RET-007 (priority 10). No higher-priority rule applies: final_sale is false, defective is null (not true), goodwill_grant and fraud_hold are false. Therefore the return is ineligible."
+  }
+}

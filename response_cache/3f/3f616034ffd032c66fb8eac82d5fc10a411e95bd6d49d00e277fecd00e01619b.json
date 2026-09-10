@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "3f616034ffd032c66fb8eac82d5fc10a411e95bd6d49d00e277fecd00e01619b",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The wool coat is apparel (not electronics), not final sale, not defective, no goodwill grant, and no fraud hold. It was delivered 45 days ago, which exceeds the 30-day standard return window. RET-008 applies (days_since_delivery > 30 and final_sale == False), making the return ineligible. No higher-priority rule (final-sale, defective, goodwill) has its condition satisfied."
+  }
+}

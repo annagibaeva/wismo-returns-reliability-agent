@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "247742f03d748ae3ccef55d2de8595d675072452295b9701bda1e8173e16b75a",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a final-sale clearance product (final_sale == true). RET-012 applies and, at priority 100, dominates all other rules. Although within the 30-day window (RET-007), that rule requires final_sale == false, so it does not apply. The item is not defective and there is no goodwill grant, so no higher- or equal-priority eligibility rule overrides. Final-sale items cannot be returned."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "c2e4fb2d38160bac9af4f121683c4e8b7385f60d4584c13280ad76ad9e724d82",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is final_sale == True (clearance category), which triggers RET-012 at priority 100, the highest applicable rule. RET-007 does not apply since final_sale is not False. The item is not defective (RET-020 inapplicable), no goodwill grant (RET-050 inapplicable), and no fraud hold. Final-sale clearance items cannot be returned."
+  }
+}

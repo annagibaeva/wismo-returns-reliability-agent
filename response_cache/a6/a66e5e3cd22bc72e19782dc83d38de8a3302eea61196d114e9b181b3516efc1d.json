@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "a66e5e3cd22bc72e19782dc83d38de8a3302eea61196d114e9b181b3516efc1d",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is final_sale (clearance), so RET-012 applies with the highest priority (100), making it ineligible for return. Buyer's remorse does not override final-sale status, and no defective, goodwill, or fraud conditions apply."
+  }
+}

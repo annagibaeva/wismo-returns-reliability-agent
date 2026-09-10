@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "7df2d669ad7c0d612e5f3d5e1b34b9c75a42e2960374a7c037854ca8beef65a6",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "Item is apparel (not electronics), not final sale, and within the 30-day window (12 days since delivery). RET-007 applies for a full refund. Higher-priority rules do not apply: not final sale (RET-012), defective is null so RET-020 does not trigger, and no goodwill grant or fraud hold."
+  }
+}

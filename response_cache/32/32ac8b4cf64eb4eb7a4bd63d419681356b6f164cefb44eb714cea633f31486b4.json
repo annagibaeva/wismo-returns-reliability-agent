@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "32ac8b4cf64eb4eb7a4bd63d419681356b6f164cefb44eb714cea633f31486b4",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (defective == True) and not final sale (final_sale == False), satisfying RET-020, which at priority 90 allows return regardless of the standard 30-day window. This dominates RET-008 (ineligible due to days_since_delivery > 30, priority 10). RET-012 does not apply since final_sale is False, and no fraud hold or goodwill grant is present."
+  }
+}

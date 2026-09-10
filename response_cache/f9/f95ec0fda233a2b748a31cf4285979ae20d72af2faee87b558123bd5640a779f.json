@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "f95ec0fda233a2b748a31cf4285979ae20d72af2faee87b558123bd5640a779f",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "final_sale is True (clearance item), so RET-012 applies at priority 100. Although the item is defective, RET-020 requires final_sale == False and therefore does not apply. The highest-priority applicable rule, RET-012, controls and makes the item ineligible for return."
+  }
+}

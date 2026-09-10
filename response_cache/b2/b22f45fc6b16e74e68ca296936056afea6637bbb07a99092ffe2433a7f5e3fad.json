@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "b22f45fc6b16e74e68ca296936056afea6637bbb07a99092ffe2433a7f5e3fad",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "Although the customer describes the mixer as never turning on, the order facts record defective == False, so the defective-item rule (RET-020) does not apply. The category is 'home' (not electronics), and final_sale is False. With days_since_delivery = 63 (> 30), RET-008 controls and the return is ineligible as it falls outside the standard 30-day window. No goodwill grant or fraud hold is present."
+  }
+}

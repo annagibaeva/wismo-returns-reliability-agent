@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "c105bbb95f3d78e5d2d4de1bebc1bf90093c7994198cbb6c3af667f5cc80ec86",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "Category is apparel (not electronics), delivered 10 days ago (<= 30), and final_sale is null/not True. RET-007 applies (days_since_delivery <= 30 and not final sale), making the item eligible for return. No higher-priority rule applies: final_sale is not True (RET-012 inapplicable), defective is not True (RET-020 inapplicable), and no goodwill grant or fraud hold."
+  }
+}

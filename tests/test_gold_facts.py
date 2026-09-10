@@ -136,6 +136,13 @@ def test_facts_for_resolves_every_spanish_id():
         assert gold.facts_for(t["id"]) == gold.facts_for(t["variant_of"]), t["id"]
 
 
+def test_facts_for_resolves_every_indonesian_id():
+    id_tickets = data.all_tickets(lang="id")
+    assert len(id_tickets) == 97
+    for t in id_tickets:
+        assert gold.facts_for(t["id"]) == gold.facts_for(t["variant_of"]), t["id"]
+
+
 def test_defective_for_resolves_every_spanish_id_not_just_the_fault_tier():
     es_tickets = data.all_tickets(lang="es")
     fault_es = [t for t in es_tickets if "gold_defective" in t["expected"]]

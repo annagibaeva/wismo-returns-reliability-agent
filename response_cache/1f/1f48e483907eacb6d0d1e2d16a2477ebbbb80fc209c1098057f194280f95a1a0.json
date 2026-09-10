@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "1f48e483907eacb6d0d1e2d16a2477ebbbb80fc209c1098057f194280f95a1a0",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "Delivery was 38 days ago, exceeding the 30-day standard window, and the item is not final sale, defective, under goodwill grant, or fraud hold. RET-008 applies: returns are not accepted more than 30 days after delivery."
+  }
+}

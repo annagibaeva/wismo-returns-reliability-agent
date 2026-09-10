@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "f6542583fbe02ec3ccb7ac25df23b780ccf04db3965b076f1d76d54c7e6777f6",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is an accessory (not electronics), not final sale, delivered 6 days ago (within the 30-day window), with no fraud hold. RET-007 applies since days_since_delivery <= 30 and final_sale == False. No higher-priority rule is triggered (not defective, not final sale, no fraud hold, no goodwill grant), so the standard-window eligibility controls."
+  }
+}

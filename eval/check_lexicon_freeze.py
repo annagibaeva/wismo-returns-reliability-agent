@@ -38,7 +38,7 @@ FREEZE_DIR = Path(__file__).resolve().parent / "frozen_lexicons"
 # cannot hold routing words, and a module that takes customer prose as input cannot
 # honestly claim that. It holds none today, and its snapshot is `{}`.
 MODULES = ("agent/agent.py", "agent/llm.py", "agent/lexicons.py", "agent/extract.py",
-           "agent/cache.py")
+           "agent/cache.py", "agent/route.py")
 FLAT_LANG = "en"
 
 # Every other module under agent/ that is *not* scanned above, with the reason it

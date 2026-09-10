@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "4c730fffa0de5c6d2cd0a69ef5061b1cef95e7f01c1e89c60c64d20e0606aea9",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is apparel (not electronics), delivered 12 days ago (<= 30), and not final sale. Per RET-007 the standard 30-day return window applies and the item is eligible. Higher-priority rules do not apply: not final sale (RET-012), not marked defective (RET-020), no goodwill grant or fraud hold. The customer's framing (wrong size / changed mind) does not affect eligibility within the standard window."
+  }
+}

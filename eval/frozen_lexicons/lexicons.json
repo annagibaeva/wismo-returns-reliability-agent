@@ -185,5 +185,101 @@
       "lleg",
       "paquete"
     ]
+  },
+  "id": {
+    "_ABUSE": [
+      "gugat",
+      "pengacara",
+      "tindakan hukum",
+      "proses hukum",
+      "review di mana-mana",
+      "review dimana-mana",
+      "sampah",
+      "ancam"
+    ],
+    "_ADDRESS": [
+      "ubah alamat",
+      "ganti alamat",
+      "ganti alamat pengiriman",
+      "alamat lain",
+      "alamat berbeda",
+      "alamat baru",
+      "alamat kantor"
+    ],
+    "_DEFECTIVE": [
+      "rusak",
+      "cacat",
+      "pecah",
+      "retak",
+      "bocor",
+      "tidak berfungsi",
+      "tidak nyala",
+      "tidak menyala",
+      "ga nyala",
+      "gak nyala",
+      "mati",
+      "bermasalah",
+      "tidak bisa dipakai"
+    ],
+    "_FRAUD": [
+      "penipuan",
+      "penipu",
+      "diretas",
+      "akun diambil",
+      "bukan saya yang pesan",
+      "tidak memesan",
+      "tidak pesan",
+      "bukan pesanan saya"
+    ],
+    "_PAYMENT": [
+      "tidak sah",
+      "tak sah",
+      "tidak diotorisasi",
+      "tanpa izin",
+      "sengketa",
+      "chargeback",
+      "bank saya",
+      "ke bank"
+    ],
+    "_RETURN": [
+      "pengembalian",
+      "kembalikan",
+      "mengembalikan",
+      "retur",
+      "refund",
+      "uang kembali",
+      "tukar",
+      "penukaran"
+    ],
+    "_SAFETY": [
+      "kebakaran",
+      "terbakar",
+      "kebakar",
+      "asap",
+      "percik",
+      "tersengat",
+      "kejutan listrik",
+      "kesetrum",
+      "setrum",
+      "nyetrum",
+      "meledak",
+      "ledakan",
+      "bahaya",
+      "berbahaya",
+      "hangus"
+    ],
+    "_WISMO": [
+      "dimana",
+      "di mana",
+      "lacak",
+      "pelacak",
+      "tracking",
+      "resi",
+      "pengirim",
+      "dikirim",
+      "mengirim",
+      "ngirim",
+      "paket"
+    ]
   }
 }

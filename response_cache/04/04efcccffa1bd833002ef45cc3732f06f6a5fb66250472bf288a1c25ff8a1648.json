@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "04efcccffa1bd833002ef45cc3732f06f6a5fb66250472bf288a1c25ff8a1648",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is final_sale == True, which triggers RET-012 (priority 100), the highest-priority applicable rule. Final-sale clearance items cannot be returned. No defective, goodwill, or fraud-hold conditions apply that would override this."
+  }
+}

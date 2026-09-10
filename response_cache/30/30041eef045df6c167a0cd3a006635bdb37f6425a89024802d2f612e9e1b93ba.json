@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "30041eef045df6c167a0cd3a006635bdb37f6425a89024802d2f612e9e1b93ba",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is final_sale == True (intimates), which triggers RET-012 (priority 100), the highest-priority applicable rule. Although the return is within the standard 30-day window, RET-007 requires final_sale == False and does not apply. The defective exception (RET-020) also does not apply since defective is null/not True. Final-sale status dominates, making the return ineligible."
+  }
+}

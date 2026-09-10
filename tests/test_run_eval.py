@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from agent import extract as extract_mod
+from agent import route as route_mod
 from agent.lexicons import LEXICONS
 from eval import run_eval, scorer, stats
 
@@ -26,6 +27,7 @@ def test_extractor_cli_choices_come_from_the_seam() -> None:
     assert set(run_eval._EXTRACTOR_CHOICES) == set(run_eval._CLI_TO_SEAM)
     assert run_eval._CLI_TO_SEAM["keyword"] == "stub"
     assert run_eval._CLI_TO_SEAM["model"] == "llm"
+    assert set(run_eval._ROUTER_CHOICES) == set(run_eval._SEAM_TO_CLI[s] for s in route_mod.ROUTERS)
 
 
 def test_extractor_mapping_is_a_bijection_onto_the_seam() -> None:
@@ -215,7 +217,7 @@ def test_extractor_agreement_available_when_model_arm_already_ran(monkeypatch) -
     M-6 adds the keyword arm for free and reports a real agreement figure -- no
     network call in this test: `_run` is monkeypatched to return synthetic rows."""
     def fake_run(backend, use_gate, *, held_out=False, use_soft_entailment=False,
-                lang="en", extractor="stub"):
+                lang="en", extractor="stub", router="stub"):
         assert extractor == "stub"  # the only arm M-6 is allowed to start itself
         rows = [
             {"ticket_id": "T1", "fact_applicable": True, "recorded_defective": True},
@@ -266,6 +268,7 @@ def test_zero_success_2pct_threshold_is_189_not_185() -> None:
 def test_report_filename_is_per_language() -> None:
     assert run_eval._report_filename("en") == "report.md"
     assert run_eval._report_filename("es") == "report-es.md"
+    assert run_eval._report_filename("id") == "report-id.md"
     assert run_eval._report_filename("es") != run_eval._report_filename("en")
 
 

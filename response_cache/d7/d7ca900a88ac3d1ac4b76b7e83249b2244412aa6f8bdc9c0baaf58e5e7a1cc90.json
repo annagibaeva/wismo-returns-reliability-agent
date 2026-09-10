@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "d7ca900a88ac3d1ac4b76b7e83249b2244412aa6f8bdc9c0baaf58e5e7a1cc90",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The customer describes a broken lamp, but the structured facts list defective=false, so the defective-item exception (RET-020) does not apply. The item is not final sale. With days_since_delivery = 37 (> 30) and final_sale = false, RET-008 controls and the return is outside the standard 30-day window. No goodwill grant or other higher-priority applicable rule exists."
+  }
+}

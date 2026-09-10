@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "67784ee24714a3ff99d3ea76640ec6aa3728f232a9cc178873ebec686c76f086",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The duvet cover is a non-final-sale home item delivered 35 days ago. Since days_since_delivery (35) exceeds the 30-day standard window and final_sale is False, RET-008 applies and returns are not accepted. The item is not defective (defective == False), so RET-020 does not apply. No goodwill grant or fraud hold is present, and the category is not electronics, so no higher-priority rule overrides this outcome."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "eb512d67dcf741cb4561f61f6eb6933e389641ed27846b5e99c6a12070e84d42",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is apparel (not electronics), delivered 10 days ago (within the 30-day standard window), and final_sale is null/not true, so RET-007 applies. No higher-priority rule is triggered: final_sale is not True (RET-012 inapplicable), defective is not True (RET-020 inapplicable), and neither goodwill_grant nor fraud_hold is set. Thus the return is eligible for a full refund."
+  }
+}

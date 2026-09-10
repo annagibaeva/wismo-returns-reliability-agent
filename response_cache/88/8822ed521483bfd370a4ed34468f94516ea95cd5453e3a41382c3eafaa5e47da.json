@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "8822ed521483bfd370a4ed34468f94516ea95cd5453e3a41382c3eafaa5e47da",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (never powered on since delivery) and is not final sale. RET-020 (priority 90) applies and allows return of defective items regardless of the standard window, overriding RET-008 which would otherwise make the return ineligible at 63 days. No final-sale (RET-012) or fraud-hold (RET-051) conditions are true. Category is 'home', so electronics rules do not apply."
+  }
+}

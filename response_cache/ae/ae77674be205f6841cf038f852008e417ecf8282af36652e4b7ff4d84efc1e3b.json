@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "ae77674be205f6841cf038f852008e417ecf8282af36652e4b7ff4d84efc1e3b",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-003"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is electronics with days_since_delivery = 20, which exceeds the 15-day electronics return window (RET-003, priority 20). This category-specific rule dominates the standard 30-day window (RET-007). The defective flag is null (not True), so RET-020 does not apply, and neither final-sale, goodwill, nor fraud-hold conditions are met."
+  }
+}

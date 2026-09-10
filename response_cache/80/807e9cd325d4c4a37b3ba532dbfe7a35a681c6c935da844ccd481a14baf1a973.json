@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "807e9cd325d4c4a37b3ba532dbfe7a35a681c6c935da844ccd481a14baf1a973",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-003"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is electronics with 20 days since delivery. The highest-priority applicable rule is RET-003 (priority 20), which makes electronics returns after 15 days ineligible. Final-sale (RET-012) does not apply since final_sale is false, and the defective exception (RET-020) does not apply since defective is not True. The electronics-specific rules override the standard 30-day window rules."
+  }
+}

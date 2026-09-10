@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "4026cc732b1f175563ae90e540cfc98fb7668714cdfa4d59824b91e6a42725d6",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item was delivered 10 days ago (<= 30) and final_sale is null (not True), so it is not a final-sale item. Under RET-007, most items may be returned within 30 days for a full refund. Higher-priority rules do not apply: final_sale is not True (RET-012), defective is not True (RET-020), and neither goodwill_grant nor fraud_hold is set. Category is apparel, so electronics rules are irrelevant."
+  }
+}

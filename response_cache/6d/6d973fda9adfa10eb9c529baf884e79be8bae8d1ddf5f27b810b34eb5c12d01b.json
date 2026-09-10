@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "6d973fda9adfa10eb9c529baf884e79be8bae8d1ddf5f27b810b34eb5c12d01b",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is final_sale == True (intimates), which triggers RET-012 (priority 100), the highest-priority applicable rule. Final-sale items cannot be returned or exchanged. The item is not defective, so RET-020 does not apply, and no goodwill grant exists. The standard-window rule RET-007 (priority 10) is superseded by the final-sale rule."
+  }
+}

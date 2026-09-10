@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "b2b531ad9f5ea2930046bcb88d6afa2bb4d850c3dcbab8a9d3f13243e25025e7",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-012"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is a gift card marked final_sale == True. RET-012 (priority 100) is the highest-priority applicable rule and states that final-sale items, including gift cards, cannot be returned or exchanged. This dominates the standard 30-day window rule, and no defective, goodwill, or fraud-hold conditions apply."
+  }
+}

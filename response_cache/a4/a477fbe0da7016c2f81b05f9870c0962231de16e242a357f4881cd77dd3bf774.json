@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "a477fbe0da7016c2f81b05f9870c0962231de16e242a357f4881cd77dd3bf774",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is not defective (defective=false) and not final sale, so only the standard window rules apply. With days_since_delivery=35 (>30) and final_sale=false, RET-008 controls and makes the return ineligible. The customer's wrong-size reason does not change this."
+  }
+}

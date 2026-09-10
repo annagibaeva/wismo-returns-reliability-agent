@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "f372899bff84a009ba42291af60db13bb832d86807738d9b3492e2e1af08379c",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-020"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is defective (screen failure confirmed) and not final sale. RET-020 (priority 90) allows defective returns regardless of the standard or electronics window, overriding the out-of-window ineligibility rules RET-003 and RET-008 (priority 20 and 10). No final-sale (RET-012) or fraud-hold (RET-051) conditions apply."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "f8e0bfec5f48017faef0851babbf8d5d10d2bc53e1b7829cf8982f220ff54c39",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-008"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item was delivered 38 days ago, which exceeds the 30-day return window, and it is not final sale. Despite the customer's claim of being within 30 days, the facts show days_since_delivery = 38, so RET-008 applies. No higher-priority rule (defective, final-sale, goodwill, fraud) is triggered by the facts."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "9f0e12598a3bec30b5adca0a9cdeef7dbd2f9b7bc6ca9f69575accd7ce3a3ffc",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is apparel (not electronics), final_sale is null/not True, and days_since_delivery (10) is within the 30-day standard window. RET-007 applies (eligible). Higher-priority rules do not apply: RET-012 requires final_sale == True (it is not), RET-020 requires defective == True (it is null), and RET-050/RET-051 conditions are false."
+  }
+}

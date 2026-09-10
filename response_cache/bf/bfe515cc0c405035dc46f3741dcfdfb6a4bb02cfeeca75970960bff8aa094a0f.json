@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "bfe515cc0c405035dc46f3741dcfdfb6a4bb02cfeeca75970960bff8aa094a0f",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-007"
+    ],
+    "outcome": "eligible",
+    "rationale": "The item is footwear (not electronics), not final sale, not defective, no goodwill grant, and no fraud hold. Only RET-007 applies: delivered 10 days ago (<= 30) and final_sale == False, making it eligible for a full refund."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "cache_version": 1,
+  "call": "llm.return_decision",
+  "key": "31aa3302b1c98b05398fc99f4a1ab553abe87fe2dde08e4107448d7eed6b3c60",
+  "model": "claude-opus-4-8",
+  "response": {
+    "cited_rule_ids": [
+      "RET-003"
+    ],
+    "outcome": "ineligible",
+    "rationale": "The item is electronics delivered 22 days ago. The electronics-specific rule RET-003 (priority 20) controls over the standard 30-day window (RET-007, priority 10), and since days_since_delivery (22) > 15, the return is not accepted. Not defective (RET-020 inapplicable), not final sale, no goodwill grant, and no fraud hold, so no higher-priority rule overrides."
+  }
+}
