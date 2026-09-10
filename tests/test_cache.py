@@ -257,23 +257,42 @@ def test_proposer_hit_and_miss_agree(monkeypatch):
     assert hit == miss == _DECISION
 
 
-def test_proposer_call_is_temperature_zero_structured_output(monkeypatch):
-    """Pins the same property `test_llm_call_is_temperature_zero_structured_output`
-    pins for the extractor. `agent/llm.py`'s module docstring has claimed "temperature
-    0" since the first commit, but `_llm_propose`'s request dict silently dropped the
-    key in an unrelated commit and ran at whatever the API defaults to for a long
-    stretch of this project's history -- caught only by manual git-log archaeology,
-    twice deferred. This makes the next silent drop a failing test instead of a
-    quiet change in what gets published."""
+@pytest.mark.parametrize("model,expect_temp", [
+    ("claude-opus-4-8", False),
+    ("claude-opus-4-7", False),
+    ("claude-opus-5", False),
+    ("claude-sonnet-4-5", True),
+    ("claude-3-7-sonnet-latest", True),
+])
+def test_sampling_params_match_model_family(model, expect_temp):
+    params = llm_mod.sampling_params(model)
+    if expect_temp:
+        assert params == {"temperature": 0}
+    else:
+        assert "temperature" not in params
+
+
+def test_proposer_call_omits_temperature_on_adaptive_models(monkeypatch):
+    """The default model (claude-opus-4-8) 400s if `temperature` is sent. The live
+    request must omit it. Older models still get temperature=0 — see
+    `test_proposer_keeps_temperature_zero_on_sampling_models`."""
     calls = _install_provider(monkeypatch, calls=[])
     facts, rules = {"defective": False, "days_since_delivery": 5}, kb.rules()
     propose_return_decision(facts, rules, "take it back", backend="llm")
     sent = calls[0]
-    assert sent["temperature"] == 0
+    assert "temperature" not in sent
     assert sent["model"] == llm_mod.MODEL
     assert sent["tools"] == [llm_mod._SCHEMA]
     assert sent["tool_choice"] == {"type": "tool", "name": "return_decision"}
     assert sent["system"] == llm_mod._SYSTEM
+
+
+def test_proposer_keeps_temperature_zero_on_sampling_models(monkeypatch):
+    monkeypatch.setattr(llm_mod, "MODEL", "claude-sonnet-4-5")
+    calls = _install_provider(monkeypatch, calls=[])
+    facts, rules = {"defective": False, "days_since_delivery": 5}, kb.rules()
+    propose_return_decision(facts, rules, "take it back", backend="llm")
+    assert calls[0]["temperature"] == 0
 
 
 # --------------------------------------------------------------------------- #

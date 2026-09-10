@@ -115,10 +115,12 @@ def _llm_entails(explanation: str, source_text: str) -> bool:
     import anthropic
     client = anthropic.Anthropic()
     user = json.dumps({"explanation": explanation, "source_text": source_text}, indent=2)
+    from agent.llm import sampling_params
     resp = client.messages.create(
-        model=MODEL, max_tokens=128, temperature=0, system=_ENTAIL_SYSTEM,
+        model=MODEL, max_tokens=128, system=_ENTAIL_SYSTEM,
         tools=[_ENTAIL_SCHEMA], tool_choice={"type": "tool", "name": "entailment_verdict"},
         messages=[{"role": "user", "content": user}],
+        **sampling_params(MODEL),
     )
     for block in resp.content:
         if getattr(block, "type", None) == "tool_use":

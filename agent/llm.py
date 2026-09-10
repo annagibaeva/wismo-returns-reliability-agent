@@ -9,8 +9,10 @@ Two implementations behind one signature:
             the real failure class — pro-customer bias + precedence blindness. It is
             NOT meant to clear the win condition; it exists to run offline/CI and to
             give the gate something realistic to catch.
-  - "llm"   (needs ANTHROPIC_API_KEY): a real Claude call, temperature 0, structured
-            output. This produces the *reported* numbers; we publish whatever it gives.
+  - "llm"   (needs ANTHROPIC_API_KEY): a real Claude call, structured output.
+            Sampling is temperature 0 on models that still accept it; Opus 4.7+
+            reject `temperature` (HTTP 400), so it is omitted there. This produces
+            the *reported* numbers; we publish whatever it gives.
 
 T7 puts `agent/cache.py` in front of that call, keyed on the whole request as sent.
 The lookup precedes the SDK import, so a run whose rulings are all cached replays with
@@ -22,12 +24,37 @@ from __future__ import annotations
 
 import json
 import os
+import re
 
 from kb.evaluator import evaluate, MissingFact
 
 from . import cache
 
 MODEL = os.environ.get("AGENT_MODEL", "claude-opus-4-8")
+
+
+def sampling_params(model: str) -> dict:
+    """Messages API sampling kwargs for `model`.
+
+    Opus 4.7+ (including 4.8 and the 5.x line) reject `temperature` / `top_p` /
+    `top_k` with HTTP 400. Older models still take `temperature=0`, which is the
+    deterministic setting this project wants. Adaptive models get `{}`: omitting
+    the field is the supported equivalent of "don't sample."
+    """
+    if _rejects_sampling(model):
+        return {}
+    return {"temperature": 0}
+
+
+def _rejects_sampling(model: str) -> bool:
+    name = model.lower()
+    if "fable" in name or "mythos" in name:
+        return True
+    m = re.search(r"(opus|sonnet|haiku)-(\d+)(?:-(\d+))?", name)
+    if m is None:
+        return False
+    major, minor = int(m.group(2)), int(m.group(3) or 0)
+    return major >= 5 or (major == 4 and minor >= 7)
 
 
 def propose_return_decision(facts: dict, candidate_rules: list[dict], message: str,
@@ -120,9 +147,10 @@ def _llm_propose(facts: dict, candidate_rules: list[dict], message: str) -> dict
     # shapes the response can be absent from the key. Looked up before the SDK import,
     # so a fully cached run replays with no `anthropic` and no credentials.
     request = {
-        "model": MODEL, "max_tokens": 512, "temperature": 0, "system": _SYSTEM,
+        "model": MODEL, "max_tokens": 512, "system": _SYSTEM,
         "tools": [_SCHEMA], "tool_choice": {"type": "tool", "name": "return_decision"},
         "messages": [{"role": "user", "content": user}],
+        **sampling_params(MODEL),
     }
     hit = cache.get(_CALL, request, _readable)
     if hit is not None:

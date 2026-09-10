@@ -17,8 +17,8 @@ Two implementations behind one signature:
             model backend can tell those apart; the keyword backend structurally
             cannot, and demonstrating that gap is part of what this project is for.
   - "llm"  (needs Anthropic credentials, usually ANTHROPIC_API_KEY): one Claude call,
-            temperature 0, structured output. Entitled to return `None` when the
-            message doesn't say.
+            structured output (temperature 0 on models that still accept sampling).
+            Entitled to return `None` when the message doesn't say.
             `kb/evaluator.py` raises `MissingFact` on a `None` input, so RET-020
             simply cannot fire and the ticket falls through to a human instead of
             being ruled on a fact nobody actually stated.
@@ -185,9 +185,10 @@ def _llm_extract(msg: str) -> dict:
     # request. Nothing that shapes the response can be missing from the key, because
     # anything missing from this dict is also missing from the call.
     request = {
-        "model": llm.MODEL, "max_tokens": 128, "temperature": 0, "system": _SYSTEM,
+        "model": llm.MODEL, "max_tokens": 128, "system": _SYSTEM,
         "tools": [_SCHEMA], "tool_choice": {"type": "tool", "name": "message_facts"},
         "messages": [{"role": "user", "content": _USER.format(msg=msg)}],
+        **llm.sampling_params(llm.MODEL),
     }
     # Before the SDK import and before the credentials check, both deliberately. A run
     # served entirely from cache never touches the wire, so it needs neither `anthropic`

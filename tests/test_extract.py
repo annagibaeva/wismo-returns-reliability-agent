@@ -487,16 +487,24 @@ def test_the_prompt_carries_only_the_message_and_the_question(monkeypatch):
 
 # ---- the provider call is shaped like the rest of the seam ----
 
-def test_llm_call_is_temperature_zero_structured_output(monkeypatch):
+def test_llm_call_omits_temperature_on_adaptive_models(monkeypatch):
     calls = []
     _install_provider(monkeypatch, _tool_use({"defective": "yes"}), calls=calls)
     extract_facts("it's broken", lang="en", backend="llm")
     sent = calls[0]
-    assert sent["temperature"] == 0
+    assert "temperature" not in sent
     assert sent["model"] == llm_mod.MODEL
     assert sent["tools"] == [extract_mod._SCHEMA]
     assert sent["tool_choice"] == {"type": "tool", "name": "message_facts"}
     assert sent["system"] == extract_mod._SYSTEM
+
+
+def test_llm_call_keeps_temperature_zero_on_sampling_models(monkeypatch):
+    monkeypatch.setattr(llm_mod, "MODEL", "claude-sonnet-4-5")
+    calls = []
+    _install_provider(monkeypatch, _tool_use({"defective": "yes"}), calls=calls)
+    extract_facts("it's broken", lang="en", backend="llm")
+    assert calls[0]["temperature"] == 0
 
 
 def test_the_schema_offers_a_third_answer_for_unanswerable(monkeypatch):
