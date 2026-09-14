@@ -12,7 +12,7 @@ from functools import lru_cache
 import kb
 import gate as grounding_gate
 from services_mock import order_api, returns_system, ticketing
-from . import extract, llm, route
+from . import extract, llm, route, translate
 from .lexicons import LEXICONS
 from .schemas import AuditLogger, Resolution
 
@@ -48,18 +48,29 @@ def _route(msg: str, lang: str = "en", audit: AuditLogger | None = None,
 
 def resolve_ticket(ticket: dict, backend: str = "stub", use_gate: bool = True,
                    use_soft_entailment: bool = False, extractor: str = "stub",
-                   router: str = "stub") -> Resolution:
+                   router: str = "stub", edge: str = "off") -> Resolution:
     """`backend` selects the proposer; `extractor` the fact reader; `router` the
     intent classifier. Independent on purpose — swapping two at once would make
     the delta attributable to neither. Each defaults to stub so `--backend llm`
     still uses the keyword router and keyword extractor unless asked otherwise.
+
+    `edge` selects the ARCHITECTURE (FR-6): "off" is Approach 2, where the system
+    reads the customer's own language. "oracle" and "llm" are Approach 1, where the
+    message is translated into English first and every step after that runs as if
+    the customer had written English. A flag rather than a branch, on purpose: the
+    two approaches must differ in exactly one place, or the comparison measures the
+    fork instead of the architecture.
     """
     audit = AuditLogger()
-    msg = ticket["message"]
+    # Approach 1 happens here, before anything reads the message, because that is what
+    # "at the edge" means: routing, extraction and the proposer must all see the same
+    # text. Under `edge="off"` this returns the message and language unchanged, so
+    # Approach 2 is byte-identical to never having called it.
+    #
     # Non-English tickets carry lang="es" or lang="id" (see fixtures/tickets.json);
     # English tickets still omit the key, so the default keeps old fixtures and any
     # caller that predates the extra-language arms working unchanged.
-    lang = ticket.get("lang", "en")
+    msg, lang = translate.translate_to_english(ticket, backend=edge, audit=audit)
     intent, oos_reason = _route(msg, lang, audit, backend=router)
     audit.decision("route_intent", msg, {"intent": intent, "reason": oos_reason, "lang": lang,
                                         "router": router})

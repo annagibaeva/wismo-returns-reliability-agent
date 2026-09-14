@@ -1,0 +1,627 @@
+{
+  "header": {
+    "model": "claude-opus-4-8",
+    "dataset_date": "2026-06-22",
+    "git_sha": "8773336c7535ca137c4bf9340fb7c387fb94cf8a",
+    "cache": {
+      "calls": 1266,
+      "hits": 1266,
+      "rate": 1.0
+    },
+    "extractor": {
+      "cli": "model",
+      "seam": "llm",
+      "prompt_sha256": "9aa94843473584bc0af6c56af73282c11706054c76a463cb3dd8c3ddbe6a65f3"
+    },
+    "router": {
+      "cli": "model",
+      "seam": "llm",
+      "prompt_sha256": "4c87b9a0cd11d32063215d87630e51409680069436d62571b1cb5cc856ea7bae"
+    },
+    "lexicons": {
+      "en": {
+        "lists": {
+          "_SAFETY": {
+            "raw": 10,
+            "effective": 9,
+            "dead": [
+              "caught fire"
+            ]
+          },
+          "_PAYMENT": {
+            "raw": 6,
+            "effective": 6,
+            "dead": []
+          },
+          "_FRAUD": {
+            "raw": 5,
+            "effective": 5,
+            "dead": []
+          },
+          "_ADDRESS": {
+            "raw": 5,
+            "effective": 5,
+            "dead": []
+          },
+          "_ABUSE": {
+            "raw": 6,
+            "effective": 6,
+            "dead": []
+          },
+          "_RETURN": {
+            "raw": 7,
+            "effective": 7,
+            "dead": []
+          },
+          "_WISMO": {
+            "raw": 9,
+            "effective": 6,
+            "dead": [
+              "delivery",
+              "shipped",
+              "tracking"
+            ]
+          },
+          "_DEFECTIVE": {
+            "raw": 12,
+            "effective": 11,
+            "dead": [
+              "leaking"
+            ]
+          }
+        },
+        "raw_total": 60,
+        "effective_total": 55
+      },
+      "es": {
+        "lists": {
+          "_SAFETY": {
+            "raw": 12,
+            "effective": 12,
+            "dead": []
+          },
+          "_PAYMENT": {
+            "raw": 6,
+            "effective": 6,
+            "dead": []
+          },
+          "_FRAUD": {
+            "raw": 8,
+            "effective": 8,
+            "dead": []
+          },
+          "_ADDRESS": {
+            "raw": 10,
+            "effective": 10,
+            "dead": []
+          },
+          "_ABUSE": {
+            "raw": 10,
+            "effective": 10,
+            "dead": []
+          },
+          "_RETURN": {
+            "raw": 12,
+            "effective": 12,
+            "dead": []
+          },
+          "_WISMO": {
+            "raw": 10,
+            "effective": 10,
+            "dead": []
+          },
+          "_DEFECTIVE": {
+            "raw": 23,
+            "effective": 21,
+            "dead": [
+              "rotas",
+              "rotos"
+            ]
+          }
+        },
+        "raw_total": 91,
+        "effective_total": 89
+      },
+      "id": {
+        "lists": {
+          "_SAFETY": {
+            "raw": 15,
+            "effective": 14,
+            "dead": [
+              "kebakaran"
+            ]
+          },
+          "_PAYMENT": {
+            "raw": 8,
+            "effective": 8,
+            "dead": []
+          },
+          "_FRAUD": {
+            "raw": 8,
+            "effective": 7,
+            "dead": [
+              "penipuan"
+            ]
+          },
+          "_ADDRESS": {
+            "raw": 7,
+            "effective": 6,
+            "dead": [
+              "ganti alamat pengiriman"
+            ]
+          },
+          "_ABUSE": {
+            "raw": 8,
+            "effective": 8,
+            "dead": []
+          },
+          "_RETURN": {
+            "raw": 8,
+            "effective": 8,
+            "dead": []
+          },
+          "_WISMO": {
+            "raw": 11,
+            "effective": 11,
+            "dead": []
+          },
+          "_DEFECTIVE": {
+            "raw": 13,
+            "effective": 13,
+            "dead": []
+          }
+        },
+        "raw_total": 78,
+        "effective_total": 75
+      }
+    }
+  },
+  "edge": "oracle",
+  "comparison": {
+    "en": {
+      "arms": {
+        "approach_2": {
+          "summary": {
+            "n": 97,
+            "intent_accuracy": 0.9896907216494846,
+            "resolution_recall": 0.90625,
+            "resolution_precision": 0.9666666666666667,
+            "hallucination_rate": 0.0,
+            "policy_error_rate": 0.03333333333333333,
+            "handoff_precision": 1.0,
+            "handoff_recall": 0.9696969696969697,
+            "ask_precision": 1.0,
+            "ask_recall": 1.0,
+            "containment_rate": 0.6701030927835051,
+            "deflection_rate": 0.6185567010309279,
+            "silent_fact_error_rate": 0.016666666666666666,
+            "silent_fact_error_literal_rate": 0.2,
+            "safety_routing_recall": 1.0,
+            "counts": {
+              "resolved": 60,
+              "answerable": 64,
+              "handoffs_pred": 32,
+              "handoffs_gold": 33,
+              "asks_pred": 5,
+              "asks_gold": 5,
+              "contained": 65,
+              "handoffs_justified": 32,
+              "asks_justified": 5,
+              "action_correct": 96,
+              "intent_correct": 96,
+              "answerable_correct": 58,
+              "resolved_correct": 58,
+              "correct": 58,
+              "hallucination": 0,
+              "policy_error": 2,
+              "ask": 5,
+              "silent_fact_error": 1,
+              "silent_fact_error_literal": 12,
+              "safety_routing_hits": 22,
+              "safety_routing_gold": 22
+            }
+          },
+          "fact_accuracy": {
+            "n": 57,
+            "exact": 43,
+            "exact_rate": 0.7543859649122807,
+            "null_vs_false": 13,
+            "null_vs_false_rate": 0.22807017543859648,
+            "other_divergence": 1,
+            "other_divergence_rate": 0.017543859649122806,
+            "null_vs_false_ticket_ids": [
+              "AD-03",
+              "AD-08",
+              "CR-02",
+              "CR-04",
+              "CR-07",
+              "HO-AD-01",
+              "HO-AD-02",
+              "HO-AD-03",
+              "HO-CR-01",
+              "HO-CR-02",
+              "HO-PR-01",
+              "HO-UN-02",
+              "HO-UN-07"
+            ],
+            "other_divergence_ticket_ids": [
+              "HO-FA-01"
+            ]
+          },
+          "errors": []
+        },
+        "approach_1": {
+          "summary": {
+            "n": 97,
+            "intent_accuracy": 0.9896907216494846,
+            "resolution_recall": 0.90625,
+            "resolution_precision": 0.9666666666666667,
+            "hallucination_rate": 0.0,
+            "policy_error_rate": 0.03333333333333333,
+            "handoff_precision": 1.0,
+            "handoff_recall": 0.9696969696969697,
+            "ask_precision": 1.0,
+            "ask_recall": 1.0,
+            "containment_rate": 0.6701030927835051,
+            "deflection_rate": 0.6185567010309279,
+            "silent_fact_error_rate": 0.016666666666666666,
+            "silent_fact_error_literal_rate": 0.2,
+            "safety_routing_recall": 1.0,
+            "counts": {
+              "resolved": 60,
+              "answerable": 64,
+              "handoffs_pred": 32,
+              "handoffs_gold": 33,
+              "asks_pred": 5,
+              "asks_gold": 5,
+              "contained": 65,
+              "handoffs_justified": 32,
+              "asks_justified": 5,
+              "action_correct": 96,
+              "intent_correct": 96,
+              "answerable_correct": 58,
+              "resolved_correct": 58,
+              "correct": 58,
+              "hallucination": 0,
+              "policy_error": 2,
+              "ask": 5,
+              "silent_fact_error": 1,
+              "silent_fact_error_literal": 12,
+              "safety_routing_hits": 22,
+              "safety_routing_gold": 22
+            }
+          },
+          "fact_accuracy": {
+            "n": 57,
+            "exact": 43,
+            "exact_rate": 0.7543859649122807,
+            "null_vs_false": 13,
+            "null_vs_false_rate": 0.22807017543859648,
+            "other_divergence": 1,
+            "other_divergence_rate": 0.017543859649122806,
+            "null_vs_false_ticket_ids": [
+              "AD-03",
+              "AD-08",
+              "CR-02",
+              "CR-04",
+              "CR-07",
+              "HO-AD-01",
+              "HO-AD-02",
+              "HO-AD-03",
+              "HO-CR-01",
+              "HO-CR-02",
+              "HO-PR-01",
+              "HO-UN-02",
+              "HO-UN-07"
+            ],
+            "other_divergence_ticket_ids": [
+              "HO-FA-01"
+            ]
+          },
+          "errors": []
+        }
+      },
+      "moved_ticket_ids": [],
+      "n_moved": 0
+    },
+    "es": {
+      "arms": {
+        "approach_2": {
+          "summary": {
+            "n": 97,
+            "intent_accuracy": 0.9896907216494846,
+            "resolution_recall": 0.921875,
+            "resolution_precision": 0.9833333333333333,
+            "hallucination_rate": 0.0,
+            "policy_error_rate": 0.016666666666666666,
+            "handoff_precision": 1.0,
+            "handoff_recall": 0.9696969696969697,
+            "ask_precision": 1.0,
+            "ask_recall": 1.0,
+            "containment_rate": 0.6701030927835051,
+            "deflection_rate": 0.6185567010309279,
+            "silent_fact_error_rate": 0.0,
+            "silent_fact_error_literal_rate": 0.21666666666666667,
+            "safety_routing_recall": 1.0,
+            "counts": {
+              "resolved": 60,
+              "answerable": 64,
+              "handoffs_pred": 32,
+              "handoffs_gold": 33,
+              "asks_pred": 5,
+              "asks_gold": 5,
+              "contained": 65,
+              "handoffs_justified": 32,
+              "asks_justified": 5,
+              "action_correct": 96,
+              "intent_correct": 96,
+              "answerable_correct": 59,
+              "resolved_correct": 59,
+              "correct": 59,
+              "hallucination": 0,
+              "policy_error": 1,
+              "ask": 5,
+              "silent_fact_error": 0,
+              "silent_fact_error_literal": 13,
+              "safety_routing_hits": 22,
+              "safety_routing_gold": 22
+            }
+          },
+          "fact_accuracy": {
+            "n": 57,
+            "exact": 42,
+            "exact_rate": 0.7368421052631579,
+            "null_vs_false": 15,
+            "null_vs_false_rate": 0.2631578947368421,
+            "other_divergence": 0,
+            "other_divergence_rate": 0.0,
+            "null_vs_false_ticket_ids": [
+              "ES-AD-03",
+              "ES-AD-08",
+              "ES-CR-02",
+              "ES-CR-04",
+              "ES-CR-07",
+              "ES-CR-10",
+              "ES-HO-AD-01",
+              "ES-HO-AD-02",
+              "ES-HO-AD-03",
+              "ES-HO-CR-01",
+              "ES-HO-CR-02",
+              "ES-HO-CR-03",
+              "ES-HO-PR-01",
+              "ES-HO-UN-02",
+              "ES-HO-UN-07"
+            ],
+            "other_divergence_ticket_ids": []
+          },
+          "errors": []
+        },
+        "approach_1": {
+          "summary": {
+            "n": 97,
+            "intent_accuracy": 0.9896907216494846,
+            "resolution_recall": 0.90625,
+            "resolution_precision": 0.9666666666666667,
+            "hallucination_rate": 0.0,
+            "policy_error_rate": 0.03333333333333333,
+            "handoff_precision": 1.0,
+            "handoff_recall": 0.9696969696969697,
+            "ask_precision": 1.0,
+            "ask_recall": 1.0,
+            "containment_rate": 0.6701030927835051,
+            "deflection_rate": 0.6185567010309279,
+            "silent_fact_error_rate": 0.016666666666666666,
+            "silent_fact_error_literal_rate": 0.2,
+            "safety_routing_recall": 1.0,
+            "counts": {
+              "resolved": 60,
+              "answerable": 64,
+              "handoffs_pred": 32,
+              "handoffs_gold": 33,
+              "asks_pred": 5,
+              "asks_gold": 5,
+              "contained": 65,
+              "handoffs_justified": 32,
+              "asks_justified": 5,
+              "action_correct": 96,
+              "intent_correct": 96,
+              "answerable_correct": 58,
+              "resolved_correct": 58,
+              "correct": 58,
+              "hallucination": 0,
+              "policy_error": 2,
+              "ask": 5,
+              "silent_fact_error": 1,
+              "silent_fact_error_literal": 12,
+              "safety_routing_hits": 22,
+              "safety_routing_gold": 22
+            }
+          },
+          "fact_accuracy": {
+            "n": 57,
+            "exact": 43,
+            "exact_rate": 0.7543859649122807,
+            "null_vs_false": 13,
+            "null_vs_false_rate": 0.22807017543859648,
+            "other_divergence": 1,
+            "other_divergence_rate": 0.017543859649122806,
+            "null_vs_false_ticket_ids": [
+              "ES-AD-03",
+              "ES-AD-08",
+              "ES-CR-02",
+              "ES-CR-04",
+              "ES-CR-07",
+              "ES-HO-AD-01",
+              "ES-HO-AD-02",
+              "ES-HO-AD-03",
+              "ES-HO-CR-01",
+              "ES-HO-CR-02",
+              "ES-HO-PR-01",
+              "ES-HO-UN-02",
+              "ES-HO-UN-07"
+            ],
+            "other_divergence_ticket_ids": [
+              "ES-HO-FA-01"
+            ]
+          },
+          "errors": []
+        }
+      },
+      "moved_ticket_ids": [
+        "ES-HO-FA-01"
+      ],
+      "n_moved": 1
+    },
+    "id": {
+      "arms": {
+        "approach_2": {
+          "summary": {
+            "n": 97,
+            "intent_accuracy": 0.9896907216494846,
+            "resolution_recall": 0.890625,
+            "resolution_precision": 1.0,
+            "hallucination_rate": 0.0,
+            "policy_error_rate": 0.0,
+            "handoff_precision": 0.9428571428571428,
+            "handoff_recall": 1.0,
+            "ask_precision": 1.0,
+            "ask_recall": 1.0,
+            "containment_rate": 0.6391752577319587,
+            "deflection_rate": 0.5876288659793815,
+            "silent_fact_error_rate": 0.0,
+            "silent_fact_error_literal_rate": 0.24561403508771928,
+            "safety_routing_recall": 1.0,
+            "counts": {
+              "resolved": 57,
+              "answerable": 64,
+              "handoffs_pred": 35,
+              "handoffs_gold": 33,
+              "asks_pred": 5,
+              "asks_gold": 5,
+              "contained": 62,
+              "handoffs_justified": 33,
+              "asks_justified": 5,
+              "action_correct": 95,
+              "intent_correct": 96,
+              "answerable_correct": 57,
+              "resolved_correct": 57,
+              "correct": 57,
+              "hallucination": 0,
+              "policy_error": 0,
+              "ask": 5,
+              "silent_fact_error": 0,
+              "silent_fact_error_literal": 14,
+              "safety_routing_hits": 22,
+              "safety_routing_gold": 22
+            }
+          },
+          "fact_accuracy": {
+            "n": 57,
+            "exact": 41,
+            "exact_rate": 0.7192982456140351,
+            "null_vs_false": 16,
+            "null_vs_false_rate": 0.2807017543859649,
+            "other_divergence": 0,
+            "other_divergence_rate": 0.0,
+            "null_vs_false_ticket_ids": [
+              "ID-AD-03",
+              "ID-AD-08",
+              "ID-CR-02",
+              "ID-CR-04",
+              "ID-CR-07",
+              "ID-CR-10",
+              "ID-FA-11",
+              "ID-HO-AD-01",
+              "ID-HO-AD-02",
+              "ID-HO-AD-06",
+              "ID-HO-CR-01",
+              "ID-HO-CR-02",
+              "ID-HO-CR-03",
+              "ID-HO-PR-01",
+              "ID-HO-UN-02",
+              "ID-HO-UN-07"
+            ],
+            "other_divergence_ticket_ids": []
+          },
+          "errors": []
+        },
+        "approach_1": {
+          "summary": {
+            "n": 97,
+            "intent_accuracy": 0.9896907216494846,
+            "resolution_recall": 0.90625,
+            "resolution_precision": 0.9666666666666667,
+            "hallucination_rate": 0.0,
+            "policy_error_rate": 0.03333333333333333,
+            "handoff_precision": 1.0,
+            "handoff_recall": 0.9696969696969697,
+            "ask_precision": 1.0,
+            "ask_recall": 1.0,
+            "containment_rate": 0.6701030927835051,
+            "deflection_rate": 0.6185567010309279,
+            "silent_fact_error_rate": 0.016666666666666666,
+            "silent_fact_error_literal_rate": 0.2,
+            "safety_routing_recall": 1.0,
+            "counts": {
+              "resolved": 60,
+              "answerable": 64,
+              "handoffs_pred": 32,
+              "handoffs_gold": 33,
+              "asks_pred": 5,
+              "asks_gold": 5,
+              "contained": 65,
+              "handoffs_justified": 32,
+              "asks_justified": 5,
+              "action_correct": 96,
+              "intent_correct": 96,
+              "answerable_correct": 58,
+              "resolved_correct": 58,
+              "correct": 58,
+              "hallucination": 0,
+              "policy_error": 2,
+              "ask": 5,
+              "silent_fact_error": 1,
+              "silent_fact_error_literal": 12,
+              "safety_routing_hits": 22,
+              "safety_routing_gold": 22
+            }
+          },
+          "fact_accuracy": {
+            "n": 57,
+            "exact": 43,
+            "exact_rate": 0.7543859649122807,
+            "null_vs_false": 13,
+            "null_vs_false_rate": 0.22807017543859648,
+            "other_divergence": 1,
+            "other_divergence_rate": 0.017543859649122806,
+            "null_vs_false_ticket_ids": [
+              "ID-AD-03",
+              "ID-AD-08",
+              "ID-CR-02",
+              "ID-CR-04",
+              "ID-CR-07",
+              "ID-HO-AD-01",
+              "ID-HO-AD-02",
+              "ID-HO-AD-03",
+              "ID-HO-CR-01",
+              "ID-HO-CR-02",
+              "ID-HO-PR-01",
+              "ID-HO-UN-02",
+              "ID-HO-UN-07"
+            ],
+            "other_divergence_ticket_ids": [
+              "ID-HO-FA-01"
+            ]
+          },
+          "errors": []
+        }
+      },
+      "moved_ticket_ids": [
+        "ID-HO-AD-05",
+        "ID-HO-FA-01",
+        "ID-HO-UN-03"
+      ],
+      "n_moved": 3
+    }
+  }
+}

@@ -129,12 +129,54 @@ def test_the_guard_fails_against_a_module_set_with_no_lexicons(tmp_path: Path) -
         _assert_lexicons_present(union_lexicons(snapshots))
 
 
+# agent/langid.py holds word lists, so the checker scans and freezes it -- but they
+# are not ROUTING lexicons: nothing in `agent/agent.py::_route` reads them, and they
+# decide a reported number (M-5) rather than where a ticket goes. Its flat tuples
+# snapshot under the `en` key, which would otherwise break the exact-equality pins
+# below for a reason that has nothing to do with routing.
+#
+# The exclusion is by MODULE, not by lexicon name, and that distinction is the point:
+# filtering the pins down to the eight known names would also let a NEW routing
+# lexicon appear in agent.py unpinned. Excluding one named file keeps all three pins
+# exact -- add a word, remove a word, reorder a word, or add a ninth lexicon to a
+# routing module and they still fail. langid.json stays frozen, and
+# `test_langid_drift_is_caught_by_the_freeze_check` is what guards it.
+ROUTING_SNAPSHOT_EXCLUSIONS = {"agent/langid.py"}
+
+
+def routing_snapshots() -> dict:
+    """Scanned modules minus the measurement-only word lists."""
+    return {rel: snap for rel, snap in current_snapshots().items()
+            if rel not in ROUTING_SNAPSHOT_EXCLUSIONS}
+
+
+def test_langid_drift_is_caught_by_the_freeze_check(tmp_path: Path) -> None:
+    """Excluding langid from the routing pins must not leave it unguarded.
+
+    The pins above stop watching `agent/langid.py`; this is what takes over. It adds
+    one word to the Indonesian detector list -- the exact edit someone would make to
+    stop the detector abstaining on an awkward ticket -- and asserts the checker
+    reports drift. Without this, `ROUTING_SNAPSHOT_EXCLUSIONS` would be a hole.
+    """
+    live = (ROOT / "agent" / "langid.py").read_text(encoding="utf-8")
+    frozen = snapshot_module(ROOT / "agent" / "langid.py")
+    assert frozen, "langid.py exposes no word lists to the checker at all"
+
+    mutated = tmp_path / "langid.py"
+    mutated.write_text(live.replace('"yang", "dan", "di"', '"yang", "dan", "di", "toko"'),
+                       encoding="utf-8")
+    assert mutated.read_text(encoding="utf-8") != live, "the mutation did not apply"
+
+    assert snapshot_module(mutated) != frozen, (
+        "a word added to agent/langid.py is invisible to the freeze checker")
+
+
 def test_english_words_unchanged_since_base_commit() -> None:
     """Fails if a single English word is added, removed, or reordered.
 
     This is the check a `--write` cannot erase, and it must survive T3 untouched.
     """
-    live = union_lexicons(current_snapshots())
+    live = union_lexicons(routing_snapshots())
     assert FLAT_LANG in live, "no English lexicons are visible to the freeze checker at all"
     assert live[FLAT_LANG] == ENGLISH_AT_BASE
 
@@ -145,7 +187,7 @@ def test_spanish_words_unchanged_since_t3() -> None:
     The counterpart to the English pin, and the only witness that survives a
     `--force` re-freeze that drops Spanish outright.
     """
-    live = union_lexicons(current_snapshots())
+    live = union_lexicons(routing_snapshots())
     assert "es" in live, "no Spanish lexicons are visible to the freeze checker at all"
     assert live["es"] == SPANISH_AT_T3
 
@@ -183,7 +225,7 @@ def test_indonesian_words_unchanged_since_t14() -> None:
     The counterpart to the Spanish pin: a `--force` re-freeze that drops Indonesian
     cannot erase this witness.
     """
-    live = union_lexicons(current_snapshots())
+    live = union_lexicons(routing_snapshots())
     assert "id" in live, "no Indonesian lexicons are visible to the freeze checker at all"
     assert live["id"] == INDONESIAN_AT_T14
 
@@ -235,6 +277,8 @@ def fake_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     (tmp_path / "agent" / "extract.py").write_text("Z = 1\n", encoding="utf-8")
     (tmp_path / "agent" / "cache.py").write_text("W = 1\n", encoding="utf-8")
     (tmp_path / "agent" / "route.py").write_text("R = 1\n", encoding="utf-8")
+    (tmp_path / "agent" / "langid.py").write_text("L = 1\n", encoding="utf-8")
+    (tmp_path / "agent" / "translate.py").write_text("T = 1\n", encoding="utf-8")
     monkeypatch.setattr(freeze, "ROOT", tmp_path)
     monkeypatch.setattr(freeze, "FREEZE_DIR", tmp_path / "eval" / "frozen_lexicons")
     return tmp_path
@@ -245,8 +289,8 @@ def test_a_first_freeze_needs_no_force(fake_repo: Path) -> None:
     assert freeze._missing_baselines() == ([], [])
     assert freeze.write_snapshots() == 0
     assert sorted(p.name for p in freeze.FREEZE_DIR.iterdir()) == [
-        "_frozen_modules.json", "agent.json", "cache.json", "extract.json", "lexicons.json",
-        "llm.json", "route.json"]
+        "_frozen_modules.json", "agent.json", "cache.json", "extract.json", "langid.json",
+        "lexicons.json", "llm.json", "route.json", "translate.json"]
     assert freeze._known_modules() == set(freeze.MODULES)
 
 

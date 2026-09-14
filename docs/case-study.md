@@ -3,11 +3,13 @@
 > ⚠️ **STALE NUMBERS — narrative kept for the design argument, not the figures.** This case study was
 > written against the pre-T8 English-only baseline (43 seed tickets, 13 gold handoffs, hallucination
 > 10%→0%, resolution-precision 81%→100%). The corpus has since grown to 65 seed tickets (22 gold
-> handoffs, 8 tiers including `fault`/`safety`) and gained a Spanish arm, and the win condition grew
+> handoffs, 8 tiers including `fault`/`safety`) and gained Spanish and Indonesian arms, and the win condition grew
 > from 3 clauses to 5. The design argument below (gate as verifier, not solver; check 2.5;
 > generalization discipline) still holds — the *numbers* quoted through this file do not. For current,
 > live-regenerated figures see [`eval/report.md`](../eval/report.md) (English, offline `stub` backend)
-> and [`eval/report-multilingual.md`](../eval/report-multilingual.md) (English + Spanish).
+> and [`eval/report-multilingual.md`](../eval/report-multilingual.md) (English + Spanish + Indonesian,
+> live model path). For what those figures do **not** establish, read
+> [`docs/multilingual-case-study.md`](multilingual-case-study.md) first.
 
 ## The problem
 

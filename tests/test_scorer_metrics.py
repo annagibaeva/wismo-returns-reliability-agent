@@ -328,3 +328,96 @@ def test_win_condition_m1_clause_is_the_raw_rate_not_a_wilson_upper_bound():
     _, upper_188 = stats.wilson_interval(0, 188)
     _, upper_189 = stats.wilson_interval(0, 189)
     assert upper_188 > 0.02 and upper_189 <= 0.02   # n=189 is where a CI-bound gate would start passing
+
+
+# --------------------------------------------------------------------------- #
+# FR-17: translated vs hand-written, and FR-7/M-5: reply language
+# --------------------------------------------------------------------------- #
+
+def test_by_provenance_keeps_english_out_of_the_translated_bucket():
+    """English originals are neither translated nor hand-written.
+
+    Folding them into `translated` would report the English baseline as evidence
+    about translation quality -- the exact overclaim FR-17 exists to prevent.
+    """
+    en = scorer.by_provenance(_rows(data.all_tickets("en")))
+    assert set(en) == {"original"}
+    assert en["original"]["n"] == 97
+
+
+@pytest.mark.parametrize("lang", ["es", "id"])
+def test_by_provenance_splits_the_non_english_arms_in_two(lang):
+    buckets = scorer.by_provenance(_rows(data.all_tickets(lang)))
+    assert set(buckets) == {"translated", "hand_written"}
+    # FR-16 fixes the hand-written subset at 8 per language; the rest are bulk.
+    assert buckets["hand_written"]["n"] == 8
+    assert buckets["translated"]["n"] == 89
+    assert buckets["hand_written"]["n"] + buckets["translated"]["n"] == 97
+
+
+def test_by_provenance_carries_fact_accuracy_per_bucket():
+    """A3 is about whether translated text behaves like real prose, and the fact
+    reader is where that would show up first -- so M-3 has to be available per
+    bucket, not just the outcome metrics."""
+    buckets = scorer.by_provenance(_rows(data.all_tickets("es")))
+    for bucket in buckets.values():
+        assert "fact_accuracy" in bucket
+        assert bucket["fact_accuracy"]["n"] >= 0
+
+
+def test_by_provenance_is_not_vacuous_when_the_flag_is_absent():
+    """If `hand_written` ever stopped reaching the rows, this is what notices."""
+    rows = _rows(data.all_tickets("es"))
+    for r in rows:
+        r["hand_written"] = False
+    buckets = scorer.by_provenance(rows)
+    assert set(buckets) == {"translated"}
+    assert buckets["translated"]["n"] == 97
+
+
+def _reply_row(ticket_id, lang, reply_lang):
+    return {"ticket_id": ticket_id, "lang": lang, "reply_lang": reply_lang}
+
+
+def test_m5_counts_matches_and_excludes_abstentions_from_the_denominator():
+    rows = [_reply_row("A", "es", "es"), _reply_row("B", "es", "en"),
+            _reply_row("C", "es", None), _reply_row("D", "es", None)]
+    m5 = scorer.reply_language_match(rows)
+    assert m5["count"] == 1
+    assert m5["mismatched"] == 1
+    assert m5["undetermined"] == 2
+    assert m5["n"] == 2                      # abstentions are NOT in the denominator
+    assert m5["rate"] == 0.5
+    assert m5["coverage"] == 0.5
+    assert m5["undetermined_ticket_ids"] == ["C", "D"]
+    assert m5["mismatched_ticket_ids"] == ["B"]
+
+
+def test_m5_scoring_an_abstention_as_a_mismatch_would_change_the_answer():
+    """Guards the design decision, not just the code: if `None` were charged as a
+    mismatch the rate would be 0.25 rather than 0.5, and a weaker detector would
+    silently make the agent look worse."""
+    rows = [_reply_row("A", "es", "es"), _reply_row("B", "es", "en"),
+            _reply_row("C", "es", None), _reply_row("D", "es", None)]
+    assert scorer.reply_language_match(rows)["rate"] == 0.5
+    charged_as_mismatch = 1 / len(rows)
+    assert charged_as_mismatch != scorer.reply_language_match(rows)["rate"]
+
+
+def test_m5_empty_input_reports_none_not_a_zero_division():
+    m5 = scorer.reply_language_match([])
+    assert m5["rate"] is None and m5["coverage"] is None and m5["n"] == 0
+
+
+@pytest.mark.parametrize("lang, expect_match", [("en", True), ("es", False), ("id", False)])
+def test_m5_on_real_replies_shows_english_templates_reaching_every_customer(lang, expect_match):
+    """The finding M-5 exists to record: BRD §5 puts translating the reply out of
+    scope, so every customer gets English. This asserts that is what the number
+    actually says, in both directions -- English matches, the other two do not.
+    """
+    m5 = scorer.reply_language_match(_rows(data.all_tickets(lang)))
+    assert m5["n"] > 0, "no reply had a detectable language at all"
+    if expect_match:
+        assert m5["rate"] == 1.0
+    else:
+        assert m5["rate"] == 0.0, f"{lang}: expected every reply to be off-language"

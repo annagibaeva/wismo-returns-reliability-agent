@@ -37,8 +37,20 @@ FREEZE_DIR = Path(__file__).resolve().parent / "frozen_lexicons"
 # behave like a lexicon. Excusing it would have required claiming it structurally
 # cannot hold routing words, and a module that takes customer prose as input cannot
 # honestly claim that. It holds none today, and its snapshot is `{}`.
+# agent/langid.py arrives with M-5. It is scanned, not excused: it is nothing but
+# word lists, and those word lists decide a published number (the share of replies
+# that came back in the customer's language). "Add a few more Spanish words until the
+# detector stops abstaining" is exactly the edit this check exists to make visible.
+# Its three tuples are flat, so they snapshot under the `en` key carrying their own
+# names (`_EN`, `_ES`, `_ID`) -- the nesting key is storage, the names carry the
+# meaning, and drift in any of the three is caught either way.
+# agent/translate.py arrives with FR-6 and is scanned for the same reason as
+# agent/extract.py: it holds model prompt text, and prompt text is where a keyword
+# list would land without looking like one ("treat these phrases as equivalent",
+# "normalise these terms before translating"). It holds none today; its snapshot
+# is `{}`, and that empty snapshot is itself the claim being checked.
 MODULES = ("agent/agent.py", "agent/llm.py", "agent/lexicons.py", "agent/extract.py",
-           "agent/cache.py", "agent/route.py")
+           "agent/cache.py", "agent/route.py", "agent/langid.py", "agent/translate.py")
 FLAT_LANG = "en"
 
 # Every other module under agent/ that is *not* scanned above, with the reason it
@@ -50,7 +62,8 @@ FLAT_LANG = "en"
 # next to the module name.
 NON_LEXICON_MODULES = {
     "agent/__init__.py": "re-exports resolve_ticket and Resolution; defines nothing",
-    "agent/schemas.py": "dataclasses for the audit trail and resolution record only",
+    "agent/schemas.py": "dataclasses for the audit trail and resolution record; calls "
+                        "langid.detect for FR-7 but defines no word list of its own",
 }
 
 Snapshot = dict[str, dict[str, list[str]]]
