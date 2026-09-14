@@ -424,7 +424,10 @@ saying out loud rather than burying.
 python eval/run_eval.py --backend llm --extractor model --router model --all-langs
 
 # Offline path (no key, used by CI as a regression check)
-python eval/run_eval.py --lang en
+python eval/run_eval.py --lang en        # one language: --lang en|es|id
+
+# Architecture comparison: read the customer's language vs translate at the edge
+python eval/run_eval.py --backend llm --compare-approaches
 
 # Tests
 pytest -q                               # 391 tests, ~4s
