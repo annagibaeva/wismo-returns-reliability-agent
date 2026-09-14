@@ -298,6 +298,28 @@ now counted rather than invisible.
 [`docs/multilingual-case-study.md`](docs/multilingual-case-study.md) has the full account of what
 these numbers do and don't establish.
 
+### Read the customer, or translate first?
+
+There are two ways to serve a non-English customer from an English policy: **read their language
+directly** (what everything above measures), or **translate the ticket to English at the edge** and
+run the English pipeline unchanged. Both are built behind one flag — `--edge` — and
+`--compare-approaches` scores them over the same tickets
+([`eval/report-approaches.md`](eval/report-approaches.md)).
+
+Translating at the edge makes every language run the English pipeline, so **English is that
+architecture's ceiling**: no translation quality can take a translated language past what English
+itself scores. On this run that ceiling is **91% resolution recall**. Read directly, Spanish scores
+**92%** — already at or above the ceiling, so translation cannot win there. Indonesian scores
+**89%**, below the ceiling, so headroom does exist in principle. The architecture changes the
+outcome on 0/97 English tickets, 1/97 Spanish and 3/97 Indonesian.
+
+The recommendation is still **read the customer's language directly**, and the honest reason is a
+ceiling argument rather than a clean sweep: Approach 1 is ruled out where even perfect translation
+loses, and the Indonesian case where it has room is not settled by this run. That is because the
+comparison uses an **oracle translator** — it returns the exact English source each translated
+ticket came from, so it is an upper bound on Approach 1, not a measurement of any real translator.
+Judge a deployed translator against that bound, not against the direct read alone.
+
 **Takeaways**
 - Grounding is not automatically language-agnostic just because it runs on structured data — it is
   only as good as the step that turned the customer's words into those structures.
