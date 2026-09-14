@@ -1,108 +1,88 @@
 # WISMO + Returns Reliability Agent
 
-> A customer-support agent for e-commerce returns whose **grounding gate drives hallucination to 0 while staying selective** — it resolves the tickets it can ground in policy, and hands off the ones it can't. The headline isn't "it answers"; it's "it refuses to be confidently wrong without refusing to work."
-
-**Built as a portfolio piece on reliable support automation**
-
----
-
-## TL;DR
-
-Built a unified WISMO + returns agent with a deterministic **grounding gate**, an **audit trail**, and a **65-ticket seed harness + 32 held-out paraphrases** that measures hallucination, policy error, and safe-handoff behavior — and runs the agent **with the gate off vs on** to show the gate's causal effect, then **seed vs held-out** to measure generalization.
-
-> **Result (stub backend, seed n=65):** the gate cuts **hallucination 6% → 0%** and **resolution-precision 63% → 74%**, trading **deflection 75% → 65%** while holding **resolution-recall flat at 72%**. **Generalization (gate ON, seed n=65 vs held-out n=32):** hallucination gap **≈0** (seed 0% → held-out 0%) — the safety line holds — but that is *not* the whole generalization story: resolution-recall collapses **72% → 19%** and intent accuracy **92% → 38%** on unseen paraphrases with this offline stub extractor. The gate keeps refusing safely; it just refuses a lot more on phrasing its keyword lexicons don't cover.
-> *(Counts reported alongside every rate; at n=65 these are directional, not statistically tight. The `stub` is an intentionally naive offline proposer — see [Two backends](#two-backends-one-seam). The 5-clause win condition currently **FAILs** on this offline stub baseline — see [`eval/report.md`](eval/report.md), regenerated every run. `--backend llm` needs `ANTHROPIC_API_KEY` and cannot run in this offline environment; its last captured numbers predate the 5-clause win condition and are archived, marked stale, at [`eval/report-llm.md`](eval/report-llm.md).)*
+A customer-support agent for e-commerce returns and "where is my order" tickets. It resolves the
+tickets it can ground in written policy, and hands off the ones it can't — in English, Spanish and
+Indonesian, against one English policy document.
 
 ---
 
-## Why this, and why this way
+## The 30-second version
 
-Support automation has one failure that matters more than the rest: a **confidently wrong answer**. "Yes, you're refunded" when policy says otherwise is worse than "let me get a human." So this optimizes for *reliability under uncertainty*, not feature coverage.
+**What it does.** Reads a customer ticket, looks up the order, decides the return outcome against a
+structured policy, then runs that decision through a **grounding gate** that can veto it. Every
+ticket ends as one of three things: **resolved** with a cited rule, **a clarifying question**, or
+**handed off** to a human with a logged reason. Everything is written to an audit trail.
 
-Two domains, deliberately unequal in weight:
-- **WISMO** ("where is my order") is a lookup — included as a clean routing contrast, but it carries little eval value.
-- **Returns** is *policy reasoning*: windows, final-sale, electronics, defects, and **rule conflicts**. This is where correctness, hallucination, and precedence failures live, so this is where the weight goes.
+**What it produces.**
 
----
+- Hallucination **0%** and win condition **PASS** in all three languages, on the live model path.
+- Turning the gate on takes resolution precision **91% → 100%** while recall stays flat at **93%** —
+  it blocked four rulings and all four were wrong.
+- Handoff precision **100%** (22/22); safety escalations caught **100%** (15/15).
+- Measured on **291 tickets** — 97 cases (65 seed + 32 held-out paraphrases) mirrored across
+  English, Spanish and Indonesian with identical gold answers.
 
-## Multilingual grounding gate
+**What I learned building it.**
 
-The policy document stays **English**. Customers write in **English, Spanish, or Indonesian**. The question is whether the grounding gate still protects the customer when those two languages are not the same — or whether it only blesses an answer built on a mistranslated fact.
-
-**What it is.** Language enters in two places only: the **intent router** (is this a return, a tracking ask, or a safety/fraud handoff?) and the **fact extractor** (did the customer say the item is faulty?). Everything else — order lookup, rule evaluation, the gate — runs on structured data. The gate never sees the customer's message. If the extractor misreads `defective`, the gate will approve a ruling that is perfectly grounded in the *wrong* facts. That silent miss is what this arm measures (M-1), alongside missed safety escalations (M-2).
-
-**Languages covered**
-
-| Code | Language | Tickets | How they exist |
-|---|---|---|---|
-| `en` | English | 97 (65 seed + 32 held-out) | Original corpus |
-| `es` | Spanish | 97 | `variant_of` each English ticket — same order, **same gold** |
-| `id` | Indonesian | 97 | Same pattern; lexicons frozen *before* any `ID-*` ticket existed |
-
-A translation may change the words, never the answer (`services_mock/data.py` rejects gold drift). Eight tickets per non-English language are tagged `hand_written` (informal, code-switched, typos). Seed scores matching across languages is **expected**: they are the same 65 cases. Held-out is where wording can actually move a rate.
-
-**v0 live path** (`--backend llm --extractor model --router model`, gate ON), seed n=65 each — see [`eval/report-multilingual.md`](eval/report-multilingual.md):
-
-| | English | Spanish | Indonesian | Target |
-|---|---|---|---|---|
-| Hallucination | 0% (0/40) | 0% (0/40) | 0% (0/40) | ≤2% |
-| Resolution recall | 93% (40/43) | 93% (40/43) | 93% (40/43) | ≥80% |
-| Handoff precision | 100% (22/22) | 100% (22/22) | 100% (22/22) | ≥85% |
-| Safety routing | 100% (15/15) | 100% (15/15) | 100% (15/15) | =100% |
-| **Win condition** | **PASS** | **PASS** | **PASS** | all five clauses |
-
-Held-out recall (same gold, messier phrasing): EN 86% (18/21) · ES 90% (19/21) · ID 81% (17/21). Hallucination stays 0%. Indonesian is more timid on paraphrases, not more wrong. These are translated test cases, not independent market traffic; native-speaker sign-off on the translations is still outstanding.
-
-**The number the headline hides.** Hallucination is 0% everywhere, but fact accuracy (M-3) — how often the system reads `defective` correctly — is **75% EN · 74% ES · 72% ID**. The gate passes nearly all of those misreads. It can afford to: `RET-020` is the only rule in `kb/rules.json` that reads `defective`, and it tests `== True`, so a recorded `None` and a gold `False` license the same answer. **Silent fact error is near zero because of the policy, not because of the gate** — add one rule keyed on `defective == False` and 13 English tickets become outcome-decisive at once.
-
-Two more measured limits. Translated vs hand-written tickets (FR-17) score 93%/83% recall in Spanish and 90%/83% in Indonesian — the hand-written subsets do not collapse, but at n=8 they cannot certify the translated bulk either. And every reply goes out in English: reply-language match (M-5) is **100% EN · 0% ES · 0% ID**, a BRD §5 non-goal, now counted rather than invisible.
-
-Read [`docs/multilingual-case-study.md`](docs/multilingual-case-study.md) for what these numbers do **not** establish — above all that nobody who reads Spanish or Indonesian has independently verified any of them.
-
-**Read the customer, or translate at the edge?** Both architectures are built behind one flag (`--edge`), and `--compare-approaches` scores them over the same tickets — see [`eval/report-approaches.md`](eval/report-approaches.md). Under translate-at-the-edge every language runs the *English* pipeline, so English is that architecture's ceiling: **91%** resolution recall. Read directly, Spanish scores **92%** and Indonesian **89%**, and the architecture changes the outcome on 1 and 3 tickets out of 97. Where the direct read already beats the ceiling, better translation cannot reverse it — so the recommendation is **read the customer's language directly**. The Approach 1 arm uses an oracle translator (an upper bound, not a deployed translator); that limit is stated in the report.
-
-Keyword lists live in [`agent/lexicons.py`](agent/lexicons.py) (`en` / `es` / `id`). CI stays on the keyword path; v0 is the model path. `--lang en|es|id` runs one language; `--all-langs` writes the three-language table; `--compare-approaches` writes the architecture comparison.
+- **The gate has a blind spot by construction.** It checks the answer against the facts and never
+  checks the facts against the customer. Fact-reading accuracy is **~75% in every language** and the
+  gate approves nearly all of those misreads. Hallucination only reads 0% because this policy happens
+  to test the one fact in the one direction the system gets right.
+- **Keyword matching is where non-English quietly breaks.** Swapping the intent router and fact
+  reader from keyword lists to a model lifted held-out resolution recall from ~19% to **81–90%**.
+  If you run English keyword lists against non-English customers, your safety escalation is probably
+  not happening and nothing will tell you.
+- **Identical scores across three languages are not a finding.** It is one corpus translated three
+  ways — matching numbers are the expected result of that design, not evidence of robustness.
 
 ---
 
-## The win condition
+## Why this problem
 
-Three clauses that pull against each other on purpose, all true simultaneously:
+> *What this section covers: the specific failure this agent optimizes against, and why returns
+> carry the weight rather than order tracking.*
 
-> **hallucination ≤ 2% AND resolution-recall ≥ 80% AND handoff-precision ≥ 85%**
+Support automation has two failures that matter more than the rest, and both are worse than doing
+nothing:
 
-The multilingual arm adds two more, scored **per language**: silent fact error ≤ 2% and safety-routing recall = 100%. All five must hold at once.
+- **The confidently wrong answer.** "Yes, you're refunded" when policy says otherwise. It is worse
+  than "let me get a human," because the customer acts on it.
+- **The answer that doesn't happen.** A refund the agent claims it processed, that never actually
+  went through.
 
-| Metric | Definition | Target | Guards against |
-|---|---|---|---|
-| **Hallucination rate** | of resolved tickets, share that are ungrounded: a fabricated rule, a cited condition that isn't actually true, or a claim with no citation | ≤ 2% (≈0) | the catastrophe: confidently-wrong answers |
-| **Resolution recall** | of **answerable** tickets, share resolved with the correct outcome | ≥ 80% | "hand off everything" laziness |
-| **Handoff precision** | of all handoffs, share that genuinely deserved escalation | ≥ 85% | dumping solvable tickets to stay "safe" |
-| **Resolution precision** | of tickets it **resolved**, share correct | ≥ 95% | silent misapplication of real rules |
-| **Policy-error rate** | of resolved tickets, share grounded-but-wrong (a precedence miss) | ~0 | the hard returns failure — see the gate's check #2.5 |
-| Deflection rate | of **all** tickets, share resolved without a human | report | (context, not a gate) |
+These are not equal in weight to a missed upsell, so the system optimizes for *reliability under
+uncertainty*, not feature coverage. The same asymmetry shapes the two domains it covers:
 
-**Why conjoined:** each metric alone is gameable. An "answer everything" agent maxes deflection but fails hallucination; a "hand off everything" agent gets 0% hallucination but fails recall. Only a **selective** agent clears all three — and selectivity is the entire skill being demonstrated.
+- **WISMO** ("where is my order") is a lookup. It's in the set as a routing contrast; it carries
+  little eval value.
+- **Returns** is *policy reasoning* — windows, final-sale, electronics, defects, and rule conflicts.
+  This is where correctness, hallucination and precedence failures live, so this is where the
+  test weight goes.
 
-> Note on definitions: "deflection" here keeps its standard meaning (resolved without a human) and is **report-only**; the `≥80%` bar sits on **resolution-recall** (of *answerable* tickets). With 22 gold handoffs + 3 gold asks, deflection caps structurally below 100%; gating deflection would be meaningless.
+**Takeaways**
+- The design target is *knowing when not to answer*, not answering more.
+- Returns tickets carry the eval; WISMO is the control.
 
 ---
 
-## Architecture
+## How it works
+
+> *What this section covers: the path a ticket takes, what comes out the other end, and where a
+> language model is and isn't involved.*
 
 ```
-   Ticket ──▶ Intent Router ──▶ (out-of-scope ─────────────────────────▶ HANDOFF)
+   Ticket ──▶ Intent Router ──▶ (out-of-scope / safety / fraud ─────────▶ HANDOFF)
                   │ returns / wismo
                   ▼
             Order lookup ──(not found / ambiguous)──────────────────────▶ HANDOFF
                   │
         ┌─────────┴──────────┐
         ▼                    ▼
-    WISMO: status        Returns: extract facts ▶ retrieve rules ▶ PROPOSE (LLM seam)
+    WISMO: status        Returns: extract facts ▶ retrieve rules ▶ PROPOSE
         │                    │  {outcome, cited_rule_ids}
         │                    ▼
         │            ┌──────────────────────┐
-        │            │   GROUNDING GATE     │  checks 1–4 + 2.5 (precedence/deadlock)
+        │            │   GROUNDING GATE     │  verifier — can veto, cannot answer
         │            └─────────┬────────────┘
         │              PASS ───┴─── BLOCK
         ▼               ▼            ▼
@@ -110,9 +90,29 @@ The multilingual arm adds two more, scored **per language**: silent fact error �
    (+ audit)        (+ RMA)      (+ ticketing stub)
 ```
 
-### Policies are data, not prose
+- **Intent router** — returns, order tracking, or straight to a human (safety, fraud, abuse).
+- **Order lookup** — a missing or ambiguous order is a handoff, not a guess.
+- **Fact extractor** — reads the ticket for the facts the policy needs (is the item faulty?).
+- **Proposer** — a Claude call at temperature 0 returning `{outcome, cited_rule_ids}`.
+- **Grounding gate** — a deterministic verifier. It can block a ruling, never supply one.
+- **Audit trail** — every step, every citation, every block reason, written per ticket.
 
-The KB ([`kb/rules.json`](kb/rules.json)) is **structured rules** so grounding is checkable mechanically:
+**What comes out**, for every ticket: an outcome (`resolve` / `ask` / `handoff`), the rule IDs it
+relied on, an RMA when a return is approved, and — when blocked — the named reason it was blocked.
+
+**Takeaways**
+- A language model proposes; deterministic code decides what ships.
+- The gate only ever removes answers, so it cannot become a second source of hallucination.
+
+---
+
+## Policy as data, and the exceptions to it
+
+> *What this section covers: why the policy is structured JSON rather than prose, and how rule
+> conflicts — the hard part of returns — are resolved explicitly.*
+
+The knowledge base ([`kb/rules.json`](kb/rules.json)) is structured rules, so grounding is checkable
+mechanically rather than by asking a model whether it thinks it was right:
 
 ```json
 { "rule_id": "RET-012", "priority": 100,
@@ -121,13 +121,15 @@ The KB ([`kb/rules.json`](kb/rules.json)) is **structured rules** so grounding i
   "source_text": "Final-sale items cannot be returned or exchanged." }
 ```
 
-- `condition` is evaluated by a **restricted AST walker** ([`kb/evaluator.py`](kb/evaluator.py)) — no `eval`, no code execution.
-- `requires_facts` is load-bearing: if a ticket lacks a required fact, the rule **can't fire** — that's how "unanswerable" is detected mechanically.
-- `priority` makes precedence explicit: higher dominates (final-sale > standard window; defective > out-of-window).
+- `condition` is evaluated by a **restricted AST walker** ([`kb/evaluator.py`](kb/evaluator.py)) —
+  no `eval`, no code execution.
+- `requires_facts` is load-bearing: if a ticket lacks a required fact, the rule **cannot fire**.
+  That is how "unanswerable" is detected mechanically instead of guessed.
+- `priority` makes the **exceptions explicit**. Real returns policy is a pile of overrides:
+  final-sale beats the standard window; a defect beats being out-of-window. Higher priority
+  dominates, and two rules of equal priority that disagree are a **deadlock** → handoff.
 
-### The grounding gate ([`gate/gate.py`](gate/gate.py))
-
-A **verifier, not a solver** — it can BLOCK a ruling (→ handoff) but never hands the agent a free answer.
+**The gate's checks** ([`gate/gate.py`](gate/gate.py)):
 
 ```
 1.   every cited rule exists                              else BLOCK  "fabricated rule"     (grounding)
@@ -139,135 +141,340 @@ A **verifier, not a solver** — it can BLOCK a ruling (→ handoff) but never h
 4.   a concrete ruling must carry a citation              else BLOCK  "ungrounded claim"    (grounding)
 ```
 
-Blocks are tagged **grounding** (→ hallucination class) or **conclusion** (→ policy-error class) so the scorer can separate the two failure types. Check **2.5** is the one that defends the real returns failure mode — an individually-grounded ruling that ignores a more-specific rule (in-window *and* final-sale).
+Blocks are tagged **grounding** (counts as hallucination) or **conclusion** (counts as policy
+error), so the two failure types never get averaged into one comforting number.
 
-### Two backends, one seam
+**Takeaways**
+- Structured rules make "is this grounded?" a mechanical question, not a judgement call.
+- Check 2.5 is the one that matters: it catches a ruling that is individually well-cited but ignores
+  a more specific rule (in-window *and* final-sale).
 
-[`agent/llm.py`](agent/llm.py) is the only module that knows the provider:
+---
 
-- **`stub`** (default, key-free): a *competent-but-credulous* proposer — pro-customer, **precedence-blind**. It reproduces the real failure class so the harness and gate work offline/CI. It is the **baseline**, not a flex.
-- **`llm`** (needs `ANTHROPIC_API_KEY`): a real Claude call, temperature 0, structured output. This produces the **reported** numbers; we publish whatever baseline it gives.
+## What counts as winning
 
-v1 ships one provider behind this seam; swapping providers edits one file.
+> *What this section covers: the bar the agent has to clear, and why it is five clauses at once
+> rather than one headline metric.*
+
+> **hallucination ≤ 2% AND resolution-recall ≥ 80% AND handoff-precision ≥ 85%
+> AND silent-fact-error ≤ 2% AND safety-routing-recall = 100%** — all five, scored per language.
+
+| Metric | Definition | Target | Guards against |
+|---|---|---|---|
+| **Hallucination rate** | of resolved tickets, share ungrounded — fabricated rule, untrue cited condition, or no citation | ≤ 2% | the catastrophe: confidently-wrong answers |
+| **Resolution recall** | of **answerable** tickets, share resolved correctly | ≥ 80% | "hand off everything" laziness |
+| **Handoff precision** | of all handoffs, share that genuinely deserved a human | ≥ 85% | dumping solvable tickets to look safe |
+| **Silent fact error** | share where the gate approved a ruling built on a misread fact | ≤ 2% | a perfectly grounded answer to the wrong question |
+| **Safety routing recall** | share of hazard / fraud / takeover tickets escalated | 100% | the tickets where being wrong is unacceptable |
+| Resolution precision | of tickets it resolved, share correct | ≥ 95% | silent misapplication of real rules |
+| Containment rate | of all tickets, share closed without a human | report only | (context, not a bar) |
+
+Each metric alone is gameable. Answer everything and containment looks great while hallucination
+fails; hand off everything and hallucination is a perfect 0% while recall collapses. Only a
+**selective** agent clears all five — selectivity is the whole skill being demonstrated. Containment
+is deliberately *not* a bar: with 22 gold handoffs in the set it caps structurally below 100%, so
+gating it would reward the wrong behaviour.
+
+**Takeaways**
+- Five conjoined clauses, because any single one can be gamed by a degenerate strategy.
+- Containment is reported, never targeted.
+
+---
+
+## Does the gate actually do anything?
+
+> *What this section covers: the same agent, same tickets, same model calls, run twice — once with
+> the gate off and once with it on. This is the causal evidence that the gate is doing work rather
+> than decorating a model that was already right.*
+
+The gate sits after the proposal, so both arms use **identical model output**. The only difference
+is whether the verifier is allowed to veto. Live model path, gate ON vs OFF, seed n=65 — the figures
+are identical in all three languages:
+
+| Metric | Gate OFF | Gate ON |
+|---|---|---|
+| Hallucination | 7% (3/44) | **0%** (0/40) |
+| Policy error | 2% (1/44) | **0%** (0/40) |
+| Resolution precision | 91% (40/44) | **100%** (40/40) |
+| Resolution recall | 93% (40/43) | 93% (40/43) |
+| Handoff precision | 100% (18/18) | 100% (22/22) |
+| Containment | 72% (47/65) | 66% (43/65) |
+
+Ungated, the agent resolves 44 tickets and gets 4 of them wrong — 3 ungrounded rulings and 1
+precedence miss. Gated, it resolves 40 and gets **none** wrong. The number worth staring at is
+**resolution recall, which does not move**: the gate blocked four rulings and all four were wrong.
+It did not block a single correct answer.
+
+The cost is 6 points of containment — four tickets that used to close automatically now reach a
+human. That is the trade the whole project is arguing for: four handoffs are cheaper than one
+customer told they're refunded when they aren't.
+
+Reproduce both arms with `python eval/run_eval.py --backend llm --extractor model --router model
+--all-langs`; the per-ticket rows for each arm land in `eval/results-multilingual.json`.
+
+### Why a block is a handoff, not a retry
+
+The obvious next feature is a loop: when the gate blocks a ruling, hand the block reason back to the
+proposer and let it try again before escalating. There is deliberately **no such loop** — the agent
+makes exactly one model call per ticket, and a block goes straight to a human.
+
+That is a measured decision rather than an unfinished one. Scoping it
+([`docs/plans/PRD-gate-repair-loop.md`](docs/plans/PRD-gate-repair-loop.md)) showed the tickets the
+gate blocks are precisely the tickets whose **correct answer is escalation**. All six blocked cases
+across the corpus carry gold `answerable: false`. Five are blocked because a fact is missing from
+the order record — no delivery date, or `final_sale` is null — and re-prompting a model cannot
+supply a fact the database does not have. The sixth is a genuine deadlock between two
+equal-priority rules that contradict each other, where passing the gate would mean picking a side
+the policy declines to pick.
+
+Enumerating the proposal space confirms it: across both outcomes and every citation subset of the
+rule set, **no passing proposal exists** for any blocked ticket. A repair loop here would convert
+six handoffs into six slower handoffs at double the proposer cost.
+
+The general form of that check is the reusable part: *before building a retry loop behind a
+deterministic verifier, enumerate whether any passing output exists for the blocked population.*
+Where the verifier's input space is small it is exhaustive, and it costs nothing to run.
+
+**Takeaways**
+- Same model, same tickets — the only variable is the gate, so the delta is attributable to it.
+- It removed exactly the wrong answers and nothing else: precision 91% → 100%, recall flat.
+- Six points of containment is the price, paid in handoffs rather than in wrong refunds.
+- Reliability here comes from refusing, not from retrying — the retry has nothing to win on this
+  corpus, and that was checked rather than assumed.
+
+---
+
+## Three languages, one English policy
+
+> *What this section covers: the languages the agent handles, how the multilingual test set was
+> built, and what the gate does and doesn't protect when the customer and the policy don't share
+> a language.*
+
+The policy document stays **English**. Customers write in **English, Spanish or Indonesian**.
+
+Language enters the system in exactly two places: the **intent router** (is this a return, a tracking
+question, or a safety escalation?) and the **fact extractor** (did the customer say the item is
+faulty?). Everything downstream — order lookup, rule evaluation, the gate — runs on structured data.
+**The gate never sees the customer's message.** So if the extractor misreads `defective`, the gate
+will happily approve a ruling that is perfectly grounded in the wrong facts. Measuring that silent
+miss is the point of this arm.
+
+**Languages covered**
+
+| Code | Language | Tickets | How they exist |
+|---|---|---|---|
+| `en` | English | 97 (65 seed + 32 held-out) | The original corpus |
+| `es` | Spanish | 97 | A `variant_of` mirror of each English ticket — same order, **same gold answer** |
+| `id` | Indonesian | 97 | Same pattern; keyword lexicons were frozen *before* any `ID-*` ticket existed |
+
+A translation may change the words, never the answer — `services_mock/data.py` rejects gold drift at
+load time. Eight tickets per non-English language are hand-written (informal, code-switched, typos)
+rather than translated.
+
+**Results on the live model path** (`--backend llm --extractor model --router model`, gate ON, seed
+n=65 per language) — [`eval/report-multilingual.md`](eval/report-multilingual.md):
+
+| | English | Spanish | Indonesian | Target |
+|---|---|---|---|---|
+| Hallucination | 0% (0/40) | 0% (0/40) | 0% (0/40) | ≤2% |
+| Resolution recall | 93% (40/43) | 93% (40/43) | 93% (40/43) | ≥80% |
+| Handoff precision | 100% (22/22) | 100% (22/22) | 100% (22/22) | ≥85% |
+| Safety routing | 100% (15/15) | 100% (15/15) | 100% (15/15) | =100% |
+| **Win condition** | **PASS** | **PASS** | **PASS** | all five clauses |
+
+And the number that matters more than the table: **fact-reading accuracy is 75% (EN) / 74% (ES) /
+72% (ID)**. The gate approves nearly all of those misreads, because under this policy a misread
+lands on a fact the rules don't test in that direction — `RET-020` is the only rule that reads
+`defective`, and it tests `== True`, so a recorded `None` and a true `False` license the same
+answer. Add one rule keyed on `defective == False` and 13 currently-harmless English divergences
+become outcome-decisive overnight.
+
+Two more limits, measured rather than asserted. **Hand-written vs translated tickets** score 93% /
+83% recall in Spanish and 90% / 83% in Indonesian — the informal, code-switched subsets don't
+collapse, but at n=8 each they can't certify the translated bulk either. And **every reply goes out
+in English**: reply-language match is 100% EN / 0% ES / 0% ID. That was a stated non-goal, but it's
+now counted rather than invisible.
+
+[`docs/multilingual-case-study.md`](docs/multilingual-case-study.md) has the full account of what
+these numbers do and don't establish.
+
+### Read the customer, or translate first?
+
+There are two ways to serve a non-English customer from an English policy: **read their language
+directly** (what everything above measures), or **translate the ticket to English at the edge** and
+run the English pipeline unchanged. Both are built behind one flag — `--edge` — and
+`--compare-approaches` scores them over the same tickets
+([`eval/report-approaches.md`](eval/report-approaches.md)).
+
+Translating at the edge makes every language run the English pipeline, so **English is that
+architecture's ceiling**: no translation quality can take a translated language past what English
+itself scores. On this run that ceiling is **91% resolution recall**. Read directly, Spanish scores
+**92%** — already at or above the ceiling, so translation cannot win there. Indonesian scores
+**89%**, below the ceiling, so headroom does exist in principle. The architecture changes the
+outcome on 0/97 English tickets, 1/97 Spanish and 3/97 Indonesian.
+
+The recommendation is still **read the customer's language directly**, and the honest reason is a
+ceiling argument rather than a clean sweep: Approach 1 is ruled out where even perfect translation
+loses, and the Indonesian case where it has room is not settled by this run. That is because the
+comparison uses an **oracle translator** — it returns the exact English source each translated
+ticket came from, so it is an upper bound on Approach 1, not a measurement of any real translator.
+Judge a deployed translator against that bound, not against the direct read alone.
+
+**Takeaways**
+- Grounding is not automatically language-agnostic just because it runs on structured data — it is
+  only as good as the step that turned the customer's words into those structures.
+- Three languages passing identically is a property of the corpus design, not evidence of robustness.
+- The cheap check for any team: run your English keyword lists against non-English tickets and count
+  the safety escalations you lose.
+
+---
+
+## The test set
+
+> *What this section covers: the 97 cases behind every number above, and why they are weighted the
+> way they are.*
+
+[`fixtures/tickets.json`](fixtures/tickets.json) — **65 seed tickets** written before the agent
+existed, plus **32 held-out paraphrases** carrying the same gold answers in different words.
+
+| Tier | Seed | Held-out | Ground truth |
+|---|---|---|---|
+| Clean returns | 10 | 4 | answerable → resolve (eligible / ineligible) |
+| WISMO | 5 | 3 | answerable → resolve (status) |
+| Adversarial | 10 | 6 | answerable; framing traps — out-of-window framed as in-window, tone pressure |
+| **Precedence** | 3 | 2 | 2 answerable (a more specific rule dominates) + 1 genuine deadlock → handoff |
+| Unanswerable | 13 | 8 | missing fact / no covering policy / out of scope → handoff |
+| **Ask** | 2 | 2 | answerable but ambiguous → ask, not handoff |
+| **Fault** | 13 | 4 | answerable; probes whether a stated fault flips eligibility |
+| **Safety** | 9 | 3 | unanswerable → handoff (product hazard, account takeover, payment fraud) |
+
+That gives **22 gold handoffs** and **3 gold asks**, so handoff-precision rests on a real
+denominator, and **43 answerable** tickets so recall does too.
+
+**Takeaways**
+- The set is deliberately handoff-heavy: a metric without a denominator is decoration.
+- Adversarial, precedence, fault and safety tiers exist to make the agent fail in specific,
+  diagnosable ways rather than on average.
+
+---
+
+## Held-out paraphrases, and why they exist
+
+> *What this section covers: why a seed score is not a result, and what changes when the wording
+> moves.*
+
+Seed tickets are the cases the system was built against — scoring well on them proves the pipeline
+runs, not that it generalizes. Held-out paraphrases carry **identical gold answers in wording the
+system has never seen**, which is the only place a score can legitimately move.
+
+The discipline that makes this honest: **held-out results may never trigger a lexicon edit.**
+Keyword lists are snapshotted in [`eval/frozen_lexicons/`](eval/frozen_lexicons/) and enforced by
+pre-commit and CI, which blocks the easy cheat of quietly adding routing keywords until held-out
+passes.
+
+| Held-out (gate ON) | English | Spanish | Indonesian |
+|---|---|---|---|
+| Resolution recall | 86% (18/21) | 90% (19/21) | 81% (17/21) |
+| Hallucination | 0% | 0% | 0% |
+| Handoff precision | 100% | 100% | 85% (11/13) |
+
+Indonesian is more *timid* on unseen phrasing, not more wrong — and its held-out handoff precision
+(0.846) sits fractionally under the 0.85 bar. The win condition is scored on the seed set, so this
+doesn't flip the verdict; if it were scored on held-out, Indonesian would fail one clause. Worth
+saying out loud rather than burying.
+
+**Takeaways**
+- Safety generalizes here (hallucination stays 0%); usefulness degrades a little (recall drops
+  5–12 points).
+- The frozen lexicon is what makes the held-out number trustworthy — without it, the split means
+  nothing.
+
+---
+
+## What this does not establish
+
+> *What this section covers: the claims the numbers above do not support, stated before someone
+> else finds them.*
+
+- **Not three markets — one corpus translated three ways.** Same 97 cases, same gold, same orders.
+- **No native-speaker sign-off.** The Spanish calibration is self-graded; there is no Bahasa
+  reviewer at all. Until a fluent reader grades the output, the Indonesian numbers rest on an
+  unverified scorer. This is the single biggest open item.
+- **The hand-written subsets are too small to certify the translated bulk.** They are scored
+  separately (93% / 83% ES, 90% / 83% ID) and they hold up, but at n=8 per language that is a
+  sanity check, not evidence that machine-translated tickets behave like real customer messages.
+- **Small samples.** A zero-success 95% Wilson upper bound doesn't reach 2% until n≈189; every 0%
+  here tops out around 6–8%. Raw counts accompany every rate for this reason.
+- **The keyword lexicons aren't comparable across languages** — the English lists grew incrementally
+  over earlier work, Spanish and Indonesian were authored in one deliberate pass.
+
+**Takeaway**
+- The headline table is real and the finding underneath it is less flattering: the gate holds because
+  the policy doesn't read the fact the system gets wrong.
+
+---
+
+## Running it
+
+> *What this section covers: how to reproduce every number above, with and without an API key.*
+
+```bash
+# Live path — the reported numbers, three languages, one table.
+# Model responses are committed, so this replays without an API key.
+python eval/run_eval.py --backend llm --extractor model --router model --all-langs
+
+# Offline path (no key, used by CI as a regression check)
+python eval/run_eval.py --lang en
+
+# Tests
+pytest -q                               # 391 tests, ~4s
+
+# Single-ticket demo: proposal, gate verdict, action, cited rule, audit trail
+python demo.py --id AD-04               # gate BLOCKS a wrong "eligible" -> handoff
+python demo.py --id AD-04 --no-gate     # same proposal, ungated -> confidently-wrong refund
+python demo.py --id PR-02               # precedence: defect overrides out-of-window
+python demo.py --id UN-08               # unanswerable: missing fact -> handoff
+
+# The same safety ticket in three languages
+python demo.py --id SF-02    --router model
+python demo.py --id ES-SF-02 --router model
+python demo.py --id ID-SF-02 --router model
+```
+
+Reports regenerate on every run rather than being hand-copied here —
+[`eval/report-multilingual.md`](eval/report-multilingual.md) (three languages, live path) and
+[`eval/report.md`](eval/report.md) (English, offline path).
+
+> **Windows:** if `python` opens the Microsoft Store, use the full interpreter path, e.g.
+> `...\Programs\Python\Python312\python.exe`.
+
+**Takeaways**
+- One command reproduces the headline table, no API key required.
+- `demo.py --id AD-04` with and without `--no-gate` is the fastest way to see what the gate buys.
 
 ---
 
 ## Repository layout
 
 ```
-/kb             rules-as-data (priority, requires_facts) + safe predicate evaluator
-/services-mock  order API · returns (RMA) · ticketing stub        (importable as services_mock/)
-/agent          router · llm.propose() seam · orchestrator · schemas/audit
-/gate           the grounding gate: checks 1–4 + 2.5
-/eval           scorer (split metrics, per-tier) · runner (gate off vs on) · report
-/fixtures       291 tickets (97 English × Spanish × Indonesian variants) · orders
+/kb             policy as data (priority, requires_facts) + safe predicate evaluator
+/agent          intent router · fact extractor · propose() seam · orchestrator · audit
+/gate           the grounding gate
+/eval           scorer · runner · frozen lexicons · generated reports
+/fixtures       291 tickets (97 cases × en/es/id) · gold facts · orders
+/services_mock  order API · returns (RMA) · ticketing stub
 /docs           case study · architecture · demo script
-demo.py         paste a ticket -> proposal, gate verdict, action, cited rule, audit trail
+demo.py         single ticket -> proposal, gate verdict, action, cited rule, audit trail
 ```
-> Python packages can't contain hyphens, so the brief's `/services-mock` is the importable `services_mock/`.
-
-## The test set (the actual product) — [`fixtures/tickets.json`](fixtures/tickets.json)
-
-**65 seed tickets** per language, written in English before the agent, plus **32 held-out paraphrases** (same gold labels, different phrasing). Spanish (`ES-*`) and Indonesian (`ID-*`) are `variant_of` mirrors of that English set — see [Multilingual grounding gate](#multilingual-grounding-gate) and [`eval/report-multilingual.md`](eval/report-multilingual.md).
-
-| Tier | Seed | Held-out | Ground truth |
-|---|---|---|---|
-| Clean returns | 10 | 4 | answerable → resolve (eligible/ineligible) |
-| WISMO | 5 | 3 | answerable → resolve (status) |
-| Adversarial | 10 | 6 | answerable; framing traps (out-of-window as in-window, final-sale as standard, tone pressure) |
-| **Precedence** | 3 | 2 | 2 answerable (a more-specific rule dominates) + 1 genuine deadlock → handoff |
-| Unanswerable | 13 | 8 | missing fact / no covering policy / out-of-scope → handoff |
-| **Ask** | 2 | 2 | answerable but ambiguous → ask (not handoff) |
-| **Fault** (T8) | 13 | 4 | answerable → resolve; probes whether a stated fault flips eligibility (`gold_defective`), including tickets where it's a control and cannot |
-| **Safety** (T8) | 9 | 3 | unanswerable → handoff (product hazard / account takeover / payment fraud), weighted toward phrasings the routing lexicon does not already expect |
-
-→ **22 gold handoffs** + **3 gold asks** (so handoff-precision has a real denominator) · **43 answerable** (so recall does too).
-
-> **Lexicon-freeze discipline:** held-out paraphrases must not trigger a lexicon edit — we report whatever they score. That freeze is the integrity signal: it blocks the easy cheat of adding routing keywords until held-out passes. Lexicons are snapshotted in [`eval/frozen_lexicons/`](eval/frozen_lexicons/) and enforced by pre-commit + CI (`eval/check_lexicon_freeze.py`).
-
-## How it's evaluated
-
-Run the seed set **twice — gate off vs gate on** — then score held-out paraphrases (gate ON) for generalization. Gate-OFF is the honest baseline; we publish whatever it is.
-
-| Metric | Gate OFF | Gate ON |
-|---|---|---|
-| Hallucination | 6% | **0%** |
-| Resolution precision | 63% | **74%** |
-| Resolution recall | 72% | 72% |
-| Handoff precision | 100% | 85% |
-| Deflection | 75% | 65% |
-
-*(stub backend, seed n=65 — see [`eval/report.md`](eval/report.md), regenerated every run. [`eval/report-stub.md`](eval/report-stub.md) is a stale pre-T8 snapshot on a corpus that no longer exists — kept for history, do not cite it. `--backend llm` needs `ANTHROPIC_API_KEY` and does not run in this offline environment; its last captured numbers predate the current 5-clause win condition and are archived, marked stale, at [`eval/report-llm.md`](eval/report-llm.md).)*
-
-**Generalization (gate ON, seed n=65 vs held-out n=32):**
-
-| Metric | Seed | Held-out | Gap |
-|---|---|---|---|
-| Hallucination | 0% | 0% | **≈0** |
-| Resolution recall | 72% | 19% | +53pp |
-| Handoff precision | 85% | 100% | -15pp |
-| Intent accuracy | 92% | 38% | +55pp |
-
-The story in one line: *the gate cut hallucination from 6% to 0% (and precision 63%→74%) while holding recall flat at 72% on the seed set — it learned to refuse the unanswerable, not refuse to work. The cost is ~10 points of deflection (more handoffs). Held-out paraphrases hold the hallucination line at 0%, but that is where the good news stops: resolution-recall craters to 19% and intent accuracy to 38% — this offline stub's keyword-based intent router and fact extractor do not generalize to unseen phrasing, so most held-out tickets resolve to the wrong (grounded but incorrect) outcome rather than being caught as ungrounded. The gate's *safety* property (never fabricate) held; the reasoner's *usefulness* on paraphrases did not. The 5-clause win condition still FAILs on this offline stub baseline — `resolution_recall`, `silent_fact_error`, and `safety_routing_recall` all miss target, which is expected of the intentionally naive proposer, not a regression.* See [`eval/report.md`](eval/report.md) (regenerated each run) and [`docs/case-study.md`](docs/case-study.md) for the honest read.
-
----
 
 ## Contributing
 
 Feature work goes through pull requests — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Quickstart
+## Video walkthrough
 
-No dependencies for the default path (standard library only).
-
-```bash
-python eval/run_eval.py                 # gate off vs on, writes eval/report.md + results.json
-python tests/test_agent.py              # 14 tests (or: pytest -q)
-
-# Live demo — the headline contrast:
-python demo.py --id AD-04               # gate BLOCKS the stub's wrong "eligible" -> handoff
-python demo.py --id AD-04 --no-gate     # same proposal, ungated -> confidently-wrong refund
-python demo.py --id PR-02               # precedence: defective overrides out-of-window
-python demo.py --id UN-08               # unanswerable: missing fact -> handoff
-
-# Real Claude backend (reported / v0 numbers):
-pip install anthropic && export ANTHROPIC_API_KEY=sk-ant-...
-python eval/run_eval.py --backend llm --extractor model --router model --all-langs
-
-# Same ticket in three languages (safety handoff on the model router):
-python demo.py --id SF-02 --router model
-python demo.py --id ES-SF-02 --router model
-python demo.py --id ID-SF-02 --router model
-```
-> **Windows:** if `python` opens the Microsoft Store, use the full interpreter path, e.g. `...\Programs\Python\Python312\python.exe`.
-
-## Honest calibration
-
-At n=65 a single ticket moves a rate by ~1.5%, so all percentages are **directional, not statistically tight** — raw counts accompany every rate. The set is weighted toward handoff/unanswerable cases so handoff-precision stands on a real denominator (gold-handoffs=22, gold-asks=3). The `stub` backend does **not** clear the 5-clause win condition (see [`eval/report.md`](eval/report.md)) — it's an intentionally naive, precedence-blind proposer built to exercise the harness offline, not to demonstrate reasoning quality; the `llm` backend is where reasoning quality (and thus recall) would actually be tested, but it requires `ANTHROPIC_API_KEY` and cannot run in this offline environment.
-
-## Results
-
-Full benchmark output — gate OFF vs ON, seed-vs-held-out generalization, per-tier and per-ticket
-breakdowns — is regenerated on every run rather than hand-copied here; a hand-copied dashboard is
-exactly what went stale in an earlier version of this README when the corpus grew from 43 to 65
-tickets. Live reports:
-
-- [`eval/report.md`](eval/report.md) — English, `--backend stub` (offline, no key needed)
-- [`eval/report-multilingual.md`](eval/report-multilingual.md) — English + Spanish + Indonesian, `--all-langs`
-
-Regenerate locally with:
-
-```bash
-python eval/run_eval.py --backend stub --lang en       # writes eval/report.md
-python eval/run_eval.py --backend stub --lang es       # writes eval/report-es.md
-python eval/run_eval.py --backend stub --lang id       # writes eval/report-id.md
-python eval/run_eval.py --backend stub --all-langs      # writes eval/report-multilingual.md
-```
+[Watch the demo on Loom](https://www.loom.com/share/ae62d11da788410c82775298b851a8c3)
 
 ## License
+
 Synthetic data and demo code, MIT-style — use freely.
-
----
-
-## Video walkthrough
-[Watch the demo on Loom](https://www.loom.com/share/ae62d11da788410c82775298b851a8c3)
