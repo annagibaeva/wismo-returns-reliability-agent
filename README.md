@@ -481,6 +481,11 @@ Feature work goes through pull requests — see [CONTRIBUTING.md](CONTRIBUTING.m
 
 [Watch the demo on Loom](https://www.loom.com/share/ae62d11da788410c82775298b851a8c3)
 
+> Recorded **before the multilingual work**, so it walks through the English-only build: the
+> grounding gate, the gate-off contrast, and the audit trail. It does not show Spanish or
+> Indonesian, the model router and fact extractor, or the approach comparison. The script for a
+> current-build walkthrough is at [`docs/demo-script-v0.md`](docs/demo-script-v0.md).
+
 ## License
 
 Synthetic data and demo code, MIT-style — use freely.
