@@ -25,11 +25,51 @@ Two domains, deliberately unequal in weight:
 
 ---
 
+## Multilingual grounding gate
+
+The policy document stays **English**. Customers write in **English, Spanish, or Indonesian**. The question is whether the grounding gate still protects the customer when those two languages are not the same — or whether it only blesses an answer built on a mistranslated fact.
+
+**What it is.** Language enters in two places only: the **intent router** (is this a return, a tracking ask, or a safety/fraud handoff?) and the **fact extractor** (did the customer say the item is faulty?). Everything else — order lookup, rule evaluation, the gate — runs on structured data. The gate never sees the customer's message. If the extractor misreads `defective`, the gate will approve a ruling that is perfectly grounded in the *wrong* facts. That silent miss is what this arm measures (M-1), alongside missed safety escalations (M-2).
+
+**Languages covered**
+
+| Code | Language | Tickets | How they exist |
+|---|---|---|---|
+| `en` | English | 97 (65 seed + 32 held-out) | Original corpus |
+| `es` | Spanish | 97 | `variant_of` each English ticket — same order, **same gold** |
+| `id` | Indonesian | 97 | Same pattern; lexicons frozen *before* any `ID-*` ticket existed |
+
+A translation may change the words, never the answer (`services_mock/data.py` rejects gold drift). Eight tickets per non-English language are tagged `hand_written` (informal, code-switched, typos). Seed scores matching across languages is **expected**: they are the same 65 cases. Held-out is where wording can actually move a rate.
+
+**v0 live path** (`--backend llm --extractor model --router model`, gate ON), seed n=65 each — see [`eval/report-multilingual.md`](eval/report-multilingual.md):
+
+| | English | Spanish | Indonesian | Target |
+|---|---|---|---|---|
+| Hallucination | 0% (0/40) | 0% (0/40) | 0% (0/40) | ≤2% |
+| Resolution recall | 93% (40/43) | 93% (40/43) | 93% (40/43) | ≥80% |
+| Handoff precision | 100% (22/22) | 100% (22/22) | 100% (22/22) | ≥85% |
+| Safety routing | 100% (15/15) | 100% (15/15) | 100% (15/15) | =100% |
+| **Win condition** | **PASS** | **PASS** | **PASS** | all five clauses |
+
+Held-out recall (same gold, messier phrasing): EN 86% (18/21) · ES 90% (19/21) · ID 81% (17/21). Hallucination stays 0%. Indonesian is more timid on paraphrases, not more wrong. These are translated test cases, not independent market traffic; native-speaker sign-off on the translations is still outstanding.
+
+**The number the headline hides.** Hallucination is 0% everywhere, but fact accuracy (M-3) — how often the system reads `defective` correctly — is **75% EN · 74% ES · 72% ID**. The gate passes nearly all of those misreads. It can afford to: `RET-020` is the only rule in `kb/rules.json` that reads `defective`, and it tests `== True`, so a recorded `None` and a gold `False` license the same answer. **Silent fact error is near zero because of the policy, not because of the gate** — add one rule keyed on `defective == False` and 13 English tickets become outcome-decisive at once.
+
+Two more measured limits. Translated vs hand-written tickets (FR-17) score 93%/83% recall in Spanish and 90%/83% in Indonesian — the hand-written subsets do not collapse, but at n=8 they cannot certify the translated bulk either. And every reply goes out in English: reply-language match (M-5) is **100% EN · 0% ES · 0% ID**, a BRD §5 non-goal, now counted rather than invisible.
+
+Read [`docs/multilingual-case-study.md`](docs/multilingual-case-study.md) for what these numbers do **not** establish — above all that nobody who reads Spanish or Indonesian has independently verified any of them.
+
+Keyword lists live in [`agent/lexicons.py`](agent/lexicons.py) (`en` / `es` / `id`). CI stays on the keyword path; v0 is the model path. `--lang en|es|id` runs one language; `--all-langs` writes the three-language table.
+
+---
+
 ## The win condition
 
 Three clauses that pull against each other on purpose, all true simultaneously:
 
 > **hallucination ≤ 2% AND resolution-recall ≥ 80% AND handoff-precision ≥ 85%**
+
+The multilingual arm adds two more, scored **per language**: silent fact error ≤ 2% and safety-routing recall = 100%. All five must hold at once.
 
 | Metric | Definition | Target | Guards against |
 |---|---|---|---|
@@ -118,7 +158,7 @@ v1 ships one provider behind this seam; swapping providers edits one file.
 /agent          router · llm.propose() seam · orchestrator · schemas/audit
 /gate           the grounding gate: checks 1–4 + 2.5
 /eval           scorer (split metrics, per-tier) · runner (gate off vs on) · report
-/fixtures       68 tiered tickets (43 seed + 25 held-out paraphrases) · orders
+/fixtures       291 tickets (97 English × Spanish × Indonesian variants) · orders
 /docs           case study · architecture · demo script
 demo.py         paste a ticket -> proposal, gate verdict, action, cited rule, audit trail
 ```
@@ -126,7 +166,7 @@ demo.py         paste a ticket -> proposal, gate verdict, action, cited rule, au
 
 ## The test set (the actual product) — [`fixtures/tickets.json`](fixtures/tickets.json)
 
-**65 seed tickets**, written before the agent, plus **32 held-out paraphrases** (same gold labels, different phrasing), weighted toward the slices that carry the metrics. (English shown; T9 added an `es` mirror of the same corpus — see [`eval/report-multilingual.md`](eval/report-multilingual.md).)
+**65 seed tickets** per language, written in English before the agent, plus **32 held-out paraphrases** (same gold labels, different phrasing). Spanish (`ES-*`) and Indonesian (`ID-*`) are `variant_of` mirrors of that English set — see [Multilingual grounding gate](#multilingual-grounding-gate) and [`eval/report-multilingual.md`](eval/report-multilingual.md).
 
 | Tier | Seed | Held-out | Ground truth |
 |---|---|---|---|
@@ -188,9 +228,14 @@ python demo.py --id AD-04 --no-gate     # same proposal, ungated -> confidently-
 python demo.py --id PR-02               # precedence: defective overrides out-of-window
 python demo.py --id UN-08               # unanswerable: missing fact -> handoff
 
-# Real Claude backend (reported numbers):
+# Real Claude backend (reported / v0 numbers):
 pip install anthropic && export ANTHROPIC_API_KEY=sk-ant-...
-python eval/run_eval.py --backend llm
+python eval/run_eval.py --backend llm --extractor model --router model --all-langs
+
+# Same ticket in three languages (safety handoff on the model router):
+python demo.py --id SF-02 --router model
+python demo.py --id ES-SF-02 --router model
+python demo.py --id ID-SF-02 --router model
 ```
 > **Windows:** if `python` opens the Microsoft Store, use the full interpreter path, e.g. `...\Programs\Python\Python312\python.exe`.
 
@@ -206,12 +251,14 @@ exactly what went stale in an earlier version of this README when the corpus gre
 tickets. Live reports:
 
 - [`eval/report.md`](eval/report.md) — English, `--backend stub` (offline, no key needed)
-- [`eval/report-multilingual.md`](eval/report-multilingual.md) — English + Spanish, `--all-langs`
+- [`eval/report-multilingual.md`](eval/report-multilingual.md) — English + Spanish + Indonesian, `--all-langs`
 
 Regenerate locally with:
 
 ```bash
 python eval/run_eval.py --backend stub --lang en       # writes eval/report.md
+python eval/run_eval.py --backend stub --lang es       # writes eval/report-es.md
+python eval/run_eval.py --backend stub --lang id       # writes eval/report-id.md
 python eval/run_eval.py --backend stub --all-langs      # writes eval/report-multilingual.md
 ```
 

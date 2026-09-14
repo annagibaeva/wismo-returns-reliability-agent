@@ -6,7 +6,7 @@ An extension to `wismo-returns-reliability-agent`.
 | Field | Value |
 |---|---|
 | Version | 1.0 |
-| Status | Approved for build, pending D-6 (§14) |
+| Status | Built. D-6 closed (§14). Iterations 1 and 2 delivered as release v0; iteration 3 not started. |
 | Base system | `annagibaeva/wismo-returns-reliability-agent` |
 | Languages | English (control), Spanish, Bahasa Indonesia |
 | Policy document | English only. Not translated. |
@@ -638,7 +638,7 @@ The dataset's "today" stays frozen at 2026-06-22, so time-based rules like the 3
 | D-3 | Source of bulk ticket versions | Default: machine translation plus back-translation, with the FR-16 hand-written subset |
 | D-4 | Does fact extraction see the policy document | Default: no, so reading errors stay separable from reasoning errors |
 | D-5 | Run the soft-check path per language | Default: no for version 1 |
-| D-6 | Size and composition of the FR-19 fault tier | **Open** |
+| D-6 | Size and composition of the FR-19 fault tier | **Closed: 17 tickets** (13 outcome-decisive, 4 deliberate controls where a higher-priority rule already fixes the outcome), plus a `safety` tier so M-2 has a denominator of its own. Per-language decisive/inert membership is printed in `eval/report-multilingual.md`. |
 
 ---
 
@@ -676,3 +676,49 @@ That is delivered when all of the following are true.
 9. The two new metrics are documented alongside the existing five, so someone reading the repo cold understands what they mean.
 10. There is a written recommendation on which of the two approaches to use, with the evidence behind it, so adding a fourth language does not mean repeating this work.
 11. `docs/multilingual-case-study.md` states plainly what the numbers do **not** establish.
+
+---
+
+## 17. Delivery status (as built)
+
+The iteration numbers in the §9–§10 requirement tables are the **plan** and are left
+as written. This section is the **record**. Where the two disagree, this section is
+later.
+
+Iterations 1 and 2 shipped together as release **v0** (live path: model router, model
+extractor, LLM proposer, gate ON, English + Spanish + Indonesian). Iteration 3 has not
+started.
+
+### Requirements
+
+| Status | Requirements |
+|---|---|
+| **Built** | FR-1, FR-2, FR-3, FR-4a, FR-4b, FR-5, FR-7, FR-8, FR-9, FR-10, FR-11, FR-12, FR-13, FR-14, FR-16, FR-17, FR-18, FR-19, FR-20 |
+| **Partial** | FR-15 — gold-answer equality is machine-enforced, but no back-translation artifact exists in the repo; meaning preservation beyond the gold answer is asserted, not shown. FR-16 — the 8 hand-written tickets per language exist and are tagged, but were authored during the build rather than by the native reviewers the requirement names. |
+| **Not built** | FR-6, FR-21 — Approach 1 (translate at the edge) and its audit trail. Iteration 3. |
+
+FR-9 was delivered in iteration 1 rather than iteration 3.
+
+### Metrics
+
+All six are implemented and, as of this release, all six are **reported**: M-1, M-2,
+M-3, M-4, M-5 and M-6 each have a section in `eval/report-multilingual.md`. M-3 and
+M-5 were the last two to be surfaced — M-3 had been computed but never printed, and
+M-5 had no implementation at all.
+
+### Definition of done (§16)
+
+| # | Status |
+|---|---|
+| 1, 2 | Met |
+| 3 | **Not met.** Spanish is self-graded; there is no Bahasa reviewer. §11.2 classifies this as a project-level failure condition, not a caveat. |
+| 4, 5, 6, 7 | Met (7 on the keyword path in CI; the model path replays from the committed cache at a 100% hit rate) |
+| 8, 9, 11 | Met |
+| 10 | **Not met.** Requires iteration 3; there is no approach comparison and therefore no recommendation. |
+
+By §11.2 this is **partial success**: Approach 2 measured in all three languages with
+both new metrics and confidence intervals, the architecture comparison absent. The
+outstanding reviewer verification in item 3 is the one item that limits what may be
+claimed rather than merely what was delivered.
+
+See `docs/multilingual-case-study.md` for what the numbers do and do not establish.

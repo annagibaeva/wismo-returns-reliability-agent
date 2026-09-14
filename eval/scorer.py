@@ -141,6 +141,15 @@ def classify(resolution, ticket: dict) -> dict:
         "ticket_id": resolution.ticket_id,
         "tier": ticket.get("tier", "?"),
         "split": ticket.get("split", "?"),
+        # FR-17: provenance of the ticket TEXT. English originals carry no
+        # `hand_written` flag and are not translations either -- `by_provenance`
+        # files them as `original`, so an English run is never reported as if its
+        # numbers said something about machine translation.
+        "hand_written": bool(ticket.get("hand_written")),
+        "lang": ticket.get("lang", "en"),
+        # FR-7 / M-5: what language the customer actually got back. `None` = the
+        # detector abstained; see `reply_language_match`.
+        "reply_lang": getattr(resolution, "reply_lang", None),
         "intent_correct": resolution.intent == ticket.get("intent"),
         "gold_intent": ticket.get("intent"),
         "answerable": answerable,
@@ -322,6 +331,44 @@ def fact_accuracy(rows: list[dict]) -> dict:
     }
 
 
+def reply_language_match(rows: list[dict]) -> dict:
+    """M-5: of the replies sent, the share written in the customer's own language.
+
+    Three outcomes, not two. `undetermined` (the detector abstained -- see
+    `agent/langid.py`) is its own bucket and is EXCLUDED from the denominator rather
+    than charged as a mismatch. Scoring an abstention as a failure would let a weak
+    detector manufacture a bad M-5, and the number is meant to measure the agent's
+    replies, not the detector's confidence. `coverage` reports how much of the corpus
+    the rate actually rests on, so a reader can see when the denominator is thin.
+
+    Expect this to read ~100% for English and ~0% elsewhere, and that is the correct
+    result rather than a bug: BRD §5 puts translating the reply out of scope and asks
+    only that the mismatch be COUNTED. `agent/agent.py` builds every customer reply
+    from an English template. M-5 is the number that stops that being invisible.
+    """
+    matched, mismatched, undetermined = [], [], []
+    for r in rows:
+        got = r.get("reply_lang")
+        if got is None:
+            undetermined.append(r["ticket_id"])
+        elif got == r.get("lang", "en"):
+            matched.append(r["ticket_id"])
+        else:
+            mismatched.append(r["ticket_id"])
+    decided = len(matched) + len(mismatched)
+    n = len(rows)
+    return {
+        "n": decided,
+        "count": len(matched),
+        "rate": (len(matched) / decided) if decided else None,
+        "mismatched": len(mismatched),
+        "undetermined": len(undetermined),
+        "coverage": (decided / n) if n else None,
+        "undetermined_ticket_ids": sorted(undetermined),
+        "mismatched_ticket_ids": sorted(mismatched),
+    }
+
+
 def route_fallback(resolutions: list) -> dict:
     """M-4: tickets where `agent/agent.py::_route` found no lexicon match at all and
     defaulted to wismo (its own `route_fallback` audit decision, not a real WISMO
@@ -427,6 +474,41 @@ def by_split(rows: list[dict]) -> dict:
     for r in rows:
         splits.setdefault(r["split"], []).append(r)
     return {s: aggregate(rs) for s, rs in splits.items()}
+
+
+PROVENANCES = ("original", "translated", "hand_written")
+
+
+def by_provenance(rows: list[dict]) -> dict:
+    """FR-17: the same aggregate, split by where the ticket TEXT came from.
+
+    This is the only test of PRD assumption A3 ("machine-translated tickets behave
+    like real customer messages", rated *Low* confidence in the PRD itself). The
+    `hand_written` flag has been on the fixtures since the corpus was built; nothing
+    read it until this function existed, which meant A3 was carried as an untested
+    assumption behind every translated number.
+
+    Three buckets, not two. An English row is `original` -- it is neither a
+    translation nor one of the hand-authored non-English tickets, and folding it into
+    `translated` would report the English baseline as evidence about translation
+    quality. Only the non-English arms populate `translated` and `hand_written`.
+
+    A caller comparing the two non-English buckets should read the counts, not just
+    the rates: `hand_written` is 8 tickets per language by construction (FR-16), so
+    most single-metric differences between the buckets will be inside the noise. The
+    honest use of this split is to show whether the hand-written subset collapses,
+    not to certify that it matches.
+    """
+    buckets: dict[str, list[dict]] = {p: [] for p in PROVENANCES}
+    for r in rows:
+        if r.get("lang", "en") == "en":
+            buckets["original"].append(r)
+        elif r.get("hand_written"):
+            buckets["hand_written"].append(r)
+        else:
+            buckets["translated"].append(r)
+    return {p: {**aggregate(rs), "fact_accuracy": fact_accuracy(rs)}
+            for p, rs in buckets.items() if rs}
 
 
 _GAP_METRICS = ("intent_accuracy", "resolution_recall", "hallucination_rate", "handoff_precision")

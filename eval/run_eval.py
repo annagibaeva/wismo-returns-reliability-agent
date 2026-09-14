@@ -1038,6 +1038,108 @@ _CAVEATS = [
 ]
 
 
+def _fact_accuracy_lines(deep) -> list[str]:
+    """M-3, printed rather than merely computed.
+
+    `scorer.fact_accuracy` existed for a long time with exactly one caller, which
+    used it only to fill in a caveat sentence's counts -- so the headline number it
+    produces, the share of facts the system reads correctly, had never appeared in
+    any report. It belongs beside M-1, because the two say opposite things and the
+    gap between them IS the finding: M-1 is near-zero while a quarter of the facts
+    are misread, and the only reason those misreads are harmless is that the one
+    rule reading `defective` tests `== True`.
+    """
+    L = ["## Fact accuracy (M-3): what the reader actually got right", "",
+         "Full corpus (seed + held-out), over the tickets where extraction ran. "
+         "`null vs False` is broken out because that is the divergence M-1's refined "
+         "definition excludes -- inert under THIS policy, not inert in general.", ""]
+    L += ["| Lang | n | Exact | null vs False | Other divergence |",
+          "| --- | --- | --- | --- | --- |"]
+    for lang in ALL_LANGS:
+        fa = scorer.fact_accuracy(deep["full_corpus"][lang]["rows"])
+        L.append(f"| {lang} | {fa['n']} | **{stats.fmt_rate(fa['exact'], fa['n'])}** "
+                 f"| {stats.fmt_rate(fa['null_vs_false'], fa['n'])} "
+                 f"| {stats.fmt_rate(fa['other_divergence'], fa['n'])} |")
+    # Derived, never hardcoded: this sentence quotes the run's own English figures,
+    # so it cannot drift out of agreement with the table directly above it the way a
+    # literal "around 75%" did the moment the keyword path was scored instead.
+    en_fa = scorer.fact_accuracy(deep["full_corpus"]["en"]["rows"])
+    en_sfe = deep["full_corpus"]["en"]["sfe"]
+    L += ["", f"_Read this against the M-1 table above. English fact accuracy of "
+          f"{stats.fmt_rate(en_fa['exact'], en_fa['n'])} sitting beside a silent-fact-error rate "
+          f"of {stats.fmt_rate(en_sfe['count'], en_sfe['n'])} is not a contradiction: it measures "
+          f"how much of the extractor's error THIS policy happens to be immune to. "
+          f"`RET-020` is the only rule in `kb/rules.json` that reads `defective`, and it tests "
+          f"`== True`. Add one rule keyed on `defective == False` and the `null vs False` column "
+          f"({en_fa['null_vs_false']} English tickets this run) moves into M-1 wholesale._", ""]
+    return L
+
+
+def _provenance_lines(deep) -> list[str]:
+    """FR-17: translated vs hand-written, the only test of PRD assumption A3.
+
+    A3 ("machine-translated tickets behave like real customer messages") is rated
+    *Low* confidence in the PRD, with this split named as the thing that would test
+    it. The `hand_written` flag sat in the fixtures unread until this section
+    existed, which meant every translated number carried an assumption nobody had
+    checked.
+    """
+    L = ["## Translated vs hand-written (FR-17)", "",
+         "PRD assumption A3 -- that machine-translated tickets behave like real customer "
+         "messages -- is rated *Low* confidence in the PRD itself, and this split is what "
+         "tests it. English tickets are the originals and are listed separately rather than "
+         "folded into `translated`, which would report the English baseline as evidence about "
+         "translation quality.", ""]
+    L += ["| Lang | Provenance | n | Recall | Hallucination | Handoff precision | Fact accuracy (M-3) |",
+          "| --- | --- | --- | --- | --- | --- | --- |"]
+    for lang in ALL_LANGS:
+        buckets = scorer.by_provenance(deep["full_corpus"][lang]["rows"])
+        for name in scorer.PROVENANCES:
+            b = buckets.get(name)
+            if not b:
+                continue
+            c, fa = b["counts"], b["fact_accuracy"]
+            L.append(
+                f"| {lang} | {name} | {b['n']} "
+                f"| {stats.fmt_rate(c['answerable_correct'], c['answerable'])} "
+                f"| {stats.fmt_rate(c['hallucination'], c['resolved'])} "
+                f"| {stats.fmt_rate(c['handoffs_justified'], c['handoffs_pred'])} "
+                f"| {stats.fmt_rate(fa['exact'], fa['n'])} |")
+    L += ["", "_The hand-written subset is 8 tickets per language by construction (FR-16), so "
+          "most single-metric differences here sit inside the confidence intervals printed "
+          "beside them. The honest reading is whether the hand-written column COLLAPSES, not "
+          "whether it matches to the point. A3 is tested by this table, not settled by it: "
+          "these 8 were authored during the build rather than by the native reviewers FR-16 "
+          "asks for, so they probe informality and code-switching, not native usage._", ""]
+    return L
+
+
+def _reply_language_lines(deep) -> list[str]:
+    """M-5 / FR-7. Expected to read 100% English, 0% elsewhere -- and that IS the
+    result, not a bug. BRD §5 puts translating the reply out of scope and asks only
+    that the mismatch be counted. This is the count."""
+    L = ["## Reply language (M-5)", "",
+         "Of the replies sent, the share written in the customer's own language. The agent "
+         "builds every customer reply from an English template (`agent/agent.py::_return_reply` "
+         "and the handoff bodies), so a non-English customer receives English no matter how "
+         "well the routing and extraction understood them. Translating the reply is a BRD §5 "
+         "non-goal; counting it is this metric.", ""]
+    L += ["| Lang | Replies with a detected language | Match | Undetermined | Coverage |",
+          "| --- | --- | --- | --- | --- |"]
+    for lang in ALL_LANGS:
+        m5 = scorer.reply_language_match(deep["full_corpus"][lang]["rows"])
+        cov = "n/a" if m5["coverage"] is None else f"{m5['coverage']*100:.0f}%"
+        L.append(f"| {lang} | {m5['n']} | **{stats.fmt_rate(m5['count'], m5['n'])}** "
+                 f"| {m5['undetermined']} | {cov} |")
+    L += ["", "_`Undetermined` is the language detector abstaining (`agent/langid.py`), not a "
+          "mismatch, and it is excluded from the denominator rather than charged against the "
+          "agent -- scoring abstentions as failures would let a weak detector manufacture a bad "
+          "number. The detector is a frozen function-word list, not a model; over the 291 "
+          "fixture tickets, whose language is declared, it misidentifies none and abstains on "
+          "24 (see `tests/test_langid.py`)._", ""]
+    return L
+
+
 def _caveat_lines(deep) -> list[str]:
     en_full = scorer.fact_accuracy(deep["full_corpus"]["en"]["rows"])
     en_six = scorer.fact_accuracy(deep["scopes"]["en"]["six_tier"]["rows"])
@@ -1161,6 +1263,10 @@ def _write_multilingual_report(header, results, deep):
         L.append(f"- {lang}: decisive **{fd['decisive']}/{fd['n']}**, "
                  f"inert `{', '.join(fd['inert_ids'])}`")
     L += [""]
+
+    L += _fact_accuracy_lines(deep)
+    L += _provenance_lines(deep)
+    L += _reply_language_lines(deep)
 
     L += ["## Extractor agreement (M-6)", "",
           "How often the keyword and model extractors read `defective` the SAME way on the same "

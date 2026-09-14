@@ -6,8 +6,8 @@ Backend: **llm** · lang scope: **English + Spanish + Indonesian** (`--all-langs
 
 - model: claude-opus-4-8  (used only when --backend llm actually runs)
 - dataset date (frozen 'today'): 2026-06-22
-- git sha: b1dc442b2c0455e395a96c2bed672162c1a907da
-- cache hit rate: 1136/1374 (83%)
+- git sha: 1dc110545b973d9135944a0ecd3537d1b563de84
+- cache hit rate: 1374/1374 (100%)
 - extractor: --extractor model -> agent/extract.py backend='llm'  (prompt sha256 9aa94843473584bc...)
 - router: --router model -> agent/route.py backend='llm'  (prompt sha256 4c87b9a0cd11d320...)
 - lexicon entries, en (effective/raw): _SAFETY=9/10, _PAYMENT=6/6, _FRAUD=5/5, _ADDRESS=5/5, _ABUSE=6/6, _RETURN=7/7, _WISMO=6/9, _DEFECTIVE=11/12  [total 55/60]
@@ -84,6 +84,44 @@ Of the 17 fault-tier tickets, some have a gold `defective` that cannot change th
 - en: decisive **13/17**, inert `FA-09, FA-10, FA-12, HO-FA-04`
 - es: decisive **13/17**, inert `ES-FA-09, ES-FA-10, ES-FA-12, ES-HO-FA-04`
 - id: decisive **13/17**, inert `ID-FA-09, ID-FA-10, ID-FA-12, ID-HO-FA-04`
+
+## Fact accuracy (M-3): what the reader actually got right
+
+Full corpus (seed + held-out), over the tickets where extraction ran. `null vs False` is broken out because that is the divergence M-1's refined definition excludes -- inert under THIS policy, not inert in general.
+
+| Lang | n | Exact | null vs False | Other divergence |
+| --- | --- | --- | --- | --- |
+| en | 57 | **75% (43/57, 95% CI 62–84%)** | 23% (13/57, 95% CI 13–35%) | 2% (1/57, 95% CI 0–9%) |
+| es | 57 | **74% (42/57, 95% CI 61–83%)** | 26% (15/57, 95% CI 16–38%) | 0% (0/57, 95% CI 0–6%) |
+| id | 57 | **72% (41/57, 95% CI 59–81%)** | 28% (16/57, 95% CI 18–40%) | 0% (0/57, 95% CI 0–6%) |
+
+_Read this against the M-1 table above. English fact accuracy of 75% (43/57, 95% CI 62–84%) sitting beside a silent-fact-error rate of 2% (1/60, 95% CI 0–8%) is not a contradiction: it measures how much of the extractor's error THIS policy happens to be immune to. `RET-020` is the only rule in `kb/rules.json` that reads `defective`, and it tests `== True`. Add one rule keyed on `defective == False` and the `null vs False` column (13 English tickets this run) moves into M-1 wholesale._
+
+## Translated vs hand-written (FR-17)
+
+PRD assumption A3 -- that machine-translated tickets behave like real customer messages -- is rated *Low* confidence in the PRD itself, and this split is what tests it. English tickets are the originals and are listed separately rather than folded into `translated`, which would report the English baseline as evidence about translation quality.
+
+| Lang | Provenance | n | Recall | Hallucination | Handoff precision | Fact accuracy (M-3) |
+| --- | --- | --- | --- | --- | --- | --- |
+| en | original | 97 | 91% (58/64, 95% CI 81–95%) | 0% (0/60, 95% CI 0–6%) | 100% (32/32, 95% CI 89–100%) | 75% (43/57, 95% CI 62–84%) |
+| es | translated | 89 | 93% (54/58, 95% CI 83–97%) | 0% (0/55, 95% CI 0–6%) | 100% (30/30, 95% CI 88–100%) | 75% (40/53, 95% CI 62–85%) |
+| es | hand_written | 8 | 83% (5/6, 95% CI 43–96%) | 0% (0/5, 95% CI 0–43%) | 100% (2/2, 95% CI 34–100%) | 50% (2/4, 95% CI 15–84%) |
+| id | translated | 89 | 90% (52/58, 95% CI 79–95%) | 0% (0/52, 95% CI 0–6%) | 94% (31/33, 95% CI 80–98%) | 74% (39/53, 95% CI 60–83%) |
+| id | hand_written | 8 | 83% (5/6, 95% CI 43–96%) | 0% (0/5, 95% CI 0–43%) | 100% (2/2, 95% CI 34–100%) | 50% (2/4, 95% CI 15–84%) |
+
+_The hand-written subset is 8 tickets per language by construction (FR-16), so most single-metric differences here sit inside the confidence intervals printed beside them. The honest reading is whether the hand-written column COLLAPSES, not whether it matches to the point. A3 is tested by this table, not settled by it: these 8 were authored during the build rather than by the native reviewers FR-16 asks for, so they probe informality and code-switching, not native usage._
+
+## Reply language (M-5)
+
+Of the replies sent, the share written in the customer's own language. The agent builds every customer reply from an English template (`agent/agent.py::_return_reply` and the handoff bodies), so a non-English customer receives English no matter how well the routing and extraction understood them. Translating the reply is a BRD §5 non-goal; counting it is this metric.
+
+| Lang | Replies with a detected language | Match | Undetermined | Coverage |
+| --- | --- | --- | --- | --- |
+| en | 92 | **100% (92/92, 95% CI 95–100%)** | 5 | 95% |
+| es | 92 | **0% (0/92, 95% CI 0–4%)** | 5 | 95% |
+| id | 93 | **0% (0/93, 95% CI 0–3%)** | 4 | 96% |
+
+_`Undetermined` is the language detector abstaining (`agent/langid.py`), not a mismatch, and it is excluded from the denominator rather than charged against the agent -- scoring abstentions as failures would let a weak detector manufacture a bad number. The detector is a frozen function-word list, not a model; over the 291 fixture tickets, whose language is declared, it misidentifies none and abstains on 24 (see `tests/test_langid.py`)._
 
 ## Extractor agreement (M-6)
 
