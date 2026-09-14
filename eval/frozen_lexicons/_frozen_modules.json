@@ -6,6 +6,7 @@
     "agent/extract.py",
     "agent/cache.py",
     "agent/route.py",
-    "agent/langid.py"
+    "agent/langid.py",
+    "agent/translate.py"
   ]
 }

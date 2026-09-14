@@ -44,8 +44,13 @@ FREEZE_DIR = Path(__file__).resolve().parent / "frozen_lexicons"
 # Its three tuples are flat, so they snapshot under the `en` key carrying their own
 # names (`_EN`, `_ES`, `_ID`) -- the nesting key is storage, the names carry the
 # meaning, and drift in any of the three is caught either way.
+# agent/translate.py arrives with FR-6 and is scanned for the same reason as
+# agent/extract.py: it holds model prompt text, and prompt text is where a keyword
+# list would land without looking like one ("treat these phrases as equivalent",
+# "normalise these terms before translating"). It holds none today; its snapshot
+# is `{}`, and that empty snapshot is itself the claim being checked.
 MODULES = ("agent/agent.py", "agent/llm.py", "agent/lexicons.py", "agent/extract.py",
-           "agent/cache.py", "agent/route.py", "agent/langid.py")
+           "agent/cache.py", "agent/route.py", "agent/langid.py", "agent/translate.py")
 FLAT_LANG = "en"
 
 # Every other module under agent/ that is *not* scanned above, with the reason it

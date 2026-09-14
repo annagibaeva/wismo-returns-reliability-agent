@@ -6,7 +6,7 @@ Backend: **llm** · lang scope: **English + Spanish + Indonesian** (`--all-langs
 
 - model: claude-opus-4-8  (used only when --backend llm actually runs)
 - dataset date (frozen 'today'): 2026-06-22
-- git sha: 1dc110545b973d9135944a0ecd3537d1b563de84
+- git sha: 8773336c7535ca137c4bf9340fb7c387fb94cf8a
 - cache hit rate: 1374/1374 (100%)
 - extractor: --extractor model -> agent/extract.py backend='llm'  (prompt sha256 9aa94843473584bc...)
 - router: --router model -> agent/route.py backend='llm'  (prompt sha256 4c87b9a0cd11d320...)

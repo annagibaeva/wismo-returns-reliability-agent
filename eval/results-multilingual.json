@@ -2,7 +2,7 @@
   "header": {
     "model": "claude-opus-4-8",
     "dataset_date": "2026-06-22",
-    "git_sha": "1dc110545b973d9135944a0ecd3537d1b563de84",
+    "git_sha": "8773336c7535ca137c4bf9340fb7c387fb94cf8a",
     "cache": {
       "calls": 1374,
       "hits": 1374,

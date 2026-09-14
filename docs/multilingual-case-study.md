@@ -173,12 +173,24 @@ English template in every case. This is a BRD §5 non-goal rather than a defect 
 it means the end-to-end customer experience in Spanish and Indonesian has not been
 measured by anything in this repository, only the decision that precedes it.
 
-### 3.9 Two of the three planned iterations' comparison work is absent
+### 3.9 The architecture comparison rests on a ceiling, not on a translator
 
-Approach 1 (translate at the edge) was never built, so the central architectural
-question — read the customer's language directly, or translate first — has **no
-measured answer here**. There is no recommendation, because there is no comparison.
-Anything this repository says about which approach to choose is argument, not evidence.
+Approach 1 (translate at the edge) is now built and measured — see
+`eval/report-approaches.md`. But the arm that was run uses the **oracle** translator,
+which returns the English ticket each non-English ticket was generated from. Its
+translations are exact by construction, so it measures *the best Approach 1 could
+possibly do*, not what a deployed translator would achieve.
+
+That supports one kind of conclusion and not another. Where Approach 2 already beats
+the ceiling, no translator can rescue Approach 1, and the recommendation is safe.
+Where Approach 2 sits below the ceiling — Indonesian, by 2 points on the model path —
+the oracle shows only that headroom exists, not that a real translator reaches it.
+`--compare-approaches --edge llm` is the run that would settle those cases, and it has
+not been made.
+
+A second limit: the comparison was scored with the gate ON in both arms, so it says
+nothing about whether translation makes the *gate* easier or harder to satisfy — only
+about end-to-end outcomes.
 
 ---
 
@@ -202,6 +214,13 @@ Stated at the same narrowness as everything above.
 4. **A reproducible artifact.** `python eval/run_eval.py --backend llm --extractor
    model --router model --all-langs` replays from the committed response cache at a
    100% hit rate, so a reader with no API key regenerates every published number.
+5. **A ceiling argument about the architecture.** Under Approach 1 every language runs
+   the English pipeline, so English *is* Approach 1's ceiling — 91% resolution recall
+   on the model path. Read directly, Spanish scores 92% and Indonesian 89%, and the
+   architecture changes the outcome on 1 and 3 tickets out of 97 respectively. Where
+   the direct read already beats the ceiling, no improvement in translation can
+   reverse it. That is enough to recommend **Approach 2 — read the customer's language
+   directly** — without having measured a real translator.
 
 ---
 

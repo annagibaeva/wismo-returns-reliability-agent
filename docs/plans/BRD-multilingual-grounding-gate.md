@@ -686,16 +686,17 @@ as written. This section is the **record**. Where the two disagree, this section
 later.
 
 Iterations 1 and 2 shipped together as release **v0** (live path: model router, model
-extractor, LLM proposer, gate ON, English + Spanish + Indonesian). Iteration 3 has not
-started.
+extractor, LLM proposer, gate ON, English + Spanish + Indonesian). Iteration 3 —
+Approach 1 behind a flag, and the comparison — is built and measured against an oracle
+translator; the live-translator arm has not been run.
 
 ### Requirements
 
 | Status | Requirements |
 |---|---|
-| **Built** | FR-1, FR-2, FR-3, FR-4a, FR-4b, FR-5, FR-7, FR-8, FR-9, FR-10, FR-11, FR-12, FR-13, FR-14, FR-16, FR-17, FR-18, FR-19, FR-20 |
+| **Built** | FR-1, FR-2, FR-3, FR-4a, FR-4b, FR-5, FR-6, FR-7, FR-8, FR-9, FR-10, FR-11, FR-12, FR-13, FR-14, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21 |
 | **Partial** | FR-15 — gold-answer equality is machine-enforced, but no back-translation artifact exists in the repo; meaning preservation beyond the gold answer is asserted, not shown. FR-16 — the 8 hand-written tickets per language exist and are tagged, but were authored during the build rather than by the native reviewers the requirement names. |
-| **Not built** | FR-6, FR-21 — Approach 1 (translate at the edge) and its audit trail. Iteration 3. |
+| **Not built** | — |
 
 FR-9 was delivered in iteration 1 rather than iteration 3.
 
@@ -714,7 +715,7 @@ M-5 had no implementation at all.
 | 3 | **Not met.** Spanish is self-graded; there is no Bahasa reviewer. §11.2 classifies this as a project-level failure condition, not a caveat. |
 | 4, 5, 6, 7 | Met (7 on the keyword path in CI; the model path replays from the committed cache at a 100% hit rate) |
 | 8, 9, 11 | Met |
-| 10 | **Not met.** Requires iteration 3; there is no approach comparison and therefore no recommendation. |
+| 10 | **Met, with a stated evidence limit.** `eval/report-approaches.md` carries the comparison and a derived recommendation (Approach 2 — read the customer's language directly). The Approach 1 arm uses the `oracle` translator, an upper bound rather than a deployed translator: it settles the cases where the direct read already beats the ceiling and cannot settle the rest. `--compare-approaches --edge llm` is the outstanding run. |
 
 By §11.2 this is **partial success**: Approach 2 measured in all three languages with
 both new metrics and confidence intervals, the architecture comparison absent. The

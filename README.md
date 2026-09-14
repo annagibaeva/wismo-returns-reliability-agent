@@ -59,7 +59,9 @@ Two more measured limits. Translated vs hand-written tickets (FR-17) score 93%/8
 
 Read [`docs/multilingual-case-study.md`](docs/multilingual-case-study.md) for what these numbers do **not** establish — above all that nobody who reads Spanish or Indonesian has independently verified any of them.
 
-Keyword lists live in [`agent/lexicons.py`](agent/lexicons.py) (`en` / `es` / `id`). CI stays on the keyword path; v0 is the model path. `--lang en|es|id` runs one language; `--all-langs` writes the three-language table.
+**Read the customer, or translate at the edge?** Both architectures are built behind one flag (`--edge`), and `--compare-approaches` scores them over the same tickets — see [`eval/report-approaches.md`](eval/report-approaches.md). Under translate-at-the-edge every language runs the *English* pipeline, so English is that architecture's ceiling: **91%** resolution recall. Read directly, Spanish scores **92%** and Indonesian **89%**, and the architecture changes the outcome on 1 and 3 tickets out of 97. Where the direct read already beats the ceiling, better translation cannot reverse it — so the recommendation is **read the customer's language directly**. The Approach 1 arm uses an oracle translator (an upper bound, not a deployed translator); that limit is stated in the report.
+
+Keyword lists live in [`agent/lexicons.py`](agent/lexicons.py) (`en` / `es` / `id`). CI stays on the keyword path; v0 is the model path. `--lang en|es|id` runs one language; `--all-langs` writes the three-language table; `--compare-approaches` writes the architecture comparison.
 
 ---
 

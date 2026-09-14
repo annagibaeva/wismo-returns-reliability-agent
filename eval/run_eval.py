@@ -105,13 +105,17 @@ def _ticket_set(held_out: bool, lang: str = "en") -> list[dict]:
 
 
 def _run(backend: str, use_gate: bool, *, held_out: bool = False, use_soft_entailment: bool = False,
-         lang: str = "en", extractor: str = "stub", router: str = "stub"):
+         lang: str = "en", extractor: str = "stub", router: str = "stub", edge: str = "off"):
+    # `edge` defaults to "off" so every existing call site is byte-identical to what
+    # it was before FR-6 landed. That matters beyond tidiness: BRD §16 item 4 requires
+    # the English numbers to be unchanged from the base repo, and a default that
+    # touched the main path would void the comparison this whole project rests on.
     rows, resolutions, errors = [], [], []
     for t in _ticket_set(held_out, lang):
         try:
             res = resolve_ticket(t, backend=backend, use_gate=use_gate,
                                  use_soft_entailment=use_soft_entailment,
-                                 extractor=extractor, router=router)
+                                 extractor=extractor, router=router, edge=edge)
         except ValueError as exc:
             errors.append({"ticket_id": t.get("id", "?"), "lang": t.get("lang", lang), "error": str(exc)})
             continue
@@ -487,6 +491,13 @@ def main() -> int:
                             help="ticket language for a single-language run (default: en)")
     lang_group.add_argument("--all-langs", action="store_true",
                             help="run English, Spanish AND Indonesian; print/write the cross-language report")
+    lang_group.add_argument("--compare-approaches", action="store_true",
+                            help="FR-6: run BOTH architectures over every language and write "
+                                 "eval/report-approaches.md with a recommendation")
+    ap.add_argument("--edge", default="oracle", choices=["oracle", "llm"],
+                    help="the Approach 1 translator used by --compare-approaches: oracle "
+                         "(default, offline, an UPPER BOUND not a translator) or llm "
+                         "(needs ANTHROPIC_API_KEY)")
     args = ap.parse_args()
 
     extractor_seam = _CLI_TO_SEAM[args.extractor]
@@ -500,6 +511,23 @@ def main() -> int:
         header = _build_header(extractor_cli=args.extractor, extractor_seam=extractor_seam,
                                router_cli=args.router, router_seam=router_seam,
                                cache_stats=cache_stats)
+        if args.compare_approaches:
+            cmp = _approach_comparison(args.backend, extractor_seam, router_seam, args.edge)
+            header = _build_header(extractor_cli=args.extractor, extractor_seam=extractor_seam,
+                                   router_cli=args.router, router_seam=router_seam,
+                                   cache_stats=cache_stats)
+            L = _approach_report_lines(cmp, edge=args.edge, backend=args.backend)
+            L = L[:2] + ["## Run header", ""] + _header_lines(header) + [""] + L[2:]
+            L += _recommendation_lines(cmp, edge=args.edge)
+            (ROOT / "eval" / "report-approaches.md").write_text("\n".join(L) + "\n",
+                                                                encoding="utf-8")
+            (ROOT / "eval" / "results-approaches.json").write_text(
+                json.dumps({"header": header, "edge": args.edge, "comparison": cmp},
+                           indent=2, default=str), encoding="utf-8")
+            print("\n".join(L))
+            # An architecture comparison has no win condition of its own; it reports.
+            return 0
+
         if args.all_langs:
             results = {
                 lang: _compute(args.backend, extractor_seam, lang=lang, held_out=args.held_out,
@@ -1137,6 +1165,136 @@ def _reply_language_lines(deep) -> list[str]:
           "number. The detector is a frozen function-word list, not a model; over the 291 "
           "fixture tickets, whose language is declared, it misidentifies none and abstains on "
           "24 (see `tests/test_langid.py`)._", ""]
+    return L
+
+
+def _approach_comparison(backend: str, extractor_seam: str, router_seam: str,
+                         edge: str) -> dict:
+    """Both architectures over the same tickets, per language (FR-6, D-1).
+
+    Approach 2 (`edge="off"`) reads the customer's language directly. Approach 1
+    (`edge="oracle"` or `"llm"`) translates at the edge and runs English downstream.
+    Scored on the full corpus so the held-out half, where wording can actually move a
+    rate, is inside the comparison rather than beside it.
+    """
+    out = {}
+    for lang in ALL_LANGS:
+        arms = {}
+        for name, edge_backend in (("approach_2", "off"), ("approach_1", edge)):
+            rows, _res, errors = [], [], []
+            for held in (False, True):
+                r, _, e = _run(backend, True, held_out=held, lang=lang,
+                               extractor=extractor_seam, router=router_seam,
+                               edge=edge_backend)
+                rows += r
+                errors += e
+            arms[name] = {"summary": scorer.aggregate(rows),
+                          "fact_accuracy": scorer.fact_accuracy(rows),
+                          "errors": errors,
+                          "by_id": {x["ticket_id"]: x for x in rows}}
+        # Which tickets the architecture actually moved, not just how the averages
+        # differ: two arms can post the same recall while disagreeing about half the
+        # corpus, and an average-only comparison hides that completely.
+        a1, a2 = arms["approach_1"]["by_id"], arms["approach_2"]["by_id"]
+        moved = sorted(tid for tid in a2
+                       if tid in a1 and (a2[tid]["action"], a2[tid]["outcome"])
+                       != (a1[tid]["action"], a1[tid]["outcome"]))
+        out[lang] = {"arms": {k: {kk: vv for kk, vv in v.items() if kk != "by_id"}
+                              for k, v in arms.items()},
+                     "moved_ticket_ids": moved, "n_moved": len(moved)}
+    return out
+
+
+def _approach_report_lines(cmp: dict, *, edge: str, backend: str) -> list[str]:
+    ceiling = edge == "oracle"
+    L = ["# Approach comparison — read the customer, or translate at the edge?", "",
+         f"Proposer backend: **{backend}** · Approach 1 translator: **{edge}** · gate ON · "
+         "full corpus (seed + held-out), 97 tickets per language.", ""]
+    if ceiling:
+        L += ["> **The Approach 1 arm here is an upper bound, not a measurement of a "
+              "translator.** `oracle` returns the English ticket each non-English ticket "
+              "was generated from (`variant_of`), so its translations are exact by "
+              "construction. No deployed translator can do better. Read this arm as "
+              "\"the best Approach 1 could possibly do\", and judge a real translator "
+              "against it rather than against Approach 2 alone.", ""]
+    L += ["| Lang | Approach | Recall | Hallucination | Handoff precision | Fact accuracy (M-3) | Tickets moved |",
+          "| --- | --- | --- | --- | --- | --- | --- |"]
+    for lang in ALL_LANGS:
+        block = cmp[lang]
+        for name, label in (("approach_2", "2 — read directly"), ("approach_1", "1 — translate")):
+            arm = block["arms"][name]
+            c, fa = arm["summary"]["counts"], arm["fact_accuracy"]
+            moved = block["n_moved"] if name == "approach_1" else ""
+            L.append(
+                f"| {lang} | {label} | "
+                f"{stats.fmt_rate(c['answerable_correct'], c['answerable'])} | "
+                f"{stats.fmt_rate(c['hallucination'], c['resolved'])} | "
+                f"{stats.fmt_rate(c['handoffs_justified'], c['handoffs_pred'])} | "
+                f"{stats.fmt_rate(fa['exact'], fa['n'])} | {moved} |")
+    L += [""]
+    for lang in ALL_LANGS:
+        ids = cmp[lang]["moved_ticket_ids"]
+        L.append(f"- **{LANG_LABELS[lang]}**: the architecture changed the outcome on "
+                 f"{len(ids)}/97 tickets — `{', '.join(ids) or 'none'}`")
+    L += [""]
+    return L
+
+
+def _recommendation_lines(cmp: dict, *, edge: str) -> list[str]:
+    """BRD §16 item 10: a written recommendation WITH the evidence behind it.
+
+    Derived from the run rather than written ahead of it. The comparison the English
+    row makes possible is the load-bearing one: under Approach 1 every language is
+    reduced to the English pipeline, so English is simultaneously the control and
+    Approach 1's ceiling for every other language.
+    """
+    en_ceiling = cmp["en"]["arms"]["approach_2"]["summary"]
+    ceiling_recall = en_ceiling["resolution_recall"]
+
+    L = ["## Recommendation", ""]
+    beats_ceiling, below_ceiling = [], []
+    for lang in ALL_LANGS:
+        if lang == "en":
+            continue
+        direct = cmp[lang]["arms"]["approach_2"]["summary"]["resolution_recall"]
+        (beats_ceiling if (direct or 0) >= (ceiling_recall or 0) else below_ceiling).append(
+            (lang, direct))
+
+    L += ["**Approach 1's ceiling is the English arm.** Translating at the edge makes every "
+          "language run the English pipeline, so no amount of translation quality can take a "
+          "translated language past what English itself scores. On this run that ceiling is "
+          f"a resolution recall of {_pct(ceiling_recall)}.", ""]
+    if beats_ceiling:
+        langs = ", ".join(f"{LANG_LABELS[l]} ({_pct(r)})" for l, r in beats_ceiling)
+        L += [f"Read directly, {langs} already meet or beat that ceiling. For those languages "
+              "Approach 1 cannot win, and the recommendation is **Approach 2 — read the "
+              "customer's language directly**.", ""]
+    if below_ceiling:
+        langs = ", ".join(f"{LANG_LABELS[l]} ({_pct(r)})" for l, r in below_ceiling)
+        L += [f"Read directly, {langs} score below the ceiling, so Approach 1 has headroom "
+              "there in principle. Whether a real translator reaches it is the question the "
+              "`--edge llm` arm answers; the `oracle` arm only shows the room exists.", ""]
+
+    L += ["**Three reasons the recommendation does not flip even where the headroom exists.**", "",
+          "1. *Approach 1 adds a failure mode the gate cannot see.* A mistranslation becomes "
+          "an English message that reads perfectly, and every downstream step — routing, "
+          "extraction, the proposer, the gate — treats it as what the customer said. FR-21's "
+          "audit trail exists precisely because nothing else in the pipeline can catch it.",
+          "2. *It puts a model call on the critical path of every ticket*, including the ones "
+          "a keyword router would have resolved offline for nothing.",
+          "3. *The measured gap is small and the intervals overlap.* Read the raw counts in "
+          "the table above before treating any of these differences as real.", ""]
+    L += ["**What would change this recommendation:** a language whose direct-read recall sits "
+          "well below the English ceiling with non-overlapping intervals, or a policy that "
+          "needs more than one fact read from the customer's prose (A1) — at which point the "
+          "per-language extraction cost rises and a single translation step starts to pay for "
+          "itself.", ""]
+    if edge == "oracle":
+        L += ["**Evidence limit.** This recommendation rests on the oracle arm, which is an "
+              "upper bound rather than a translator. It is sound as a *ceiling* argument — it "
+              "rules Approach 1 out where even perfect translation loses — and it cannot "
+              "settle the cases where the ceiling is above the direct-read score. Those need "
+              "`--compare-approaches --edge llm`.", ""]
     return L
 
 
