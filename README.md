@@ -433,7 +433,7 @@ python eval/run_eval.py --lang en        # one language: --lang en|es|id
 python eval/run_eval.py --backend llm --compare-approaches
 
 # Tests
-pytest -q                               # 391 tests, ~4s
+pytest -q                               # 436 tests, ~6s
 
 # Single-ticket demo: proposal, gate verdict, action, cited rule, audit trail
 python demo.py --id AD-04               # gate BLOCKS a wrong "eligible" -> handoff

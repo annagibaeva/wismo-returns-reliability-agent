@@ -33,7 +33,11 @@ _CLI_TO_SEAM = {"keyword": "stub", "model": "llm"}
 
 def _ticket(args) -> dict:
     if args.id:
-        for t in data.tickets():
+        # The whole corpus, not data.tickets(): that defaults to English seed only,
+        # which puts every ES-*/ID-* variant and every held-out HO-* ticket out of
+        # reach of the demo. The eval harness keeps the narrower default on purpose
+        # (see services_mock/data.all_tickets), so widen it here rather than there.
+        for t in data.all_tickets(None):
             if t["id"].upper() == args.id.upper():
                 return t
         sys.exit(f"No ticket {args.id} in fixtures.")
