@@ -212,10 +212,35 @@ customer told they're refunded when they aren't.
 Reproduce both arms with `python eval/run_eval.py --backend llm --extractor model --router model
 --all-langs`; the per-ticket rows for each arm land in `eval/results-multilingual.json`.
 
+### Why a block is a handoff, not a retry
+
+The obvious next feature is a loop: when the gate blocks a ruling, hand the block reason back to the
+proposer and let it try again before escalating. There is deliberately **no such loop** — the agent
+makes exactly one model call per ticket, and a block goes straight to a human.
+
+That is a measured decision rather than an unfinished one. Scoping it
+([`docs/plans/PRD-gate-repair-loop.md`](docs/plans/PRD-gate-repair-loop.md)) showed the tickets the
+gate blocks are precisely the tickets whose **correct answer is escalation**. All six blocked cases
+across the corpus carry gold `answerable: false`. Five are blocked because a fact is missing from
+the order record — no delivery date, or `final_sale` is null — and re-prompting a model cannot
+supply a fact the database does not have. The sixth is a genuine deadlock between two
+equal-priority rules that contradict each other, where passing the gate would mean picking a side
+the policy declines to pick.
+
+Enumerating the proposal space confirms it: across both outcomes and every citation subset of the
+rule set, **no passing proposal exists** for any blocked ticket. A repair loop here would convert
+six handoffs into six slower handoffs at double the proposer cost.
+
+The general form of that check is the reusable part: *before building a retry loop behind a
+deterministic verifier, enumerate whether any passing output exists for the blocked population.*
+Where the verifier's input space is small it is exhaustive, and it costs nothing to run.
+
 **Takeaways**
 - Same model, same tickets — the only variable is the gate, so the delta is attributable to it.
 - It removed exactly the wrong answers and nothing else: precision 91% → 100%, recall flat.
 - Six points of containment is the price, paid in handoffs rather than in wrong refunds.
+- Reliability here comes from refusing, not from retrying — the retry has nothing to win on this
+  corpus, and that was checked rather than assumed.
 
 ---
 
