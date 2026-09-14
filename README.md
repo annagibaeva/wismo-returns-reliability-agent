@@ -420,7 +420,10 @@ saying out loud rather than burying.
 
 ```bash
 # Live path — the reported numbers, three languages, one table.
-# Model responses are committed, so this replays without an API key.
+# All 1374 model responses are committed, so this replays from cache with no
+# network calls. ANTHROPIC_API_KEY must still be SET (any value) to satisfy a
+# pre-flight check; it is never used when every call hits the cache.
+export ANTHROPIC_API_KEY=replayed-from-cache
 python eval/run_eval.py --backend llm --extractor model --router model --all-langs
 
 # Offline path (no key, used by CI as a regression check)
